@@ -30,8 +30,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentScreen, onNavigate }) =
 
         <nav className="flex-1 mt-4">
           {navItems.map((item) => (
-            <div
+            <button
               key={item.id}
+              type="button"
               onClick={() => onNavigate(item.id)}
               className={`
                 p-4 flex items-center gap-3 cursor-pointer group transition-all steps-bezel
@@ -40,9 +41,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentScreen, onNavigate }) =
                   : 'text-surface-container-highest hover:bg-surface-dim hover:text-primary'}
               `}
             >
-              <item.icon size={20} />
+              {React.createElement(ICONS[item.icon], { size: 20 })}
               <span className="font-headline font-bold text-sm tracking-widest uppercase">{item.label}</span>
-            </div>
+            </button>
           ))}
           <div className="text-surface-container-highest p-4 flex items-center gap-3 hover:bg-surface-dim hover:text-primary transition-colors cursor-pointer group">
             <ICONS.History size={20} />
@@ -51,7 +52,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentScreen, onNavigate }) =
         </nav>
 
         <div className="p-4 mb-2">
-          <button className="w-full bg-primary text-on-primary font-headline font-bold py-3 uppercase tracking-tighter bezel-button">
+          <button
+            type="button"
+            onClick={() => onNavigate('refine')}
+            className="w-full bg-primary text-on-primary font-headline font-bold py-3 uppercase tracking-tighter bezel-button"
+          >
             New Entry
           </button>
         </div>
@@ -71,8 +76,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentScreen, onNavigate }) =
       {/* Mobile Bottom Nav */}
       <nav className="md:hidden fixed bottom-0 left-0 w-full flex justify-around items-stretch h-16 bg-surface border-t-4 border-surface-container-highest z-50">
         {navItems.map((item) => (
-          <div
+          <button
             key={item.id}
+            type="button"
             onClick={() => onNavigate(item.id)}
             className={`
               flex flex-col items-center justify-center pt-2 pb-1 px-4 cursor-pointer
@@ -81,9 +87,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentScreen, onNavigate }) =
                 : 'text-surface-container-highest hover:text-primary'}
             `}
           >
-            <item.icon size={20} />
+            {React.createElement(ICONS[item.icon], { size: 20 })}
             <span className="font-headline text-[10px] font-bold uppercase mt-1">{item.label.split(' ')[0]}</span>
-          </div>
+          </button>
         ))}
         <div className="flex flex-col items-center justify-center text-surface-container-highest hover:text-primary pt-2 pb-1 px-4">
           <ICONS.Scroll size={20} />

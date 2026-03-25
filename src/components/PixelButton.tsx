@@ -1,8 +1,9 @@
 import React from 'react';
-import { motion } from 'motion/react';
+import { motion, type HTMLMotionProps } from 'motion/react';
 import { ICONS } from '../constants';
 
-interface PixelButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+interface PixelButtonProps extends Omit<HTMLMotionProps<'button'>, 'children'> {
+  children?: React.ReactNode;
   variant?: 'primary' | 'secondary' | 'tertiary' | 'ghost';
   icon?: keyof typeof ICONS;
   size?: 'sm' | 'md' | 'lg';

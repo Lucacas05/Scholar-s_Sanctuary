@@ -5,7 +5,7 @@ import { PixelCard } from '../components/PixelCard';
 
 export const Refine: React.FC = () => {
   return (
-    <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-8">
+    <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-8 pb-8 md:pb-52">
       {/* Left: Customization */}
       <aside className="w-full md:w-80 flex flex-col gap-6">
         <PixelCard title="Refine Garments" variant="high">
@@ -132,7 +132,7 @@ export const Refine: React.FC = () => {
       </aside>
 
       {/* System Message Footer */}
-      <footer className="fixed bottom-0 left-0 md:left-64 right-0 p-4 md:p-8 z-40">
+      <footer className="mt-8 mb-20 md:mb-0 md:mt-0 md:fixed md:bottom-0 left-0 md:left-64 right-0 p-0 md:p-8 z-40">
         <div className="max-w-5xl mx-auto bg-surface-container-high p-1 pixel-border shadow-[0_-10px_40px_rgba(0,0,0,0.6)]">
           <div className="bg-surface-container-low p-6 flex flex-col md:flex-row items-center gap-6 relative">
             <div className="absolute -top-4 left-6 bg-secondary-container text-primary-fixed px-4 py-1 font-headline font-bold text-xs uppercase tracking-widest pixel-shadow">

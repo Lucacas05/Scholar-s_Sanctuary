@@ -12,10 +12,10 @@ export default function App() {
 
   const renderScreen = () => {
     switch (currentScreen) {
-      case 'dashboard': return <Dashboard />;
+      case 'dashboard': return <Dashboard onNavigate={setCurrentScreen} />;
       case 'study': return <StudyRoom />;
       case 'refine': return <Refine />;
-      default: return <Dashboard />;
+      default: return <Dashboard onNavigate={setCurrentScreen} />;
     }
   };
 
@@ -73,6 +73,8 @@ export default function App() {
         <motion.button
           whileHover={{ rotate: 90 }}
           whileTap={{ scale: 0.9 }}
+          onClick={() => setCurrentScreen('refine')}
+          aria-label="Create a new entry"
           className="fixed right-6 bottom-20 md:bottom-8 w-16 h-16 bg-primary text-on-primary bezel-button flex items-center justify-center z-40 shadow-2xl"
         >
           <ICONS.Plus size={32} />
