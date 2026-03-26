@@ -4,6 +4,7 @@ import { Pause, Play, RotateCcw } from "lucide-react";
 interface StudyTimerProps {
   initialMinutes?: number;
   labels: {
+    namePlate?: string;
     start: string;
     pause: string;
     reset: string;
@@ -39,7 +40,7 @@ export function StudyTimer({ initialMinutes = 25, labels }: StudyTimerProps) {
   return (
     <div className="bg-surface-container-high pixel-border p-1 shadow-2xl max-w-sm w-full relative">
       <div className="absolute -top-4 left-4 bg-secondary-container text-primary-fixed px-3 py-1 font-headline font-bold text-xs uppercase tracking-tighter z-10">
-        Foco profundo
+        {labels.namePlate ?? "Foco profundo"}
       </div>
       <div className="bg-surface-container-highest p-6 flex flex-col items-center gap-2">
         <div className="font-headline text-7xl md:text-8xl font-black text-primary tracking-widest antialiased drop-shadow-[4px_4px_0px_#472a00]">

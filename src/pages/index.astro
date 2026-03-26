@@ -33,87 +33,105 @@ const { dashboard } = siteContent;
           {dashboard.hero.description}
         </p>
         <div class="flex flex-wrap gap-4 mt-6">
-          <PixelButton href="/estudio" size="lg" icon="BookOpen">{dashboard.hero.primaryCta}</PixelButton>
-          <PixelButton href="#estudio-activo" variant="tertiary" size="lg">{dashboard.hero.secondaryCta}</PixelButton>
+          <PixelButton href={dashboard.hero.primaryHref} size="lg" icon="BookOpen">{dashboard.hero.primaryCta}</PixelButton>
+          <PixelButton href={dashboard.hero.secondaryHref} variant="tertiary" size="lg">{dashboard.hero.secondaryCta}</PixelButton>
         </div>
       </div>
     </section>
 
-    <section id="camaras">
+    <section id="espacios">
       <div class="flex items-center justify-between mb-8 gap-4">
         <h2 class="text-3xl font-headline font-black text-tertiary uppercase tracking-tighter flex items-center gap-3">
           <span class="w-8 h-8 bg-tertiary-container border-2 border-tertiary flex items-center justify-center">
             <ICONS.Castle className="text-tertiary" size={16} />
           </span>
-          {dashboard.chambers.title}
+          {dashboard.spaces.title}
         </h2>
         <div class="h-1 flex-1 mx-8 dither-bg opacity-20 hidden md:block"></div>
         <a
-          href="#camaras"
+          href={dashboard.spaces.linkHref}
           class="text-primary font-headline font-bold uppercase text-xs tracking-widest flex items-center gap-1 hover:underline"
         >
-          {dashboard.chambers.linkLabel} <ICONS.ArrowUpRight className="inline" size={14} />
+          {dashboard.spaces.linkLabel} <ICONS.ArrowUpRight className="inline" size={14} />
         </a>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
-        <a href="/estudio" class="md:col-span-8 bg-surface-container-high border-4 border-surface-container-highest p-1 group overflow-hidden text-left">
+        <a
+          href={dashboard.spaces.sharedLibrary.href}
+          class="md:col-span-8 bg-surface-container-high border-4 border-surface-container-highest p-1 group overflow-hidden text-left"
+        >
           <div class="relative h-64 md:h-80 bg-surface-dim overflow-hidden">
             <img
               src={images.silentWing}
-              class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-              alt={dashboard.chambers.featured.alt}
+              class="absolute inset-0 w-full h-full object-cover scale-110 blur-md opacity-30 group-hover:scale-[1.14] transition-transform duration-500"
+              alt=""
+              aria-hidden="true"
+              loading="eager"
+              fetchpriority="high"
+              decoding="async"
+            />
+            <img
+              src={images.silentWing}
+              class="relative z-10 w-full h-full object-contain object-center p-4 md:p-5 group-hover:scale-[1.02] transition-transform duration-500"
+              alt={dashboard.spaces.sharedLibrary.alt}
               loading="eager"
               fetchpriority="high"
               decoding="async"
             />
             <div class="absolute top-4 left-4 bg-tertiary px-3 py-1 font-headline font-bold text-on-tertiary text-xs uppercase tracking-tighter">
-              {dashboard.chambers.featured.badge}
+              {dashboard.spaces.sharedLibrary.badge}
             </div>
             <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex flex-col justify-end p-6">
               <div class="flex items-center gap-2 mb-2">
                 <span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
-                <span class="text-primary text-xs font-bold uppercase tracking-widest">{dashboard.chambers.featured.status}</span>
+                <span class="text-primary text-xs font-bold uppercase tracking-widest">{dashboard.spaces.sharedLibrary.status}</span>
               </div>
               <h3 class="text-2xl font-headline font-black text-white uppercase tracking-tighter">
-                {dashboard.chambers.featured.title}
+                {dashboard.spaces.sharedLibrary.title}
               </h3>
+              <p class="text-on-surface-variant text-sm font-body mt-2 max-w-lg">
+                {dashboard.spaces.sharedLibrary.description}
+              </p>
             </div>
           </div>
         </a>
 
-        <a href="/estudio" class="md:col-span-4 bg-surface-container-high border-4 border-surface-container-highest p-1 group overflow-hidden text-left">
+        <a
+          href={dashboard.spaces.garden.href}
+          class="md:col-span-4 bg-surface-container-high border-4 border-surface-container-highest p-1 group overflow-hidden text-left"
+        >
           <div class="relative h-full min-h-[250px] bg-surface-dim overflow-hidden">
             <img
               src={images.gardenTerrace}
               class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-              alt={dashboard.chambers.terrace.alt}
+              alt={dashboard.spaces.garden.alt}
               loading="lazy"
               decoding="async"
             />
             <div class="absolute top-4 left-4 bg-primary px-3 py-1 font-headline font-bold text-on-primary text-xs uppercase tracking-tighter">
-              {dashboard.chambers.terrace.badge}
+              {dashboard.spaces.garden.badge}
             </div>
             <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex flex-col justify-end p-6">
-              <h3 class="text-xl font-headline font-black text-white uppercase tracking-tighter">{dashboard.chambers.terrace.title}</h3>
-              <p class="text-on-surface-variant text-xs font-body mt-2">{dashboard.chambers.terrace.description}</p>
+              <h3 class="text-xl font-headline font-black text-white uppercase tracking-tighter">{dashboard.spaces.garden.title}</h3>
+              <p class="text-on-surface-variant text-xs font-body mt-2">{dashboard.spaces.garden.description}</p>
             </div>
           </div>
         </a>
 
-        {dashboard.chambers.sideCards.map((item) => {
+        {dashboard.spaces.secondaryLinks.map((item) => {
           const Icon = ICONS[item.icon];
           return (
             <div class="md:col-span-3">
               <PixelCard variant="low" class="h-full flex flex-col gap-4">
                 <div class="w-12 h-12 bg-surface-container-highest flex items-center justify-center border-b-4 border-secondary-container">
-                  <Icon className={item.icon === "Flame" ? "text-tertiary" : "text-primary"} size={24} />
+                  <Icon className={item.icon === "History" ? "text-tertiary" : "text-primary"} size={24} />
                 </div>
                 <div>
                   <h4 class="font-headline font-bold uppercase tracking-widest text-on-surface text-sm">{item.title}</h4>
                   <p class="text-xs text-outline mt-1 font-body">{item.description}</p>
                 </div>
-                <PixelButton href="/estudio" variant="ghost" fullWidth={true} class={`mt-auto border-2 ${item.accentClass}`}>
+                <PixelButton href={item.href} variant="ghost" fullWidth={true} class={`mt-auto border-2 ${item.accentClass}`}>
                   {item.cta}
                 </PixelButton>
               </PixelCard>
@@ -126,8 +144,8 @@ const { dashboard } = siteContent;
             <div class="absolute top-0 right-0 w-24 h-24 dither-bg opacity-10"></div>
             <div class="flex items-start justify-between gap-6">
               <div class="max-w-[60%]">
-                <h4 class="font-headline font-black uppercase text-2xl tracking-tighter text-secondary">{dashboard.chambers.challenge.title}</h4>
-                <p class="text-sm text-on-surface-variant mt-2 font-body">{dashboard.chambers.challenge.description}</p>
+                <h4 class="font-headline font-black uppercase text-2xl tracking-tighter text-secondary">{dashboard.progressPanel.title}</h4>
+                <p class="text-sm text-on-surface-variant mt-2 font-body">{dashboard.progressPanel.description}</p>
                 <div class="mt-6">
                   <div class="w-full h-4 bg-tertiary-container relative">
                     <div class="absolute inset-y-0 left-0 bg-primary w-[65%] flex items-center justify-end pr-1">
@@ -135,13 +153,13 @@ const { dashboard } = siteContent;
                     </div>
                   </div>
                   <div class="flex justify-between mt-1">
-                    <span class="text-[10px] font-headline font-bold uppercase text-outline">{dashboard.chambers.challenge.progressLabel}</span>
-                    <span class="text-[10px] font-headline font-bold uppercase text-primary">{dashboard.chambers.challenge.progressValue}</span>
+                    <span class="text-[10px] font-headline font-bold uppercase text-outline">{dashboard.progressPanel.progressLabel}</span>
+                    <span class="text-[10px] font-headline font-bold uppercase text-primary">{dashboard.progressPanel.progressValue}</span>
                   </div>
                 </div>
               </div>
               <div class="w-24 h-24 bg-surface-container-highest border-4 border-outline-variant flex items-center justify-center p-2 shrink-0">
-                <img src={images.questBadge} alt={dashboard.chambers.challenge.alt} class="w-full h-full" loading="lazy" decoding="async" />
+                <img src={images.questBadge} alt={dashboard.progressPanel.alt} class="w-full h-full" loading="lazy" decoding="async" />
               </div>
             </div>
           </PixelCard>
@@ -149,21 +167,21 @@ const { dashboard } = siteContent;
       </div>
     </section>
 
-    <section id="estudio-activo">
+    <section id="pulso-personal">
       <div class="bg-surface-container-highest border-t-8 border-primary-container p-8 relative pixel-border">
         <div class="flex flex-col md:flex-row gap-8 items-center">
           <div class="w-48 h-48 bg-surface border-4 border-surface-container-highest pixel-border-inset flex items-center justify-center relative group">
-            <img src={images.ancientBook} class="w-32 h-32 object-contain" alt={dashboard.activeStudy.alt} loading="lazy" decoding="async" />
+            <img src={images.ancientBook} class="w-32 h-32 object-contain" alt={dashboard.currentFocus.alt} loading="lazy" decoding="async" />
             <div class="absolute -bottom-4 bg-primary text-on-primary font-headline font-bold text-[10px] px-3 py-1 uppercase tracking-widest bezel-button">
-              {dashboard.activeStudy.level}
+              {dashboard.currentFocus.level}
             </div>
           </div>
           <div class="flex-1 text-center md:text-left">
-            <h2 class="text-3xl font-headline font-black text-tertiary uppercase tracking-tighter mb-3">{dashboard.activeStudy.title}</h2>
-            <h3 class="text-4xl font-headline font-black text-on-surface uppercase tracking-tighter mb-2">{dashboard.activeStudy.bookTitle}</h3>
-            <p class="text-outline font-headline font-bold text-sm tracking-widest uppercase mb-4">{dashboard.activeStudy.progress}</p>
+            <h2 class="text-3xl font-headline font-black text-tertiary uppercase tracking-tighter mb-3">{dashboard.currentFocus.title}</h2>
+            <h3 class="text-4xl font-headline font-black text-on-surface uppercase tracking-tighter mb-2">{dashboard.currentFocus.bookTitle}</h3>
+            <p class="text-outline font-headline font-bold text-sm tracking-widest uppercase mb-4">{dashboard.currentFocus.progress}</p>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
-              {dashboard.activeStudy.stats.map((stat) => (
+              {dashboard.currentFocus.stats.map((stat) => (
                 <div class:list={["bg-surface-container-low p-4 border-b-4", stat.color]}>
                   <p class="text-[10px] font-headline font-bold text-outline uppercase tracking-widest">{stat.label}</p>
                   <p class:list={["text-2xl font-headline font-black", stat.textColor]}>{stat.value}</p>

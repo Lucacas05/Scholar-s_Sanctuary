@@ -8,7 +8,7 @@ import { StudyTimer } from "@/islands/StudyTimer";
 const { study } = siteContent;
 ---
 
-<BaseLayout title="Estudio" currentPath="/estudio">
+<BaseLayout title="Santuario silencioso" currentPath="/estudio">
   <div class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
     <section class="lg:col-span-8 space-y-8">
       <div class="relative aspect-video bg-surface-container-low pixel-border overflow-hidden shadow-2xl group">
@@ -21,6 +21,12 @@ const { study } = siteContent;
           decoding="async"
         />
         <div class="absolute inset-0 dither-bg pointer-events-none opacity-40"></div>
+
+        <div class="absolute top-6 left-6 bg-secondary-container px-3 py-2 border-l-4 border-primary">
+          <span class="text-primary-fixed font-headline font-bold text-xs uppercase tracking-[0.2em]">
+            {study.roomLabel}
+          </span>
+        </div>
 
         <div class="absolute inset-0 flex items-center justify-center p-6">
           <StudyTimer client:load labels={study.timer} />

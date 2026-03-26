@@ -1,0 +1,108 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import PixelButton from "@/components/PixelButton.astro";
+import PixelCard from "@/components/PixelCard.astro";
+import { images, siteContent } from "@/data/site";
+import { ICONS } from "@/lib/icons";
+
+const garden = siteContent.dashboard.spaces.garden;
+---
+
+<BaseLayout title="Jardín" currentPath="/estudio">
+  <div class="max-w-6xl mx-auto space-y-8">
+    <section class="relative h-[420px] overflow-hidden bg-surface-container-lowest pixel-border">
+      <div
+        class="absolute inset-0 bg-cover bg-center opacity-60"
+        style={`background-image: url(${images.gardenTerrace});`}
+      />
+      <div class="absolute inset-0 bg-gradient-to-t from-surface via-surface/15 to-transparent" />
+      <div class="absolute inset-0 opacity-35 pointer-events-none">
+        <div class="absolute inset-0 bg-[radial-gradient(circle_at_20%_22%,rgba(173,208,168,0.22)_0,transparent_18%),radial-gradient(circle_at_74%_28%,rgba(255,185,97,0.18)_0,transparent_14%),radial-gradient(circle_at_54%_76%,rgba(231,189,177,0.2)_0,transparent_15%)]" />
+      </div>
+
+      <div class="absolute bottom-10 left-8 max-w-3xl">
+        <div class="inline-block bg-primary px-3 py-1 mb-4 border-l-4 border-secondary">
+          <span class="text-on-primary font-headline font-bold text-xs uppercase tracking-[0.2em]">
+            {garden.badge}
+          </span>
+        </div>
+        <h1 class="text-5xl md:text-6xl font-headline font-black text-on-surface uppercase tracking-tighter leading-none mb-4 drop-shadow-[4px_4px_0px_#181210]">
+          {garden.title}
+        </h1>
+        <p class="text-on-surface-variant font-body text-lg max-w-2xl bg-surface/80 backdrop-blur-sm p-4 border-2 border-outline-variant/30">
+          {garden.description} Esta ruta deja preparado el lugar al que irán los usuarios cuando el Pomodoro entre en pausa.
+        </p>
+        <div class="flex flex-wrap gap-4 mt-6">
+          <PixelButton href="/" icon="Castle">Volver al hub</PixelButton>
+          <PixelButton href="/cronicas" variant="tertiary">Ver crónicas</PixelButton>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <PixelCard variant="low" title="Descanso visible" subtitle="Estado del personaje">
+        <p class="text-sm text-on-surface-variant leading-relaxed">
+          Cuando el foco termine, este jardín será el destino natural para mostrar que alguien ha pasado a descanso sin desaparecer del mundo.
+        </p>
+      </PixelCard>
+
+      <PixelCard variant="low" title="Bocadillos breves" subtitle="Social ligero">
+        <p class="text-sm text-on-surface-variant leading-relaxed">
+          Aquí encajan mensajes cortos tipo saludo o pausa, visibles para el grupo sin convertir el estudio en un chat constante.
+        </p>
+      </PixelCard>
+
+      <PixelCard variant="low" title="Movimiento suave" subtitle="Vida del espacio">
+        <p class="text-sm text-on-surface-variant leading-relaxed">
+          El jardín es donde más sentido tendrá un paseo ligero, idle animations y pequeñas acciones ambientales de los personajes.
+        </p>
+      </PixelCard>
+    </section>
+
+    <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div class="lg:col-span-7">
+        <PixelCard variant="default" class="h-full">
+          <div class="flex items-start gap-4 mb-6">
+            <div class="w-12 h-12 bg-tertiary-container border-2 border-tertiary flex items-center justify-center">
+              <ICONS.Wind className="text-tertiary" size={24} />
+            </div>
+            <div>
+              <h2 class="font-headline font-black text-2xl uppercase tracking-tighter text-tertiary">Qué debería ocurrir aquí</h2>
+              <p class="text-sm text-on-surface-variant mt-2">
+                El jardín queda definido como la sala de pausa del producto, separada del foco para que estudio y descanso no se mezclen en la misma vista.
+              </p>
+            </div>
+          </div>
+          <ul class="space-y-3 text-sm text-on-surface-variant">
+            <li>Entrada automática o sugerida al terminar una sesión de foco.</li>
+            <li>Mensajes cortos visibles para amigos durante la pausa.</li>
+            <li>Personajes caminando o en reposo dentro de una escena 2D/2.5D ligera.</li>
+            <li>Reincorporación fácil al estudio cuando el descanso se cierre.</li>
+          </ul>
+        </PixelCard>
+      </div>
+
+      <div class="lg:col-span-5">
+        <PixelCard variant="highest" class="h-full">
+          <div class="flex items-start gap-4 mb-4">
+            <div class="w-12 h-12 bg-primary-container border-2 border-primary flex items-center justify-center">
+              <ICONS.MapPin className="text-primary" size={24} />
+            </div>
+            <div>
+              <h2 class="font-headline font-black text-2xl uppercase tracking-tighter text-primary">Fase actual</h2>
+              <p class="text-sm text-on-surface-variant mt-2">
+                Hemos fijado el jardín como destino del descanso y como espacio diferenciado dentro del producto. La lógica viva llegará después.
+              </p>
+            </div>
+          </div>
+          <div class="bg-surface-container-low p-4 border-l-4 border-secondary">
+            <p class="font-headline font-bold text-xs uppercase tracking-widest text-outline">Se resuelve más adelante</p>
+            <p class="text-sm text-on-surface-variant mt-2">
+              Personajes moviéndose, bocadillos compartidos, transiciones automáticas desde Pomodoro y presencia sincronizada.
+            </p>
+          </div>
+        </PixelCard>
+      </div>
+    </section>
+  </div>
+</BaseLayout>

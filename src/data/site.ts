@@ -68,106 +68,113 @@ export const siteContent = {
   },
   dashboard: {
     hero: {
-      badge: "Sesión activa: Tomo de los ancestros",
-      titleStart: "El Santuario",
-      titleAccent: "Silencioso",
+      badge: "Modo individual de foco",
+      titleStart: "Santuario",
+      titleAccent: "silencioso",
       description:
-        "En lo profundo del archivo, donde el conocimiento respira en silencio, continúa tu travesía entre pergaminos olvidados.",
-      primaryCta: "Entrar al estudio",
-      secondaryCta: "Ver registro",
+        "Cuando quieras estudiar a solas, este ala te reserva una mesa, un reloj y el silencio suficiente para sostener el ritmo sin ruido social.",
+      primaryCta: "Entrar al santuario",
+      primaryHref: "/estudio",
+      secondaryCta: "Ver los espacios",
+      secondaryHref: "#espacios",
     },
-    chambers: {
-      title: "Cámaras disponibles",
-      linkLabel: "Explorar mapa",
-      featured: {
-        badge: "Ala Silente",
-        status: "12 estudiosos presentes",
-        title: "Cámara de enfoque profundo",
-        alt: "Ala Silente",
+    spaces: {
+      title: "Espacios del santuario",
+      linkLabel: "Ver mi pulso",
+      linkHref: "#pulso-personal",
+      sharedLibrary: {
+        badge: "Biblioteca compartida",
+        status: "Sala preparada para estudio social",
+        title: "Estudia con tu círculo",
+        description:
+          "La sala destinada al Pomodoro compartido, la presencia de amigos y el foco acompañado.",
+        alt: "Biblioteca compartida",
+        href: "/biblioteca-compartida",
       },
-      terrace: {
-        badge: "Terraza del Jardín",
-        title: "Susurros de la naturaleza",
-        description: "Sonidos ambientales al aire libre para el flujo creativo.",
-        alt: "Terraza del Jardín",
+      garden: {
+        badge: "Jardín de descanso",
+        title: "Descansar entre los setos",
+        description:
+          "El lugar pensado para pausas, bocadillos cortos y personajes en reposo mientras pasa el tiempo.",
+        alt: "Jardín del santuario",
+        href: "/jardin",
       },
-      sideCards: [
+      secondaryLinks: [
         {
-          title: "Scriptorium",
-          description: "Copiado y archivo para sesiones de concentración.",
-          cta: "Entrar",
-          icon: "BookOpen",
+          title: "Refinar personaje",
+          description: "Define el avatar modular que te representará dentro del santuario.",
+          cta: "Abrir editor",
+          icon: "Users",
           accentClass: "border-primary",
+          href: "/refinar",
         },
         {
-          title: "El Hogar",
-          description: "Estudio social y conversación relajada.",
-          cta: "Unirse",
-          icon: "Flame",
+          title: "Crónicas del archivo",
+          description: "Consulta sesiones, rachas e hitos que más adelante saldrán de actividad real.",
+          cta: "Ver crónicas",
+          icon: "History",
           accentClass: "border-tertiary",
+          href: "/cronicas",
         },
       ],
-      challenge: {
-        title: "Desafío del escriba",
-        description:
-          'Completa 3 horas de lectura concentrada para desbloquear la insignia "Maestro de los Rollos".',
-        progressLabel: "Progreso",
-        progressValue: "65% completado",
-        alt: "Insignia del desafío",
-      },
     },
-    activeStudy: {
-      title: "Estudio actual",
-      level: "Nivel 12",
+    progressPanel: {
+      title: "Ritual de progreso",
+      description:
+        "La portada mantiene un pulso personal: racha, objetivo y lectura en curso, sin mezclar todavía actividad social dentro del hub.",
+      progressLabel: "Meta semanal",
+      progressValue: "65% completado",
+      alt: "Insignia del ritual",
+    },
+    currentFocus: {
+      title: "Pulso personal",
+      level: "Racha de 7 días",
       bookTitle: "Tomo del reino olvidado",
-      progress: "Progreso de lectura • Capítulo 4: Las campanas silenciosas",
+      progress: "Lectura en curso • Capítulo 4: Las campanas silenciosas",
       stats: [
         { label: "Palabras leídas", value: "14.2k", color: "border-tertiary", textColor: "text-tertiary" },
         { label: "Tiempo invertido", value: "02:45", color: "border-primary", textColor: "text-primary" },
-        { label: "Multiplicador de foco", value: "x1.5", color: "border-secondary", textColor: "text-secondary" },
-        { label: "Restante", value: "12 páginas", color: "border-error", textColor: "text-error" },
+        { label: "Sesiones cerradas", value: "09", color: "border-secondary", textColor: "text-secondary" },
+        { label: "Meta restante", value: "12 páginas", color: "border-error", textColor: "text-error" },
       ],
       alt: "Tomo antiguo",
     },
   },
   study: {
-    roomLabel: "Foco profundo",
+    roomLabel: "Santuario silencioso",
     roomAlt: "Sala de estudio isométrica",
     timer: {
+      namePlate: "Reloj de foco",
       start: "Iniciar",
       pause: "Pausar",
       reset: "Reiniciar",
     },
-    avatars: [
-      { name: "Erala la estudiosa", color: "bg-tertiary", textColor: "text-on-tertiary" },
-      { name: "Julian el escriba", color: "bg-secondary", textColor: "text-on-secondary" },
-      { name: "Thorne el archivero", color: "bg-primary", textColor: "text-on-primary" },
-    ],
+    avatars: [{ name: "Tu mesa reservada", color: "bg-primary", textColor: "text-on-primary" }],
     ambience: [
       { label: "Lluvia suave", icon: "CloudRain" },
       { label: "Campanas lejanas", icon: "Bell" },
       { label: "Fuego del hogar", icon: "Flame" },
       { label: "Brisa de biblioteca", icon: "Wind" },
     ],
-    notesTitle: "Marginalia colectiva",
+    notesTitle: "Marginalia del santuario",
     notes: [
       {
-        author: "Estudiosa_042",
+        author: "Archivo privado",
         time: "hace 12 min",
         content:
-          '"La traducción de la página 42 parece insinuar una cámara oculta bajo el ala occidental..."',
+          '"Entra aquí cuando quieras sostener una sesión propia: sin distracciones, sin bocadillos ajenos y con el Pomodoro marcando el pulso."',
       },
       {
-        author: "Archivero_Z",
+        author: "Campanario",
         time: "hace 45 min",
         content:
-          '"¿Alguien más ha notado que la tinta reacciona distinto a la luz de las velas en esta sala?"',
+          '"El santuario silencioso será la sala individual del producto. La presencia social vivirá fuera de este ala."',
       },
       {
         author: "Escriba_Mayor",
         time: "hace 1 h",
         content:
-          '"Objetivo del día: transcribir 500 palabras de los guiones arcanos. Progreso: 60%."',
+          '"Objetivo del día: cerrar una sesión limpia y dejar apuntado el avance antes de volver a la biblioteca compartida."',
       },
     ],
     notesCta: "Añadir marginalia",
