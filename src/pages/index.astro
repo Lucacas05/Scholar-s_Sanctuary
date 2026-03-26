@@ -61,23 +61,22 @@ const { dashboard } = siteContent;
           href={dashboard.spaces.sharedLibrary.href}
           class="md:col-span-8 bg-surface-container-high border-4 border-surface-container-highest p-1 group overflow-hidden text-left"
         >
-          <div class="relative h-64 md:h-80 bg-surface-dim overflow-hidden">
-            <div class="absolute inset-y-0 right-0 w-full md:w-[58%] overflow-hidden">
-              <img
-                src={images.silentWing}
-                class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
-                alt={dashboard.spaces.sharedLibrary.alt}
-                loading="eager"
-                fetchpriority="high"
-                decoding="async"
-              />
-              <div class="absolute inset-0 bg-gradient-to-l from-black/10 via-transparent to-surface-dim"></div>
-            </div>
-            <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent md:hidden"></div>
+          <div class="relative h-72 md:h-[28rem] bg-surface-dim overflow-hidden">
+            <img
+              src={images.silentWing}
+              class="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
+              style="object-position: center 46%;"
+              alt={dashboard.spaces.sharedLibrary.alt}
+              loading="eager"
+              fetchpriority="high"
+              decoding="async"
+            />
+            <div class="absolute inset-0 bg-[linear-gradient(90deg,rgba(24,18,16,0.92)_0%,rgba(24,18,16,0.86)_28%,rgba(24,18,16,0.38)_56%,rgba(24,18,16,0.18)_100%)]"></div>
+            <div class="absolute inset-0 bg-gradient-to-t from-black/72 via-transparent to-black/10"></div>
             <div class="absolute top-4 left-4 bg-tertiary px-3 py-1 font-headline font-bold text-on-tertiary text-xs uppercase tracking-tighter">
               {dashboard.spaces.sharedLibrary.badge}
             </div>
-            <div class="absolute inset-0 flex flex-col justify-end p-6 md:max-w-[46%]">
+            <div class="absolute inset-0 flex flex-col justify-end p-6 md:max-w-[48%]">
               <div class="flex items-center gap-2 mb-2">
                 <span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
                 <span class="text-primary text-xs font-bold uppercase tracking-widest">{dashboard.spaces.sharedLibrary.status}</span>
