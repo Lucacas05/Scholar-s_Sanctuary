@@ -1,4 +1,4 @@
-export type Screen = 'dashboard' | 'study' | 'refine';
+export type Screen = 'dashboard' | 'study' | 'refine' | 'chronicles';
 
 export interface Marginalia {
   id: string;

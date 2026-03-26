@@ -12,6 +12,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentScreen, onNavigate }) =
     { id: 'dashboard', label: 'Study Hall', icon: 'Castle' },
     { id: 'study', label: 'Manuscripts', icon: 'BookText' },
     { id: 'refine', label: 'Society', icon: 'Users' },
+    { id: 'chronicles', label: 'Chronicles', icon: 'History' },
   ];
 
   return (
@@ -45,10 +46,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentScreen, onNavigate }) =
               <span className="font-headline font-bold text-sm tracking-widest uppercase">{item.label}</span>
             </button>
           ))}
-          <div className="text-surface-container-highest p-4 flex items-center gap-3 hover:bg-surface-dim hover:text-primary transition-colors cursor-pointer group">
-            <ICONS.History size={20} />
-            <span className="font-headline font-bold text-sm tracking-widest uppercase">Chronicles</span>
-          </div>
         </nav>
 
         <div className="p-4 mb-2">
@@ -87,14 +84,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentScreen, onNavigate }) =
                 : 'text-surface-container-highest hover:text-primary'}
             `}
           >
-            {React.createElement(ICONS[item.icon], { size: 20 })}
-            <span className="font-headline text-[10px] font-bold uppercase mt-1">{item.label.split(' ')[0]}</span>
+            {React.createElement(item.id === 'chronicles' ? ICONS.Scroll : ICONS[item.icon], { size: 20 })}
+            <span className="font-headline text-[10px] font-bold uppercase mt-1">
+              {item.id === 'chronicles' ? 'Scrolls' : item.label.split(' ')[0]}
+            </span>
           </button>
         ))}
-        <div className="flex flex-col items-center justify-center text-surface-container-highest hover:text-primary pt-2 pb-1 px-4">
-          <ICONS.Scroll size={20} />
-          <span className="font-headline text-[10px] font-bold uppercase mt-1">Scrolls</span>
-        </div>
       </nav>
     </>
   );

@@ -4,6 +4,7 @@ import { Sidebar } from './components/Sidebar';
 import { Dashboard } from './screens/Dashboard';
 import { StudyRoom } from './screens/StudyRoom';
 import { Refine } from './screens/Refine';
+import { Chronicles } from './screens/Chronicles';
 import { Screen } from './types';
 import { ICONS } from './constants';
 
@@ -15,6 +16,7 @@ export default function App() {
       case 'dashboard': return <Dashboard onNavigate={setCurrentScreen} />;
       case 'study': return <StudyRoom />;
       case 'refine': return <Refine />;
+      case 'chronicles': return <Chronicles onNavigate={setCurrentScreen} />;
       default: return <Dashboard onNavigate={setCurrentScreen} />;
     }
   };
@@ -39,7 +41,11 @@ export default function App() {
               >
                 Library
               </button>
-              <button className="text-surface-container-highest hover:text-primary transition-colors">
+              <button
+                type="button"
+                onClick={() => setCurrentScreen('chronicles')}
+                className={`${currentScreen === 'chronicles' ? 'text-primary border-b-4 border-primary' : 'text-surface-container-highest hover:text-primary'} pb-1 transition-all`}
+              >
                 Archives
               </button>
             </nav>
