@@ -1,6 +1,5 @@
 import React from 'react';
 import { ASSETS, ICONS } from '../constants';
-import { PixelButton } from '../components/PixelButton';
 import { PixelCard } from '../components/PixelCard';
 
 export const Refine: React.FC = () => {
@@ -130,26 +129,6 @@ export const Refine: React.FC = () => {
           </ul>
         </div>
       </aside>
-
-      {/* System Message Footer */}
-      <footer className="mt-8 mb-20 md:mb-0 md:mt-0 md:fixed md:bottom-0 left-0 md:left-64 right-0 p-0 md:p-8 z-40">
-        <div className="max-w-5xl mx-auto bg-surface-container-high p-1 pixel-border shadow-[0_-10px_40px_rgba(0,0,0,0.6)]">
-          <div className="bg-surface-container-low p-6 flex flex-col md:flex-row items-center gap-6 relative">
-            <div className="absolute -top-4 left-6 bg-secondary-container text-primary-fixed px-4 py-1 font-headline font-bold text-xs uppercase tracking-widest pixel-shadow">
-              System Message
-            </div>
-            <div className="flex-grow">
-              <p className="text-on-surface font-body text-lg leading-snug tracking-tight">
-                The ritual is nearly complete, Master Scribe. Do these vestments and artifacts truly reflect the essence of your scholarly spirit?
-              </p>
-            </div>
-            <div className="flex gap-4 w-full md:w-auto">
-              <PixelButton variant="tertiary">Reconsider</PixelButton>
-              <PixelButton>Finalize Incarnation</PixelButton>
-            </div>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 };

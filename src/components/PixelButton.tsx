@@ -17,6 +17,7 @@ export const PixelButton: React.FC<PixelButtonProps> = ({
   size = 'md',
   fullWidth = false,
   className = '',
+  type = 'button',
   ...props 
 }) => {
   const Icon = icon ? ICONS[icon] : null;
@@ -36,6 +37,7 @@ export const PixelButton: React.FC<PixelButtonProps> = ({
 
   return (
     <motion.button
+      type={type}
       whileTap={{ y: 2 }}
       className={`
         ${variants[variant]} 
