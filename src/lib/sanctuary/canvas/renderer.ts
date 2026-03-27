@@ -49,27 +49,34 @@ export function drawSceneProp(
   prop: SceneProp,
   atlasImages: Partial<Record<string, HTMLImageElement>> | null,
 ) {
+  ctx.save();
+  ctx.globalAlpha = prop.alpha ?? 1;
+  ctx.translate(prop.x + prop.w / 2, prop.y + prop.h / 2);
+  if (prop.rotation) {
+    ctx.rotate((prop.rotation * Math.PI) / 180);
+  }
+
   if (prop.shape) {
-    drawProceduralProp(ctx, prop);
+    drawProceduralProp(ctx, { ...prop, x: -prop.w / 2, y: -prop.h / 2 });
+    ctx.restore();
     return;
   }
 
   const atlasImage = prop.atlas ? atlasImages?.[prop.atlas] ?? null : null;
 
   if (!atlasImage || !prop.source) {
+    ctx.restore();
     return;
   }
 
-  ctx.save();
-  ctx.globalAlpha = prop.alpha ?? 1;
   ctx.drawImage(
     atlasImage,
     prop.source.x,
     prop.source.y,
     prop.source.w,
     prop.source.h,
-    prop.x,
-    prop.y,
+    -prop.w / 2,
+    -prop.h / 2,
     prop.w,
     prop.h,
   );
@@ -77,7 +84,7 @@ export function drawSceneProp(
   if (prop.tint) {
     ctx.globalCompositeOperation = "multiply";
     ctx.fillStyle = prop.tint;
-    ctx.fillRect(prop.x, prop.y, prop.w, prop.h);
+    ctx.fillRect(-prop.w / 2, -prop.h / 2, prop.w, prop.h);
   }
   ctx.restore();
 }

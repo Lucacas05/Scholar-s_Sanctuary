@@ -43,6 +43,7 @@ export interface SceneProp {
   y: number;
   w: number;
   h: number;
+  rotation?: number;
   layer: "back" | "front";
   alpha?: number;
   tint?: string;

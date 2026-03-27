@@ -83,6 +83,12 @@ export const sceneAtlasCatalog = {
     url: "/game/atlases/lpc-walls.png",
     defaultSlice: { w: 32, h: 32 },
   },
+  "wall-puerta": {
+    id: "wall-puerta",
+    label: "Wall Puerta",
+    url: "/game/atlases/wall-puerta.png",
+    defaultSlice: { w: 32, h: 32 },
+  },
 } as const;
 
 export type SceneAtlasId = keyof typeof sceneAtlasCatalog;

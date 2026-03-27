@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { Copy, Download, Eraser, Grid3x3, Import, Layers2, MousePointer2, Plus, RotateCcw, Save } from "lucide-react";
+import gsap from "gsap";
+import { Copy, Download, Eraser, Grid3x3, Import, Layers2, MousePointer2, Plus, Redo2, RotateCcw, Save, Undo2 } from "lucide-react";
 import { sceneAtlasCatalog, sceneAtlasEntries, type SceneAtlasId } from "@/lib/sanctuary/canvas/atlasCatalog";
 import { drawPixelAvatar } from "@/lib/sanctuary/canvas/avatarPainter";
 import { drawSceneBackground, drawSceneProp } from "@/lib/sanctuary/canvas/renderer";
@@ -21,6 +22,9 @@ const TILE_SNAP = 2;
 const MIN_ATLAS_PREVIEW_ZOOM = 0.1;
 const MIN_PROP_SCALE = 0.05;
 const MIN_PROP_SIZE = 4;
+const MAX_HISTORY_STEPS = 80;
+const ATLAS_PREVIEW_MODAL_WIDTH = 720;
+const ATLAS_PREVIEW_MODAL_HEIGHT = 460;
 
 type EditorTool = "select" | "prop" | "spawnLocal" | "seatLocal" | "wanderNodes" | "remoteSlots";
 
@@ -112,6 +116,15 @@ function createDefaultDrafts(): EditorDrafts {
   };
 }
 
+function cloneDrafts(drafts: EditorDrafts): EditorDrafts {
+  return {
+    "solo-library": cloneSceneMap(drafts["solo-library"]),
+    "shared-library": cloneSceneMap(drafts["shared-library"]),
+    "public-library": cloneSceneMap(drafts["public-library"]),
+    garden: cloneSceneMap(drafts.garden),
+  };
+}
+
 function prettifyLabel(input: string) {
   return input
     .replace(/[-_]+/g, " ")
@@ -142,6 +155,7 @@ function buildCatalog(): PropCatalogItem[] {
           source: prop.source ? { ...prop.source } : undefined,
           w: prop.w,
           h: prop.h,
+          rotation: prop.rotation,
           layer: prop.layer,
           alpha: prop.alpha,
           tint: prop.tint,
@@ -162,14 +176,15 @@ function buildCatalog(): PropCatalogItem[] {
       key,
       label: `Nuevo recorte · ${entry.label}`,
       category: "atlas-sheet",
-      template: {
-        atlas: entry.id,
-        source: { x: 0, y: 0, w: entry.defaultSlice.w, h: entry.defaultSlice.h },
-        w: entry.defaultSlice.w,
-        h: entry.defaultSlice.h,
-        layer: "back",
-      },
-    });
+        template: {
+          atlas: entry.id,
+          source: { x: 0, y: 0, w: entry.defaultSlice.w, h: entry.defaultSlice.h },
+          w: entry.defaultSlice.w,
+          h: entry.defaultSlice.h,
+          rotation: 0,
+          layer: "back",
+        },
+      });
   });
 
   return catalog.sort((left, right) => {
@@ -191,6 +206,15 @@ function snapTile(value: number) {
 
 function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value));
+}
+
+function isFormFieldTarget(target: EventTarget | null) {
+  if (!(target instanceof HTMLElement)) {
+    return false;
+  }
+
+  const tag = target.tagName;
+  return tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || target.isContentEditable;
 }
 
 function getPropScaleValue(prop: SceneProp) {
@@ -215,17 +239,70 @@ function applyPropScale(prop: SceneProp, scale: number) {
   prop.h = Math.max(MIN_PROP_SIZE, Math.round(prop.h * safeScale));
 }
 
+function normalizeRotation(value?: number) {
+  const safe = Number.isFinite(value) ? (value as number) : 0;
+  const normalized = ((safe % 360) + 360) % 360;
+  return normalized > 180 ? normalized - 360 : normalized;
+}
+
+function getPropRotationRadians(prop: SceneProp) {
+  return (normalizeRotation(prop.rotation) * Math.PI) / 180;
+}
+
+function getRotatedBounds(prop: SceneProp) {
+  const radians = getPropRotationRadians(prop);
+  const cos = Math.abs(Math.cos(radians));
+  const sin = Math.abs(Math.sin(radians));
+  return {
+    width: prop.w * cos + prop.h * sin,
+    height: prop.w * sin + prop.h * cos,
+  };
+}
+
+function getCenteredAtlasViewport(
+  source: NonNullable<SceneProp["source"]>,
+  atlasImage: HTMLImageElement,
+  zoom: number,
+) {
+  const margin = 16;
+  const safeZoom = clamp(zoom, MIN_ATLAS_PREVIEW_ZOOM, 6);
+  const baseViewportW = source.w + margin * 2;
+  const baseViewportH = source.h + margin * 2;
+  const viewportW = Math.max(source.w + 8, Math.min(atlasImage.width, Math.round(baseViewportW / safeZoom)));
+  const viewportH = Math.max(source.h + 8, Math.min(atlasImage.height, Math.round(baseViewportH / safeZoom)));
+  const centerX = source.x + source.w / 2;
+  const centerY = source.y + source.h / 2;
+  return {
+    x: clamp(Math.round(centerX - viewportW / 2), 0, Math.max(0, atlasImage.width - viewportW)),
+    y: clamp(Math.round(centerY - viewportH / 2), 0, Math.max(0, atlasImage.height - viewportH)),
+  };
+}
+
+function clampPropPosition(prop: SceneProp, x: number, y: number, maxWidth: number, maxHeight: number) {
+  const bounds = getRotatedBounds(prop);
+  const minX = Math.ceil(bounds.width / 2 - prop.w / 2);
+  const minY = Math.ceil(bounds.height / 2 - prop.h / 2);
+  const maxX = Math.floor(maxWidth - bounds.width / 2 - prop.w / 2);
+  const maxY = Math.floor(maxHeight - bounds.height / 2 - prop.h / 2);
+  return {
+    x: clamp(snapPixel(x), Math.min(minX, maxX), Math.max(minX, maxX)),
+    y: clamp(snapPixel(y), Math.min(minY, maxY), Math.max(minY, maxY)),
+  };
+}
+
 function buildPreviewProp(prop: Omit<SceneProp, "id">, previewSize: number): SceneProp {
   const padding = 8;
-  const scale = Math.min((previewSize - padding * 2) / prop.w, (previewSize - padding * 2) / prop.h, 1.75);
+  const bounds = getRotatedBounds({ ...prop, id: "preview-bounds", x: 0, y: 0 });
+  const scale = Math.min((previewSize - padding * 2) / bounds.width, (previewSize - padding * 2) / bounds.height, 1.75);
   const width = Math.max(8, Math.round(prop.w * scale));
   const height = Math.max(8, Math.round(prop.h * scale));
+  const scaledBounds = getRotatedBounds({ ...prop, id: "preview-bounds", x: 0, y: 0, w: width, h: height });
 
   return {
     ...prop,
     id: "preview",
-    x: Math.round((previewSize - width) / 2),
-    y: Math.round((previewSize - height) / 2),
+    x: Math.round((previewSize - width) / 2 - (scaledBounds.width - width) / 2),
+    y: Math.round((previewSize - height) / 2 - (scaledBounds.height - height) / 2),
     w: width,
     h: height,
   };
@@ -290,6 +367,7 @@ function normalizeSceneMap(value: unknown, sceneKind: SceneKind): SceneMap {
             y: typeof prop.y === "number" ? prop.y : 0,
             w: typeof prop.w === "number" ? prop.w : 32,
             h: typeof prop.h === "number" ? prop.h : 32,
+            rotation: typeof prop.rotation === "number" ? normalizeRotation(prop.rotation) : 0,
             layer: prop.layer === "front" ? "front" : "back",
             alpha: typeof prop.alpha === "number" ? prop.alpha : undefined,
             tint: typeof prop.tint === "string" ? prop.tint : undefined,
@@ -414,6 +492,30 @@ function findProp(scene: SceneMap, id: string) {
   return scene.props.find((prop) => prop.id === id) ?? null;
 }
 
+function sanitizeSelection(scene: SceneMap, selection: Selection): Selection {
+  if (!selection) {
+    return null;
+  }
+
+  if (selection.kind === "prop") {
+    return findProp(scene, selection.id) ? selection : null;
+  }
+
+  if (selection.kind === "spawnLocal") {
+    return selection;
+  }
+
+  if (selection.kind === "seatLocal") {
+    return scene.seatLocal ? selection : null;
+  }
+
+  if (selection.kind === "wanderNodes") {
+    return scene.wanderNodes[selection.index] ? selection : null;
+  }
+
+  return scene.remoteSlots[selection.index] ? selection : null;
+}
+
 function findSelectionAt(scene: SceneMap, x: number, y: number): Selection {
   const markerRadius = 8;
 
@@ -456,7 +558,12 @@ function findSelectionAt(scene: SceneMap, x: number, y: number): Selection {
 
   for (let index = orderedProps.length - 1; index >= 0; index -= 1) {
     const prop = orderedProps[index];
-    if (x >= prop.x && x <= prop.x + prop.w && y >= prop.y && y <= prop.y + prop.h) {
+    const centerX = prop.x + prop.w / 2;
+    const centerY = prop.y + prop.h / 2;
+    const radians = -getPropRotationRadians(prop);
+    const localX = (x - centerX) * Math.cos(radians) - (y - centerY) * Math.sin(radians);
+    const localY = (x - centerX) * Math.sin(radians) + (y - centerY) * Math.cos(radians);
+    if (Math.abs(localX) <= prop.w / 2 && Math.abs(localY) <= prop.h / 2) {
       return { kind: "prop", id: prop.id };
     }
   }
@@ -624,6 +731,7 @@ function AtlasSourcePreview({
   atlasImage,
   viewportOrigin,
   onViewportChange,
+  onSourceChange,
   zoom = 1,
   width = 220,
   height = 136,
@@ -632,6 +740,7 @@ function AtlasSourcePreview({
   atlasImage: HTMLImageElement | null;
   viewportOrigin?: AtlasViewportOrigin | null;
   onViewportChange?: (next: AtlasViewportOrigin) => void;
+  onSourceChange?: (next: NonNullable<SceneProp["source"]>) => void;
   zoom?: number;
   width?: number;
   height?: number;
@@ -653,6 +762,10 @@ function AtlasSourcePreview({
     viewportH: number;
     originX: number;
     originY: number;
+    drawX: number;
+    drawY: number;
+    drawW: number;
+    drawH: number;
   } | null>(null);
 
   useEffect(() => {
@@ -728,6 +841,10 @@ function AtlasSourcePreview({
       viewportH,
       originX,
       originY,
+      drawX,
+      drawY,
+      drawW,
+      drawH,
     };
   }, [atlasImage, source, viewportOrigin, zoom, width, height]);
 
@@ -776,6 +893,43 @@ function AtlasSourcePreview({
     }
   }
 
+  function handleDoubleClick(event: React.MouseEvent<HTMLCanvasElement>) {
+    if (!atlasImage || !renderStateRef.current || !onSourceChange) {
+      return;
+    }
+
+    const state = renderStateRef.current;
+    const rect = event.currentTarget.getBoundingClientRect();
+    const canvasX = ((event.clientX - rect.left) / rect.width) * width;
+    const canvasY = ((event.clientY - rect.top) / rect.height) * height;
+
+    if (
+      canvasX < state.drawX ||
+      canvasY < state.drawY ||
+      canvasX > state.drawX + state.drawW ||
+      canvasY > state.drawY + state.drawH
+    ) {
+      return;
+    }
+
+    const atlasPointX = state.originX + ((canvasX - state.drawX) / state.drawW) * state.viewportW;
+    const atlasPointY = state.originY + ((canvasY - state.drawY) / state.drawH) * state.viewportH;
+    const nextSource = {
+      ...source,
+      x: clamp(Math.round(atlasPointX - source.w / 2), 0, Math.max(0, atlasImage.width - source.w)),
+      y: clamp(Math.round(atlasPointY - source.h / 2), 0, Math.max(0, atlasImage.height - source.h)),
+    };
+
+    onSourceChange(nextSource);
+
+    if (onViewportChange) {
+      onViewportChange({
+        x: clamp(Math.round(atlasPointX - state.viewportW / 2), 0, Math.max(0, atlasImage.width - state.viewportW)),
+        y: clamp(Math.round(atlasPointY - state.viewportH / 2), 0, Math.max(0, atlasImage.height - state.viewportH)),
+      });
+    }
+  }
+
   return (
     <canvas
       ref={canvasRef}
@@ -785,6 +939,7 @@ function AtlasSourcePreview({
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerEnd}
       onPointerCancel={handlePointerEnd}
+      onDoubleClick={handleDoubleClick}
     />
   );
 }
@@ -798,10 +953,19 @@ export function SceneEditor() {
   const viewportShellRef = useRef<HTMLDivElement | null>(null);
   const dragRef = useRef<DragState | null>(null);
   const lastNonEmptySelectionRef = useRef<Exclude<Selection, null> | null>(null);
+  const copyButtonRef = useRef<HTMLButtonElement | null>(null);
+  const copyButtonFillRef = useRef<HTMLSpanElement | null>(null);
+  const copyButtonLabelRef = useRef<HTMLSpanElement | null>(null);
+  const copyButtonTimelineRef = useRef<gsap.core.Timeline | null>(null);
+  const undoStackRef = useRef<EditorDrafts[]>([]);
+  const redoStackRef = useRef<EditorDrafts[]>([]);
+  const draftsRef = useRef<EditorDrafts>(loadDrafts());
+  const dragHistorySnapshotRef = useRef<EditorDrafts | null>(null);
+  const dragHistoryWasRecordedRef = useRef(false);
   const [atlasImages, setAtlasImages] = useState<Partial<Record<string, HTMLImageElement>>>({});
   const [atlasViewPositions, setAtlasViewPositions] = useState<Record<string, AtlasViewportOrigin>>(() => loadAtlasViewPositions());
   const [atlasPreviewZooms, setAtlasPreviewZooms] = useState<Record<string, number>>(() => loadAtlasPreviewZooms());
-  const [drafts, setDrafts] = useState<EditorDrafts>(() => loadDrafts());
+  const [drafts, setDrafts] = useState<EditorDrafts>(() => draftsRef.current);
   const [sceneKind, setSceneKind] = useState<SceneKind>("solo-library");
   const [tool, setTool] = useState<EditorTool>("select");
   const [selectedCatalogKey, setSelectedCatalogKey] = useState<string>(catalog[0]?.key ?? "");
@@ -811,7 +975,9 @@ export function SceneEditor() {
   const [showGrid, setShowGrid] = useState(true);
   const [importBuffer, setImportBuffer] = useState("");
   const [flash, setFlash] = useState("");
+  const [copyButtonText, setCopyButtonText] = useState("Copiar JSON");
   const [isAtlasInspectorOpen, setIsAtlasInspectorOpen] = useState(false);
+  const [historyState, setHistoryState] = useState({ undo: 0, redo: 0 });
   const scene = drafts[sceneKind];
   const selectedProp = selection?.kind === "prop" ? findProp(scene, selection.id) : null;
   const selectedCatalog = catalog.find((item) => item.key === selectedCatalogKey) ?? null;
@@ -819,6 +985,10 @@ export function SceneEditor() {
   const selectedPropAtlasView = selectedPropAtlasViewKey ? atlasViewPositions[selectedPropAtlasViewKey] ?? null : null;
   const selectedPropAtlasPreviewZoom = selectedPropAtlasViewKey ? atlasPreviewZooms[selectedPropAtlasViewKey] ?? 1 : 1;
   const selectedPropAtlasImage = selectedProp?.atlas ? atlasImages[selectedProp.atlas] ?? null : null;
+
+  useEffect(() => {
+    draftsRef.current = drafts;
+  }, [drafts]);
 
   useEffect(() => {
     let cancelled = false;
@@ -914,6 +1084,12 @@ export function SceneEditor() {
   }, [selection]);
 
   useEffect(() => {
+    return () => {
+      copyButtonTimelineRef.current?.kill();
+    };
+  }, []);
+
+  useEffect(() => {
     window.render_game_to_text = () =>
       JSON.stringify({
         mode: "editor-escenas",
@@ -927,6 +1103,7 @@ export function SceneEditor() {
         wanderNodes: scene.wanderNodes.length,
         remoteSlots: scene.remoteSlots.length,
         atlasInspectorOpen: isAtlasInspectorOpen,
+        history: historyState,
         atlasPreviewZoom: selectedPropAtlasPreviewZoom,
         atlasView:
           selectedPropAtlasViewKey && atlasViewPositions[selectedPropAtlasViewKey]
@@ -939,11 +1116,12 @@ export function SceneEditor() {
                 atlas: selectedProp.atlas ?? null,
                 w: selectedProp.w,
                 h: selectedProp.h,
+                rotation: normalizeRotation(selectedProp.rotation),
                 source: selectedProp.source,
                 scale: getPropScaleValue(selectedProp),
               }
             : selectedProp
-              ? { id: selectedProp.id, w: selectedProp.w, h: selectedProp.h, scale: 1 }
+              ? { id: selectedProp.id, w: selectedProp.w, h: selectedProp.h, rotation: normalizeRotation(selectedProp.rotation), scale: 1 }
               : null,
       });
     window.advanceTime = () => undefined;
@@ -962,6 +1140,43 @@ export function SceneEditor() {
         return;
       }
 
+      if (isFormFieldTarget(event.target)) {
+        return;
+      }
+
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "z") {
+        event.preventDefault();
+        if (event.shiftKey) {
+          redo();
+        } else {
+          undo();
+        }
+        return;
+      }
+
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "y") {
+        event.preventDefault();
+        redo();
+        return;
+      }
+
+      if (isAtlasInspectorOpen && (event.code === "Space" || event.key === " ")) {
+        const activeSource = selectedProp?.source;
+        if (activeSource && selectedPropAtlasImage && selectedPropAtlasViewKey) {
+          event.preventDefault();
+          setAtlasViewPositions((current) => ({
+            ...current,
+            [selectedPropAtlasViewKey]: getCenteredAtlasViewport(
+              activeSource,
+              selectedPropAtlasImage,
+              selectedPropAtlasPreviewZoom,
+            ),
+          }));
+          setFlash("Atlas centrado en la selección");
+        }
+        return;
+      }
+
       if (event.key !== "Delete" && event.key !== "Backspace") {
         return;
       }
@@ -976,7 +1191,45 @@ export function SceneEditor() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isAtlasInspectorOpen, selection, scene]);
+  }, [isAtlasInspectorOpen, selection, scene, selectedProp, selectedPropAtlasImage, selectedPropAtlasPreviewZoom, selectedPropAtlasViewKey]);
+
+  function animateCopyButton(success: boolean) {
+    const button = copyButtonRef.current;
+    const fill = copyButtonFillRef.current;
+    const label = copyButtonLabelRef.current;
+    if (!button || !fill || !label) {
+      return;
+    }
+
+    copyButtonTimelineRef.current?.kill();
+    const fillColor = success ? "#ffb961" : "#c46a6a";
+    const textColor = success ? "#1b1412" : "#fff3f1";
+
+    gsap.set(fill, {
+      scaleX: 0,
+      transformOrigin: "left center",
+      backgroundColor: fillColor,
+    });
+    gsap.set(label, { color: "" });
+    setCopyButtonText(success ? "Copiado" : "No copiado");
+
+    copyButtonTimelineRef.current = gsap.timeline({
+      defaults: { ease: "power2.out" },
+      onComplete: () => {
+        setCopyButtonText("Copiar JSON");
+        gsap.set(fill, { scaleX: 0, clearProps: "transformOrigin,backgroundColor" });
+        gsap.set(label, { clearProps: "color" });
+      },
+    });
+
+    copyButtonTimelineRef.current
+      .to(fill, { scaleX: 1, duration: 0.28 })
+      .to(label, { color: textColor, duration: 0.18 }, 0)
+      .to({}, { duration: 0.45 })
+      .set(fill, { transformOrigin: "right center" })
+      .to(fill, { scaleX: 0, duration: 0.34, ease: "power2.inOut" })
+      .to(label, { color: "", duration: 0.2 }, "<");
+  }
 
   function renderCanvas() {
     const canvas = canvasRef.current;
@@ -1042,18 +1295,75 @@ export function SceneEditor() {
         ctx.strokeStyle = "#ffb961";
         ctx.lineWidth = 2;
         ctx.setLineDash([4, 3]);
-        ctx.strokeRect(prop.x + 1, prop.y + 1, prop.w - 2, prop.h - 2);
+        ctx.translate(prop.x + prop.w / 2, prop.y + prop.h / 2);
+        ctx.rotate(getPropRotationRadians(prop));
+        ctx.strokeRect(-prop.w / 2 + 1, -prop.h / 2 + 1, prop.w - 2, prop.h - 2);
         ctx.restore();
       }
     }
   }
 
-  function updateScene(mutator: (draft: SceneMap) => void) {
-    setDrafts((current) => {
-      const nextScene = cloneSceneMap(current[sceneKind]);
-      mutator(nextScene);
-      return { ...current, [sceneKind]: nextScene };
+  function syncHistoryState() {
+    setHistoryState({
+      undo: undoStackRef.current.length,
+      redo: redoStackRef.current.length,
     });
+  }
+
+  function pushUndoSnapshot(snapshot: EditorDrafts) {
+    undoStackRef.current.push(cloneDrafts(snapshot));
+    if (undoStackRef.current.length > MAX_HISTORY_STEPS) {
+      undoStackRef.current.splice(0, undoStackRef.current.length - MAX_HISTORY_STEPS);
+    }
+    redoStackRef.current = [];
+    syncHistoryState();
+  }
+
+  function applyDrafts(nextDrafts: EditorDrafts, nextSelection?: Selection) {
+    const sanitizedSelection = sanitizeSelection(nextDrafts[sceneKind], nextSelection ?? selection);
+    draftsRef.current = nextDrafts;
+    setDrafts(nextDrafts);
+    setSelection(sanitizedSelection);
+    if (sanitizedSelection) {
+      lastNonEmptySelectionRef.current = sanitizedSelection;
+    }
+  }
+
+  function updateScene(mutator: (draft: SceneMap) => void, options?: { recordHistory?: boolean; snapshot?: EditorDrafts }) {
+    const currentDrafts = draftsRef.current;
+    const nextDrafts = cloneDrafts(currentDrafts);
+    mutator(nextDrafts[sceneKind]);
+    if (options?.recordHistory !== false) {
+      pushUndoSnapshot(options?.snapshot ?? currentDrafts);
+    }
+    applyDrafts(nextDrafts);
+  }
+
+  function undo() {
+    const previous = undoStackRef.current.pop();
+    if (!previous) {
+      return;
+    }
+
+    redoStackRef.current.push(cloneDrafts(draftsRef.current));
+    syncHistoryState();
+    applyDrafts(cloneDrafts(previous));
+    setFlash("Cambio deshecho");
+  }
+
+  function redo() {
+    const next = redoStackRef.current.pop();
+    if (!next) {
+      return;
+    }
+
+    undoStackRef.current.push(cloneDrafts(draftsRef.current));
+    if (undoStackRef.current.length > MAX_HISTORY_STEPS) {
+      undoStackRef.current.splice(0, undoStackRef.current.length - MAX_HISTORY_STEPS);
+    }
+    syncHistoryState();
+    applyDrafts(cloneDrafts(next));
+    setFlash("Cambio rehecho");
   }
 
   function toSceneCoordinates(event: React.PointerEvent<HTMLCanvasElement> | React.MouseEvent<HTMLCanvasElement>) {
@@ -1094,8 +1404,15 @@ export function SceneEditor() {
           return;
         }
 
-        prop.x = clamp(snapPixel(pointerX - prop.w / 2), 0, draft.width * draft.tileSize - prop.w);
-        prop.y = clamp(snapPixel(pointerY - prop.h / 2), 0, draft.height * draft.tileSize - prop.h);
+        const next = clampPropPosition(
+          prop,
+          pointerX - prop.w / 2,
+          pointerY - prop.h / 2,
+          draft.width * draft.tileSize,
+          draft.height * draft.tileSize,
+        );
+        prop.x = next.x;
+        prop.y = next.y;
       });
       return;
     }
@@ -1115,9 +1432,13 @@ export function SceneEditor() {
     const prop: SceneProp = {
       id: createPropId(template.label.toLowerCase().replace(/\s+/g, "-")),
       ...template.template,
-      x: snapPixel(x - template.template.w / 2),
-      y: snapPixel(y - template.template.h / 2),
+      x: 0,
+      y: 0,
     };
+
+    const next = clampPropPosition(prop, x - template.template.w / 2, y - template.template.h / 2, scene.width * scene.tileSize, scene.height * scene.tileSize);
+    prop.x = next.x;
+    prop.y = next.y;
 
     updateScene((draft) => {
       draft.props.push(prop);
@@ -1158,6 +1479,8 @@ export function SceneEditor() {
       if (hit?.kind === "prop") {
         const prop = findProp(scene, hit.id);
         if (prop) {
+          dragHistorySnapshotRef.current = cloneDrafts(draftsRef.current);
+          dragHistoryWasRecordedRef.current = false;
           dragRef.current = {
             selection: hit,
             offsetX: x - prop.x,
@@ -1175,6 +1498,8 @@ export function SceneEditor() {
                 : scene.remoteSlots[hit.index];
 
         if (point) {
+          dragHistorySnapshotRef.current = cloneDrafts(draftsRef.current);
+          dragHistoryWasRecordedRef.current = false;
           dragRef.current = {
             selection: hit,
             offsetX: x - point.x * scene.tileSize,
@@ -1230,6 +1555,11 @@ export function SceneEditor() {
       return;
     }
 
+    if (!dragHistoryWasRecordedRef.current && dragHistorySnapshotRef.current) {
+      pushUndoSnapshot(dragHistorySnapshotRef.current);
+      dragHistoryWasRecordedRef.current = true;
+    }
+
     const { x, y } = toSceneCoordinates(event);
     const activeDrag = dragRef.current;
 
@@ -1240,9 +1570,16 @@ export function SceneEditor() {
         if (!prop) {
           return;
         }
-        prop.x = clamp(snapPixel(x - activeDrag.offsetX), 0, draft.width * draft.tileSize - prop.w);
-        prop.y = clamp(snapPixel(y - activeDrag.offsetY), 0, draft.height * draft.tileSize - prop.h);
-      });
+        const next = clampPropPosition(
+          prop,
+          x - activeDrag.offsetX,
+          y - activeDrag.offsetY,
+          draft.width * draft.tileSize,
+          draft.height * draft.tileSize,
+        );
+        prop.x = next.x;
+        prop.y = next.y;
+      }, { recordHistory: false });
       return;
     }
 
@@ -1250,11 +1587,23 @@ export function SceneEditor() {
       x: clamp(snapTile((x - activeDrag.offsetX) / scene.tileSize), 0, scene.width),
       y: clamp(snapTile((y - activeDrag.offsetY) / scene.tileSize), 0, scene.height),
     };
-    updateMarkerPoint(activeDrag.selection, point);
+    updateScene((draft) => {
+      if (activeDrag.selection.kind === "spawnLocal") {
+        draft.spawnLocal = point;
+      } else if (activeDrag.selection.kind === "seatLocal") {
+        draft.seatLocal = point;
+      } else if (activeDrag.selection.kind === "wanderNodes") {
+        draft.wanderNodes[activeDrag.selection.index] = point;
+      } else if (activeDrag.selection.kind === "remoteSlots") {
+        draft.remoteSlots[activeDrag.selection.index] = point;
+      }
+    }, { recordHistory: false });
   }
 
   function handleCanvasPointerUp() {
     dragRef.current = null;
+    dragHistorySnapshotRef.current = null;
+    dragHistoryWasRecordedRef.current = false;
   }
 
   function handleCanvasDoubleClick(event: React.MouseEvent<HTMLCanvasElement>) {
@@ -1339,9 +1688,40 @@ export function SceneEditor() {
     setSelection({ kind: "prop", id: duplicate.id });
   }
 
-  function copyJson() {
+  async function copyJson() {
     const payload = JSON.stringify(scene, null, 2);
-    navigator.clipboard.writeText(payload).then(() => setFlash("JSON copiado"));
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(payload);
+        setFlash("JSON copiado");
+        animateCopyButton(true);
+        return;
+      }
+    } catch {
+      // Fallback below
+    }
+
+    const textarea = document.createElement("textarea");
+    textarea.value = payload;
+    textarea.setAttribute("readonly", "");
+    textarea.style.position = "fixed";
+    textarea.style.opacity = "0";
+    textarea.style.pointerEvents = "none";
+    textarea.style.left = "-9999px";
+    document.body.appendChild(textarea);
+    textarea.select();
+    textarea.setSelectionRange(0, textarea.value.length);
+
+    try {
+      const copied = document.execCommand("copy");
+      setFlash(copied ? "JSON copiado" : "No se pudo copiar el JSON");
+      animateCopyButton(copied);
+    } catch {
+      setFlash("No se pudo copiar el JSON");
+      animateCopyButton(false);
+    } finally {
+      document.body.removeChild(textarea);
+    }
   }
 
   function downloadJson() {
@@ -1353,8 +1733,11 @@ export function SceneEditor() {
     try {
       const parsed = JSON.parse(importBuffer);
       const next = normalizeSceneMap(parsed, sceneKind);
-      setDrafts((current) => ({ ...current, [sceneKind]: next }));
-      setSelection(null);
+      const currentDrafts = draftsRef.current;
+      const nextDrafts = cloneDrafts(currentDrafts);
+      nextDrafts[sceneKind] = next;
+      pushUndoSnapshot(currentDrafts);
+      applyDrafts(nextDrafts, null);
       setFlash("JSON importado");
     } catch {
       setFlash("El JSON no es válido");
@@ -1362,11 +1745,11 @@ export function SceneEditor() {
   }
 
   function resetScene() {
-    setDrafts((current) => ({
-      ...current,
-      [sceneKind]: cloneSceneMap(sceneMaps[sceneKind]),
-    }));
-    setSelection(null);
+    const currentDrafts = draftsRef.current;
+    const nextDrafts = cloneDrafts(currentDrafts);
+    nextDrafts[sceneKind] = cloneSceneMap(sceneMaps[sceneKind]);
+    pushUndoSnapshot(currentDrafts);
+    applyDrafts(nextDrafts, null);
     setFlash("Escena restaurada");
   }
 
@@ -1393,10 +1776,34 @@ export function SceneEditor() {
           <div className="flex flex-wrap gap-3">
             <button
               type="button"
-              onClick={copyJson}
-              className="inline-flex items-center gap-2 border-2 border-outline-variant bg-surface px-4 py-3 font-headline text-xs font-bold uppercase tracking-[0.18em] text-on-surface hover:border-primary"
+              onClick={undo}
+              disabled={historyState.undo === 0}
+              className="inline-flex items-center gap-2 border-2 border-outline-variant bg-surface px-4 py-3 font-headline text-xs font-bold uppercase tracking-[0.18em] text-on-surface disabled:cursor-not-allowed disabled:opacity-40"
             >
-              <Copy size={14} /> Copiar JSON
+              <Undo2 size={14} /> Deshacer
+            </button>
+            <button
+              type="button"
+              onClick={redo}
+              disabled={historyState.redo === 0}
+              className="inline-flex items-center gap-2 border-2 border-outline-variant bg-surface px-4 py-3 font-headline text-xs font-bold uppercase tracking-[0.18em] text-on-surface disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <Redo2 size={14} /> Rehacer
+            </button>
+            <button
+              ref={copyButtonRef}
+              type="button"
+              onClick={copyJson}
+              className="relative inline-flex items-center gap-2 overflow-hidden border-2 border-outline-variant bg-surface px-4 py-3 font-headline text-xs font-bold uppercase tracking-[0.18em] text-on-surface hover:border-primary"
+            >
+              <span
+                ref={copyButtonFillRef}
+                aria-hidden="true"
+                className="absolute inset-0 z-0 origin-left scale-x-0 bg-primary"
+              />
+              <span ref={copyButtonLabelRef} className="relative z-10 inline-flex items-center gap-2">
+                <Copy size={14} /> {copyButtonText}
+              </span>
             </button>
             <button
               type="button"
@@ -1409,8 +1816,8 @@ export function SceneEditor() {
         </div>
       </section>
 
-      <section className="grid gap-6 lg:grid-cols-[14rem_minmax(0,1fr)_17.5rem] xl:grid-cols-[15.5rem_minmax(0,1fr)_19rem]">
-        <aside className="space-y-4 lg:sticky lg:top-28 lg:self-start">
+      <section className="grid gap-6 lg:grid-cols-[16rem_minmax(0,1fr)_20rem] xl:grid-cols-[18rem_minmax(0,1fr)_22rem]">
+        <aside className="space-y-4 lg:sticky lg:top-28 lg:max-h-[calc(100vh-8rem)] lg:self-start lg:overflow-y-auto lg:pr-2">
           <div className="bg-surface-container-lowest pixel-border p-4">
             <p className="font-headline text-[10px] font-bold uppercase tracking-[0.24em] text-outline">Escena activa</p>
             <div className="mt-3 grid gap-2">
@@ -1475,7 +1882,7 @@ export function SceneEditor() {
               </span>
             </div>
 
-            <div className="space-y-2 max-h-[28rem] overflow-auto pr-1">
+            <div className="space-y-2 max-h-[28rem] overflow-auto pr-1 lg:max-h-none lg:overflow-visible lg:pr-0">
               {catalog.map((item) => (
                 <button
                   key={item.key}
@@ -1556,7 +1963,7 @@ export function SceneEditor() {
                     Atlases cargados
                   </p>
                   <p className="mt-1 text-xs leading-relaxed text-on-surface-variant">
-                    Aquí tienes `Top-Down_Retro_Interior`, `Interiors_free`, `lpc-walls` y el atlas de biblioteca.
+                    Aquí tienes `Top-Down_Retro_Interior`, `Interiors_free`, `lpc-walls`, `wall_puerta` y el atlas de biblioteca.
                   </p>
                 </div>
                 <span className="font-headline text-[10px] font-bold uppercase tracking-[0.16em] text-outline">
@@ -1564,7 +1971,7 @@ export function SceneEditor() {
                 </span>
               </div>
 
-              <div className="space-y-2 max-h-[20rem] overflow-auto pr-1">
+              <div className="space-y-2 max-h-[20rem] overflow-auto pr-1 lg:max-h-none lg:overflow-visible lg:pr-0">
                 {sceneAtlasEntries.map((entry) => {
                   const catalogKey = `atlas-sheet:${entry.id}`;
                   return (
@@ -1650,7 +2057,7 @@ export function SceneEditor() {
               <div>
                 <p className="font-headline text-[10px] font-bold uppercase tracking-[0.24em] text-outline">Flujo</p>
                 <p className="mt-2 text-sm leading-relaxed text-on-surface-variant">
-                  1. Elige escena. 2. Coloca props o markers. 3. Ajusta propiedades. 4. Haz doble clic en el canvas para mandar la selección al ratón. 5. Exporta el JSON.
+                  1. Elige escena. 2. Coloca props o markers. 3. Ajusta propiedades. 4. Haz doble clic en el canvas para mandar la selección al ratón. 5. Usa deshacer y rehacer si pruebas una variante. 6. Exporta el JSON.
                 </p>
               </div>
               {flash ? (
@@ -1662,7 +2069,7 @@ export function SceneEditor() {
           </div>
         </div>
 
-        <aside className="space-y-4 lg:sticky lg:top-28 lg:self-start">
+        <aside className="space-y-4 lg:sticky lg:top-28 lg:max-h-[calc(100vh-8rem)] lg:self-start lg:overflow-y-auto lg:pr-2">
           <div className="bg-surface-container-lowest pixel-border p-4">
             <div className="mb-3 flex items-center gap-2">
               <Layers2 size={16} className="text-primary" />
@@ -1735,6 +2142,61 @@ export function SceneEditor() {
                       className="w-full border border-outline-variant bg-surface px-3 py-2 text-sm text-on-surface"
                     />
                   </label>
+                </div>
+
+                <div className="space-y-3 border border-outline-variant bg-surface px-3 py-3">
+                  <div className="flex items-end justify-between gap-3">
+                    <div>
+                      <p className="font-headline text-[10px] font-bold uppercase tracking-[0.18em] text-outline">
+                        Rotación
+                      </p>
+                      <p className="mt-1 text-xs leading-relaxed text-on-surface-variant">
+                        Gira la pieza sobre su centro sin cambiar el recorte ni la escala guardada.
+                      </p>
+                    </div>
+                    <span className="font-headline text-sm font-black uppercase tracking-[0.14em] text-primary">
+                      {normalizeRotation(selectedProp.rotation)}°
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-[1fr_5rem] gap-3">
+                    <input
+                      type="range"
+                      min="-180"
+                      max="180"
+                      step="15"
+                      value={normalizeRotation(selectedProp.rotation)}
+                      onChange={(event) => updateSelectedProp((prop) => {
+                        prop.rotation = normalizeRotation(Number(event.target.value));
+                      })}
+                    />
+                    <input
+                      type="number"
+                      min="-180"
+                      max="180"
+                      step="15"
+                      value={normalizeRotation(selectedProp.rotation)}
+                      onChange={(event) => updateSelectedProp((prop) => {
+                        prop.rotation = normalizeRotation(Number(event.target.value));
+                      })}
+                      className="w-full border border-outline-variant bg-surface px-3 py-2 text-sm text-on-surface"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-4 gap-2">
+                    {[0, 90, 180, -90].map((angle) => (
+                      <button
+                        key={angle}
+                        type="button"
+                        onClick={() => updateSelectedProp((prop) => {
+                          prop.rotation = angle;
+                        })}
+                        className="border border-outline-variant bg-surface px-2 py-2 font-headline text-[10px] font-bold uppercase tracking-[0.16em] text-on-surface"
+                      >
+                        {angle}°
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 {selectedProp.source ? (
@@ -2032,6 +2494,7 @@ export function SceneEditor() {
             <ul className="space-y-2 text-sm leading-relaxed text-on-surface-variant">
               <li>El editor guarda cada escena en local automáticamente.</li>
               <li>Los props se exportan en el mismo formato que usa el visor actual.</li>
+              <li>Deshacer y rehacer actúan sobre el JSON de la escena activa y permiten revertir arrastres completos.</li>
               <li>Por ahora el tamaño del canvas sigue el stage actual del juego: 20×12 tiles de 16 px.</li>
             </ul>
           </div>
@@ -2050,7 +2513,7 @@ export function SceneEditor() {
                   {getAtlasMeta(selectedProp.atlas)?.label ?? "Atlas"}
                 </h3>
                 <p className="mt-2 max-w-2xl text-sm leading-relaxed text-on-surface-variant">
-                  Arrastra la vista para moverte por la hoja. El recorte sigue controlándose desde `Source X/Y/W/H` y la posición se guarda por pieza.
+                  Arrastra la vista para moverte por la hoja. Haz doble clic dentro del atlas para mandar el recorte al punto clicado y pulsa `Espacio` para recentrar la vista sobre la selección actual.
                 </p>
               </div>
 
@@ -2070,8 +2533,14 @@ export function SceneEditor() {
                   atlasImage={selectedPropAtlasImage}
                   viewportOrigin={selectedPropAtlasView}
                   zoom={selectedPropAtlasPreviewZoom}
-                  width={720}
-                  height={460}
+                  width={ATLAS_PREVIEW_MODAL_WIDTH}
+                  height={ATLAS_PREVIEW_MODAL_HEIGHT}
+                  onSourceChange={(nextSource) => {
+                    updateSelectedProp((prop) => {
+                      if (!prop.source) return;
+                      prop.source = nextSource;
+                    });
+                  }}
                   onViewportChange={(next) => {
                     if (!selectedPropAtlasViewKey) return;
                     setAtlasViewPositions((current) => ({
@@ -2091,7 +2560,7 @@ export function SceneEditor() {
                     {selectedProp.id}
                   </p>
                   <p className="mt-2 text-xs leading-relaxed text-on-surface-variant">
-                    Doble clic en el canvas principal para recolocar esta pieza rápidamente.
+                    Doble clic en el atlas para mandar el recorte al punto clicado. El doble clic en el canvas principal sigue recolocando la pieza en la escena.
                   </p>
                 </div>
 
