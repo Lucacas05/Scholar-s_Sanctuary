@@ -33,9 +33,20 @@ interface RemoteActor extends CanvasRemotePlayer {
   pose: ActorPose;
 }
 
+interface CollisionRect {
+  id: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
 const LOGICAL_WIDTH = 320;
 const LOGICAL_HEIGHT = 192;
 const FIXED_STEP_MS = 1000 / 60;
+const FLOOR_TOP_PX = 54;
+const ACTOR_COLLIDER_HALF_WIDTH = 4;
+const ACTOR_COLLIDER_HEIGHT = 8;
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
@@ -57,6 +68,83 @@ function chooseFacing(fromX: number, fromY: number, toX: number, toY: number): F
   return dy >= 0 ? "down" : "up";
 }
 
+function getLocalSeatTarget(map: SceneMap) {
+  const seatSlots = map.seatSlots?.filter(Boolean) ?? [];
+  if (seatSlots.length > 0) {
+    return seatSlots[Math.floor(Math.random() * seatSlots.length)];
+  }
+
+  return map.seatLocal;
+}
+
+function normalizeRotation(rotation = 0) {
+  const normalized = rotation % 360;
+  return normalized < 0 ? normalized + 360 : normalized;
+}
+
+function getRotatedBounds(width: number, height: number, rotation = 0) {
+  const radians = (normalizeRotation(rotation) * Math.PI) / 180;
+  const cosine = Math.abs(Math.cos(radians));
+  const sine = Math.abs(Math.sin(radians));
+  return {
+    width: width * cosine + height * sine,
+    height: width * sine + height * cosine,
+  };
+}
+
+function rectsOverlap(left: CollisionRect, right: CollisionRect) {
+  return left.x < right.x + right.w && left.x + left.w > right.x && left.y < right.y + right.h && left.y + left.h > right.y;
+}
+
+function getPropCollisionRect(prop: SceneMap["props"][number]): CollisionRect | null {
+  if (prop.shape === "path" || (prop.w <= 18 && prop.h <= 18)) {
+    return null;
+  }
+
+  const rotated = getRotatedBounds(prop.w, prop.h, prop.rotation ?? 0);
+  const boundsX = prop.x + prop.w / 2 - rotated.width / 2;
+  const boundsY = prop.y + prop.h / 2 - rotated.height / 2;
+  const wallLikeAtlas = prop.atlas?.includes("walls") || prop.atlas === "wall-puerta";
+  const topWallLike = wallLikeAtlas || (prop.y <= 18 && prop.w >= 72 && prop.h >= 44);
+  const narrowTall = prop.h >= 44 && prop.w <= 34;
+  const wideFurniture = prop.w >= 44 && prop.h >= 28;
+
+  let colliderWidth = rotated.width * 0.72;
+  let colliderHeight = Math.max(10, rotated.height * 0.24);
+
+  if (prop.shape === "tree") {
+    colliderWidth = rotated.width * 0.36;
+    colliderHeight = Math.max(14, rotated.height * 0.16);
+  } else if (prop.shape === "column") {
+    colliderWidth = rotated.width * 0.76;
+    colliderHeight = Math.max(10, rotated.height * 0.16);
+  } else if (prop.shape === "bench") {
+    colliderWidth = rotated.width * 0.84;
+    colliderHeight = Math.max(10, rotated.height * 0.3);
+  } else if (topWallLike) {
+    colliderWidth = rotated.width * 0.94;
+    colliderHeight = Math.min(18, Math.max(10, rotated.height * 0.22));
+  } else if (narrowTall) {
+    colliderWidth = rotated.width * 0.58;
+    colliderHeight = Math.max(12, rotated.height * 0.18);
+  } else if (wideFurniture) {
+    colliderWidth = rotated.width * 0.82;
+    colliderHeight = Math.max(12, rotated.height * 0.28);
+  }
+
+  if (colliderWidth < 8 || colliderHeight < 8) {
+    return null;
+  }
+
+  return {
+    id: prop.id,
+    x: boundsX + (rotated.width - colliderWidth) / 2,
+    y: boundsY + rotated.height - colliderHeight,
+    w: colliderWidth,
+    h: colliderHeight,
+  };
+}
+
 export class SanctuaryCanvasEngine {
   private readonly canvas: HTMLCanvasElement;
   private readonly ctx: CanvasRenderingContext2D;
@@ -70,6 +158,7 @@ export class SanctuaryCanvasEngine {
   private tick = 0;
   private destroyed = false;
   private atlasImages: Partial<Record<string, HTMLImageElement>> = {};
+  private collisionRects: CollisionRect[] = [];
   private localActor: LocalActor;
   private remoteActors = new Map<string, RemoteActor>();
   private focusResolver: (() => void) | null = null;
@@ -87,6 +176,7 @@ export class SanctuaryCanvasEngine {
     this.ctx.imageSmoothingEnabled = false;
     this.sceneKind = sceneKind;
     this.map = getSceneMap(sceneKind);
+    this.collisionRects = this.buildCollisionRects(this.map);
     this.localActor = {
       x: this.map.spawnLocal.x,
       y: this.map.spawnLocal.y,
@@ -132,6 +222,7 @@ export class SanctuaryCanvasEngine {
   setScene(sceneKind: SceneKind) {
     this.sceneKind = sceneKind;
     this.map = getSceneMap(sceneKind);
+    this.collisionRects = this.buildCollisionRects(this.map);
     this.localActor.x = this.map.spawnLocal.x;
     this.localActor.y = this.map.spawnLocal.y;
     this.localActor.route = [];
@@ -170,13 +261,14 @@ export class SanctuaryCanvasEngine {
   }
 
   iniciarFocus() {
+    const seatTarget = getLocalSeatTarget(this.map);
     this.localActor.state = "studying";
     this.localActor.pose = "walk";
     this.localActor.autoBubble = "";
     this.localActor.temporaryBubble = "";
-    this.localActor.route = this.map.seatLocal ? [this.map.seatLocal] : [];
+    this.localActor.route = seatTarget ? [seatTarget] : [];
 
-    if (!this.map.seatLocal) {
+    if (!seatTarget) {
       this.localActor.pose = "idle";
       this.localActor.autoBubble = "Estudiando 📖";
       this.render();
@@ -346,9 +438,83 @@ export class SanctuaryCanvasEngine {
     }
 
     this.localActor.facing = chooseFacing(this.localActor.x, this.localActor.y, target.x, target.y);
-    this.localActor.x += (dx / distance) * speed * deltaSeconds;
-    this.localActor.y += (dy / distance) * speed * deltaSeconds;
+    const nextX = this.localActor.x + (dx / distance) * speed * deltaSeconds;
+    const nextY = this.localActor.y + (dy / distance) * speed * deltaSeconds;
+    const resolved = this.resolveLocalMovement(nextX, nextY, target);
+    this.localActor.x = resolved.x;
+    this.localActor.y = resolved.y;
     return false;
+  }
+
+  private buildCollisionRects(map: SceneMap) {
+    return map.props
+      .map((prop) => getPropCollisionRect(prop))
+      .filter((rect): rect is CollisionRect => Boolean(rect));
+  }
+
+  private resolveLocalMovement(nextX: number, nextY: number, target?: TilePoint) {
+    const current = { x: this.localActor.x, y: this.localActor.y };
+    const clamped = this.clampLocalPosition(nextX, nextY);
+    const fullStep = { x: clamped.x, y: clamped.y };
+
+    if (!this.collidesAt(fullStep.x, fullStep.y, target)) {
+      return fullStep;
+    }
+
+    const xOnly = { x: clamped.x, y: current.y };
+    const yOnly = { x: current.x, y: clamped.y };
+    const halfStep = this.clampLocalPosition(
+      current.x + (clamped.x - current.x) * 0.5,
+      current.y + (clamped.y - current.y) * 0.5,
+    );
+    const candidates = [
+      Math.abs(clamped.x - current.x) >= Math.abs(clamped.y - current.y) ? xOnly : yOnly,
+      Math.abs(clamped.x - current.x) >= Math.abs(clamped.y - current.y) ? yOnly : xOnly,
+      halfStep,
+      { x: halfStep.x, y: current.y },
+      { x: current.x, y: halfStep.y },
+    ];
+
+    for (const candidate of candidates) {
+      if (!this.collidesAt(candidate.x, candidate.y, target)) {
+        return candidate;
+      }
+    }
+
+    return current;
+  }
+
+  private clampLocalPosition(tileX: number, tileY: number) {
+    const minX = 0.5;
+    const maxX = this.map.width - 0.5;
+    const minY = FLOOR_TOP_PX / this.map.tileSize + 0.5;
+    const maxY = this.map.height - 0.15;
+    return {
+      x: clamp(tileX, minX, maxX),
+      y: clamp(tileY, minY, maxY),
+    };
+  }
+
+  private collidesAt(tileX: number, tileY: number, target?: TilePoint) {
+    const targetRadius = this.localActor.state === "studying" ? 1.65 : 0.24;
+    if (target && Math.hypot(target.x - tileX, target.y - tileY) <= targetRadius) {
+      return false;
+    }
+
+    const actorRect = this.getActorCollisionRect(tileX, tileY);
+    return this.collisionRects.some((rect) => rectsOverlap(actorRect, rect));
+  }
+
+  private getActorCollisionRect(tileX: number, tileY: number): CollisionRect {
+    const px = tileX * this.map.tileSize;
+    const py = tileY * this.map.tileSize;
+    return {
+      id: "local-actor",
+      x: px - ACTOR_COLLIDER_HALF_WIDTH,
+      y: py - ACTOR_COLLIDER_HEIGHT,
+      w: ACTOR_COLLIDER_HALF_WIDTH * 2,
+      h: ACTOR_COLLIDER_HEIGHT,
+    };
   }
 
   private getLocalBubbleText() {

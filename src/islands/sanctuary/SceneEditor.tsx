@@ -31,7 +31,7 @@ type EditorTool = "select" | "prop" | "spawnLocal" | "seatLocal" | "wanderNodes"
 type Selection =
   | { kind: "prop"; id: string }
   | { kind: "spawnLocal" }
-  | { kind: "seatLocal" }
+  | { kind: "seatLocal"; index: number }
   | { kind: "wanderNodes"; index: number }
   | { kind: "remoteSlots"; index: number }
   | null;
@@ -79,7 +79,7 @@ const toolLabels: Record<EditorTool, string> = {
   select: "Seleccionar",
   prop: "Colocar prop",
   spawnLocal: "Spawn local",
-  seatLocal: "Asiento",
+  seatLocal: "Asientos",
   wanderNodes: "Ruta de paseo",
   remoteSlots: "Slots remotos",
 };
@@ -107,11 +107,26 @@ function cloneSceneMap(map: SceneMap): SceneMap {
     ...map,
     spawnLocal: clonePoint(map.spawnLocal),
     seatLocal: map.seatLocal ? clonePoint(map.seatLocal) : undefined,
+    seatSlots: map.seatSlots?.map(clonePoint),
     wanderNodes: map.wanderNodes.map(clonePoint),
     remoteSlots: map.remoteSlots.map(clonePoint),
     props: map.props.map(cloneProp),
     theme: { ...map.theme },
   };
+}
+
+function getSeatPoints(scene: SceneMap) {
+  if (scene.seatSlots?.length) {
+    return scene.seatSlots;
+  }
+
+  return scene.seatLocal ? [scene.seatLocal] : [];
+}
+
+function setSeatPoints(scene: SceneMap, points: TilePoint[]) {
+  const nextPoints = points.map(clonePoint);
+  scene.seatSlots = nextPoints.length > 0 ? nextPoints : undefined;
+  scene.seatLocal = nextPoints[0] ? clonePoint(nextPoints[0]) : undefined;
 }
 
 function createDefaultDrafts(): EditorDrafts {
@@ -400,16 +415,25 @@ function normalizeSceneMap(value: unknown, sceneKind: SceneKind): SceneMap {
         })
     : fallback.props;
 
+  const normalizedSeatLocal =
+    candidate.seatLocal === null
+      ? undefined
+      : normalizeTilePoint(candidate.seatLocal, fallback.seatLocal ?? fallback.spawnLocal);
+  const normalizedSeatSlots = Array.isArray(candidate.seatSlots)
+    ? candidate.seatSlots.map((point) => normalizeTilePoint(point, fallback.seatLocal ?? fallback.spawnLocal))
+    : candidate.seatLocal
+      ? [normalizedSeatLocal ?? normalizeTilePoint(candidate.seatLocal, fallback.seatLocal ?? fallback.spawnLocal)]
+      : fallback.seatSlots;
+  const primarySeat = normalizedSeatSlots?.[0] ?? normalizedSeatLocal;
+
   return {
     name: sceneKind,
     width: typeof candidate.width === "number" ? candidate.width : fallback.width,
     height: typeof candidate.height === "number" ? candidate.height : fallback.height,
     tileSize: typeof candidate.tileSize === "number" ? candidate.tileSize : fallback.tileSize,
     spawnLocal: normalizeTilePoint(candidate.spawnLocal, fallback.spawnLocal),
-    seatLocal:
-      candidate.seatLocal === null
-        ? undefined
-        : normalizeTilePoint(candidate.seatLocal, fallback.seatLocal ?? fallback.spawnLocal),
+    seatLocal: primarySeat,
+    seatSlots: normalizedSeatSlots,
     wanderNodes: Array.isArray(candidate.wanderNodes)
       ? candidate.wanderNodes.map((point) => normalizeTilePoint(point, fallback.spawnLocal))
       : fallback.wanderNodes,
@@ -527,7 +551,7 @@ function sanitizeSelection(scene: SceneMap, selection: Selection): Selection {
   }
 
   if (selection.kind === "seatLocal") {
-    return scene.seatLocal ? selection : null;
+    return getSeatPoints(scene)[selection.index] ? selection : null;
   }
 
   if (selection.kind === "wanderNodes") {
@@ -551,8 +575,9 @@ function findSelectionAt(scene: SceneMap, x: number, y: number): Selection {
     return spawnHit;
   }
 
-  if (scene.seatLocal) {
-    const seatHit = checkMarker(scene.seatLocal, { kind: "seatLocal" });
+  const seatPoints = getSeatPoints(scene);
+  for (let index = 0; index < seatPoints.length; index += 1) {
+    const seatHit = checkMarker(seatPoints[index], { kind: "seatLocal", index });
     if (seatHit) {
       return seatHit;
     }
@@ -1110,6 +1135,7 @@ export function SceneEditor() {
         props: scene.props.length,
         spawnLocal: scene.spawnLocal,
         seatLocal: scene.seatLocal ?? null,
+        seatSlots: getSeatPoints(scene).length,
         wanderNodes: scene.wanderNodes.length,
         remoteSlots: scene.remoteSlots.length,
         atlasInspectorOpen: isAtlasInspectorOpen,
@@ -1292,7 +1318,7 @@ export function SceneEditor() {
     drawPixelAvatar(ctx, {
       avatar: currentAvatar,
       state: "idle",
-      pose: scene.seatLocal ? "sitting" : "idle",
+      pose: getSeatPoints(scene).length > 0 ? "sitting" : "idle",
       facing: "down",
       x: Math.round(scene.spawnLocal.x * scene.tileSize),
       y: Math.round(scene.spawnLocal.y * scene.tileSize),
@@ -1306,9 +1332,9 @@ export function SceneEditor() {
       .forEach((prop) => drawSceneProp(ctx, prop, atlasImages));
 
     drawMarker(ctx, scene, scene.spawnLocal, "SP", "#ffb961", selection?.kind === "spawnLocal");
-    if (scene.seatLocal) {
-      drawMarker(ctx, scene, scene.seatLocal, "AS", "#e7bdb1", selection?.kind === "seatLocal");
-    }
+    getSeatPoints(scene).forEach((point, index) => {
+      drawMarker(ctx, scene, point, `AS${index + 1}`, "#e7bdb1", selection?.kind === "seatLocal" && selection.index === index);
+    });
     scene.wanderNodes.forEach((point, index) => {
       drawMarker(ctx, scene, point, `W${index + 1}`, "#add0a8", selection?.kind === "wanderNodes" && selection.index === index);
     });
@@ -1409,7 +1435,9 @@ export function SceneEditor() {
       if (target.kind === "spawnLocal") {
         draft.spawnLocal = point;
       } else if (target.kind === "seatLocal") {
-        draft.seatLocal = point;
+        const seatPoints = getSeatPoints(draft);
+        seatPoints[target.index] = point;
+        setSeatPoints(draft, seatPoints);
       } else if (target.kind === "wanderNodes") {
         draft.wanderNodes[target.index] = point;
       } else if (target.kind === "remoteSlots") {
@@ -1482,7 +1510,9 @@ export function SceneEditor() {
         draft.props = draft.props.filter((prop) => prop.id !== selection.id);
       }
       if (selection.kind === "seatLocal") {
-        draft.seatLocal = undefined;
+        const seatPoints = getSeatPoints(draft);
+        seatPoints.splice(selection.index, 1);
+        setSeatPoints(draft, seatPoints);
       }
       if (selection.kind === "wanderNodes") {
         draft.wanderNodes.splice(selection.index, 1);
@@ -1518,7 +1548,7 @@ export function SceneEditor() {
           hit.kind === "spawnLocal"
             ? scene.spawnLocal
             : hit.kind === "seatLocal"
-              ? scene.seatLocal
+              ? getSeatPoints(scene)[hit.index]
               : hit.kind === "wanderNodes"
                 ? scene.wanderNodes[hit.index]
                 : scene.remoteSlots[hit.index];
@@ -1554,9 +1584,11 @@ export function SceneEditor() {
 
     if (tool === "seatLocal") {
       updateScene((draft) => {
-        draft.seatLocal = point;
+        const seatPoints = getSeatPoints(draft);
+        seatPoints.push(point);
+        setSeatPoints(draft, seatPoints);
       });
-      setSelection({ kind: "seatLocal" });
+      setSelection({ kind: "seatLocal", index: getSeatPoints(scene).length });
       return;
     }
 
@@ -1617,7 +1649,9 @@ export function SceneEditor() {
       if (activeDrag.selection.kind === "spawnLocal") {
         draft.spawnLocal = point;
       } else if (activeDrag.selection.kind === "seatLocal") {
-        draft.seatLocal = point;
+        const seatPoints = getSeatPoints(draft);
+        seatPoints[activeDrag.selection.index] = point;
+        setSeatPoints(draft, seatPoints);
       } else if (activeDrag.selection.kind === "wanderNodes") {
         draft.wanderNodes[activeDrag.selection.index] = point;
       } else if (activeDrag.selection.kind === "remoteSlots") {
@@ -1667,8 +1701,10 @@ export function SceneEditor() {
       }
 
       if (selection.kind === "seatLocal") {
-        draft.seatLocal = draft.seatLocal ?? clonePoint(draft.spawnLocal);
-        mutator(draft.seatLocal);
+        const seatPoints = getSeatPoints(draft);
+        seatPoints[selection.index] = seatPoints[selection.index] ?? clonePoint(draft.spawnLocal);
+        mutator(seatPoints[selection.index]);
+        setSeatPoints(draft, seatPoints);
         return;
       }
 
@@ -2432,7 +2468,7 @@ export function SceneEditor() {
                   {selection.kind === "spawnLocal"
                     ? "Spawn local"
                     : selection.kind === "seatLocal"
-                      ? "Asiento"
+                      ? `Asiento ${selection.index + 1}`
                       : selection.kind === "wanderNodes"
                         ? `Wander ${selection.index + 1}`
                         : `Remote ${selection.index + 1}`}
@@ -2447,7 +2483,7 @@ export function SceneEditor() {
                         selection.kind === "spawnLocal"
                           ? scene.spawnLocal.x
                           : selection.kind === "seatLocal"
-                            ? scene.seatLocal?.x ?? 0
+                            ? getSeatPoints(scene)[selection.index]?.x ?? 0
                             : selection.kind === "wanderNodes"
                               ? scene.wanderNodes[selection.index]?.x ?? 0
                               : scene.remoteSlots[selection.index]?.x ?? 0
@@ -2467,7 +2503,7 @@ export function SceneEditor() {
                         selection.kind === "spawnLocal"
                           ? scene.spawnLocal.y
                           : selection.kind === "seatLocal"
-                            ? scene.seatLocal?.y ?? 0
+                            ? getSeatPoints(scene)[selection.index]?.y ?? 0
                             : selection.kind === "wanderNodes"
                               ? scene.wanderNodes[selection.index]?.y ?? 0
                               : scene.remoteSlots[selection.index]?.y ?? 0

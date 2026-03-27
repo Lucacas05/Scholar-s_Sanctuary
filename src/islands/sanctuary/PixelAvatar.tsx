@@ -1,33 +1,26 @@
 import { Flame, MoonStar, Sparkles } from "lucide-react";
+import { getAvatarArtManifest } from "@/lib/sanctuary/avatarArt";
 import type { AvatarConfig, PresenceState } from "@/lib/sanctuary/store";
 
 interface PixelAvatarProps {
   avatar: AvatarConfig;
   state?: PresenceState;
   name?: string;
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "xl";
   highlighted?: boolean;
+  showStatusBadge?: boolean;
+  showAccessoryBadge?: boolean;
 }
 
-const skinTones = {
-  marfil: "#f4d2b7",
-  miel: "#d9a16a",
-  bronce: "#9d6841",
-  umbra: "#5e3b27",
-} as const;
-
-const hairTones = {
-  obsidiana: "#22181b",
-  castano: "#5d4030",
-  cobre: "#9a4d1b",
-  plata: "#d1d5db",
-} as const;
-
-const outfitTones = {
-  escriba: { primary: "#88603c", trim: "#ffb961" },
-  alquimista: { primary: "#5b3e63", trim: "#e7bdb1" },
-  guardabosques: { primary: "#35523a", trim: "#add0a8" },
-} as const;
+interface SizeMetrics {
+  frameWidth: number;
+  frameHeight: number;
+  spriteScale: number;
+  badgeSize: number;
+  labelClass: string;
+  accessoryBox: number;
+  bottomOffset: number;
+}
 
 const stateIcons = {
   idle: MoonStar,
@@ -36,32 +29,244 @@ const stateIcons = {
   offline: MoonStar,
 } as const;
 
-const avatarSizes = {
+const sizeMetrics: Record<NonNullable<PixelAvatarProps["size"]>, SizeMetrics> = {
   sm: {
-    frame: "h-24 w-[4.5rem]",
-    head: "w-8 h-8 top-3",
-    body: "w-11 h-11 bottom-6",
-    feet: "w-9 h-3 bottom-3",
-    accessory: "w-7 h-7",
-    label: "text-[9px]",
+    frameWidth: 86,
+    frameHeight: 108,
+    spriteScale: 1.2,
+    badgeSize: 24,
+    labelClass: "text-[9px]",
+    accessoryBox: 28,
+    bottomOffset: 6,
   },
   md: {
-    frame: "w-24 h-32",
-    head: "w-10 h-10 top-4",
-    body: "w-14 h-14 bottom-8",
-    feet: "w-10 h-3 bottom-4",
-    accessory: "w-8 h-8",
-    label: "text-[10px]",
+    frameWidth: 108,
+    frameHeight: 142,
+    spriteScale: 1.52,
+    badgeSize: 28,
+    labelClass: "text-[10px]",
+    accessoryBox: 34,
+    bottomOffset: 8,
   },
   lg: {
-    frame: "w-40 h-48",
-    head: "w-16 h-16 top-5",
-    body: "h-24 w-[5.5rem] bottom-10",
-    feet: "w-16 h-4 bottom-5",
-    accessory: "w-10 h-10",
-    label: "text-xs",
+    frameWidth: 164,
+    frameHeight: 208,
+    spriteScale: 2.42,
+    badgeSize: 34,
+    labelClass: "text-xs",
+    accessoryBox: 40,
+    bottomOffset: 10,
   },
-} as const;
+  xl: {
+    frameWidth: 226,
+    frameHeight: 282,
+    spriteScale: 3.3,
+    badgeSize: 42,
+    labelClass: "text-xs",
+    accessoryBox: 52,
+    bottomOffset: 12,
+  },
+};
+
+function SpriteSheetLayer({
+  src,
+  sheetWidth,
+  sheetHeight,
+  scale,
+  className = "",
+}: {
+  src: string;
+  sheetWidth: number;
+  sheetHeight: number;
+  scale: number;
+  className?: string;
+}) {
+  const frameX = sheetWidth === 192 ? 64 * scale : 0;
+  const frameY = 128 * scale;
+
+  return (
+    <div
+      className={`absolute inset-0 bg-no-repeat ${className}`}
+      style={{
+        backgroundImage: `url(${src})`,
+        backgroundSize: `${sheetWidth * scale}px ${sheetHeight * scale}px`,
+        backgroundPosition: `-${frameX}px -${frameY}px`,
+        imageRendering: "pixelated",
+      }}
+    />
+  );
+}
+
+function AccessoryBadge({
+  accessory,
+  size,
+}: {
+  accessory: AvatarConfig["accessory"];
+  size: number;
+}) {
+  if (accessory === "ninguno") {
+    return null;
+  }
+
+  return (
+    <div
+      className="absolute bottom-6 -right-1 flex items-center justify-center rounded-none border-2 border-surface-container-highest bg-surface-container-low shadow-[0_4px_0_rgba(0,0,0,0.22)]"
+      style={{ width: size, height: size }}
+    >
+      {accessory === "libro" && (
+        <div className="relative h-[58%] w-[50%] border-2 border-[#3f2517] bg-[#7f5434]">
+          <div className="absolute inset-y-0 left-[24%] w-[2px] bg-[#f7d598]" />
+          <div className="absolute inset-x-[16%] top-[18%] h-[2px] bg-[#f7d598]/70" />
+        </div>
+      )}
+      {accessory === "te" && (
+        <div className="relative h-[54%] w-[56%]">
+          <div className="absolute bottom-0 left-[10%] h-[62%] w-[54%] rounded-b-[0.12rem] border-2 border-[#724b1d] bg-[#ddc49e]" />
+          <div className="absolute right-[4%] top-[18%] h-[36%] w-[20%] rounded-r-full border-2 border-[#724b1d]" />
+          <div className="absolute left-[32%] top-0 h-[20%] w-[2px] bg-white/60" />
+        </div>
+      )}
+      {accessory === "pluma" && (
+        <div className="relative h-[66%] w-[34%] rotate-12">
+          <div className="absolute inset-0 rounded-full bg-[#ddd7e6]" />
+          <div className="absolute bottom-[-10%] left-1/2 h-[46%] w-[2px] -translate-x-1/2 bg-[#7a4b2b]" />
+        </div>
+      )}
+      {accessory === "linterna" && (
+        <div className="relative h-[64%] w-[48%]">
+          <div className="absolute inset-x-[18%] top-0 h-[18%] rounded-t-full border-2 border-[#714100]" />
+          <div className="absolute inset-x-0 top-[18%] bottom-0 rounded-[0.12rem] border-2 border-[#714100] bg-[#ffdc9a]" />
+          <div className="absolute inset-x-[24%] top-[34%] bottom-[10%] bg-[#ffb961]/70" />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function FaceOverlay({
+  avatar,
+  scale,
+}: {
+  avatar: AvatarConfig;
+  scale: number;
+}) {
+  const unit = scale;
+  const eyeColor = avatar.expression === "despierto" ? "#1b1412" : "#2d231f";
+  const mouthColor = avatar.expression === "picaro" ? "#6d3925" : "#5b3021";
+  const facialColor =
+    avatar.hairColor === "plata"
+      ? "#cfd6db"
+      : avatar.hairColor === "cobre"
+        ? "#92512d"
+        : avatar.hairColor === "obsidiana"
+          ? "#251a1b"
+          : "#5b4333";
+
+  return (
+    <>
+      <span
+        className="absolute rounded-none"
+        style={{
+          left: 24 * unit,
+          top: 17 * unit,
+          width: 4 * unit,
+          height: avatar.expression === "despierto" ? 3 * unit : 2 * unit,
+          backgroundColor: eyeColor,
+        }}
+      />
+      <span
+        className="absolute rounded-none"
+        style={{
+          left: 36 * unit,
+          top: 17 * unit,
+          width: 4 * unit,
+          height: avatar.expression === "despierto" ? 3 * unit : 2 * unit,
+          backgroundColor: eyeColor,
+        }}
+      />
+      {avatar.expression === "picaro" && (
+        <span
+          className="absolute rounded-none bg-[#2f231f]"
+          style={{
+            left: 35 * unit,
+            top: 13 * unit,
+            width: 5 * unit,
+            height: unit,
+          }}
+        />
+      )}
+      <span
+        className="absolute rounded-none"
+        style={{
+          left: avatar.expression === "picaro" ? 29 * unit : 28 * unit,
+          top: avatar.expression === "despierto" ? 25 * unit : 26 * unit,
+          width: avatar.expression === "picaro" ? 8 * unit : 6 * unit,
+          height: unit,
+          backgroundColor: mouthColor,
+          transform: avatar.expression === "picaro" ? `skewX(-25deg)` : undefined,
+        }}
+      />
+      {avatar.facialHair === "bigote" && (
+        <span
+          className="absolute rounded-none"
+          style={{
+            left: 27 * unit,
+            top: 22 * unit,
+            width: 10 * unit,
+            height: 2 * unit,
+            backgroundColor: facialColor,
+          }}
+        />
+      )}
+      {avatar.facialHair === "barba-corta" && (
+        <span
+          className="absolute rounded-b-[0.18rem]"
+          style={{
+            left: 26 * unit,
+            top: 23 * unit,
+            width: 12 * unit,
+            height: 6 * unit,
+            backgroundColor: facialColor,
+          }}
+        />
+      )}
+    </>
+  );
+}
+
+function HoodOverlay({
+  color,
+  scale,
+}: {
+  color: string;
+  scale: number;
+}) {
+  const unit = scale;
+
+  return (
+    <div
+      className="absolute"
+      style={{
+        left: 17 * unit,
+        top: 6 * unit,
+        width: 30 * unit,
+        height: 26 * unit,
+      }}
+    >
+      <div
+        className="absolute inset-0 rounded-t-[1rem]"
+        style={{
+          background: color,
+          clipPath: "polygon(0 18%, 18% 0, 82% 0, 100% 18%, 100% 100%, 0 100%)",
+        }}
+      />
+      <div
+        className="absolute left-[18%] top-[16%] h-[60%] w-[64%] rounded-t-full bg-[#1a1311]"
+        style={{ opacity: 0.26 }}
+      />
+    </div>
+  );
+}
 
 export function PixelAvatar({
   avatar,
@@ -69,120 +274,118 @@ export function PixelAvatar({
   name,
   size = "md",
   highlighted = false,
+  showStatusBadge = true,
+  showAccessoryBadge = true,
 }: PixelAvatarProps) {
-  const palette = outfitTones[avatar.outfit];
-  const skin = skinTones[avatar.skinTone];
-  const hair = avatar.hairStyle === "capucha" ? palette.trim : hairTones[avatar.hairColor];
   const StateIcon = stateIcons[state];
-  const sizes = avatarSizes[size];
-  const shoulderWidth =
-    avatar.base === "vigia" ? "w-[72%]" : avatar.base === "viajera" ? "w-[60%]" : "w-[66%]";
+  const metrics = sizeMetrics[size];
+  const manifest = getAvatarArtManifest(avatar);
+  const spriteScale = metrics.spriteScale * (avatar.base === "vigia" ? 1.05 : avatar.base === "viajera" ? 0.98 : 1);
+  const spriteSize = 64 * spriteScale;
+  const stageLeft = (metrics.frameWidth - spriteSize) / 2;
+  const stageTop = metrics.frameHeight - spriteSize - metrics.bottomOffset;
 
   return (
-    <div className={`relative ${sizes.frame}`}>
-      <div className="absolute inset-x-5 bottom-1 h-4 rounded-full bg-black/35 blur-md" />
+    <div className="relative" style={{ width: metrics.frameWidth, height: metrics.frameHeight }}>
+      <div className="absolute inset-x-[12%] bottom-1 h-5 rounded-full bg-black/35 blur-md" />
       <div
-        className={[
-          "absolute left-1/2 -translate-x-1/2 rounded-[0.35rem] border-[3px] border-surface-container-highest shadow-[0_8px_0_rgba(0,0,0,0.2)]",
-          sizes.head,
-          highlighted ? "ring-2 ring-primary ring-offset-2 ring-offset-surface" : "",
-        ]
-          .filter(Boolean)
-          .join(" ")}
-        style={{ backgroundColor: skin }}
-      >
-        <div
-          className="absolute left-0 top-0 h-[38%] w-full rounded-t-[0.25rem]"
-          style={{ backgroundColor: hair }}
-        />
-        {avatar.hairStyle === "ondas" && (
-          <div className="absolute inset-x-1 top-[14%] h-[28%] rounded-full opacity-90" style={{ backgroundColor: hair }} />
-        )}
-        {avatar.hairStyle === "coleta" && (
-          <div className="absolute right-0 top-[26%] h-[52%] w-[18%] rounded-b-sm" style={{ backgroundColor: hair }} />
-        )}
-        {avatar.hairStyle === "capucha" && (
-          <>
-            <div className="absolute inset-x-0 top-0 h-[65%] rounded-t-[0.35rem]" style={{ backgroundColor: palette.primary }} />
-            <div className="absolute inset-x-[18%] top-[16%] h-[42%] rounded-t-full border-t-2 border-tertiary/30" style={{ backgroundColor: hair }} />
-          </>
-        )}
-
-        <div className="absolute inset-x-[22%] top-[42%] flex justify-between">
-          <span className={`h-1.5 w-1.5 rounded-none ${avatar.expression === "despierto" ? "bg-surface" : "bg-surface/70"}`} />
-          <span className={`h-1.5 w-1.5 rounded-none ${avatar.expression === "despierto" ? "bg-surface" : "bg-surface/70"}`} />
-        </div>
-        <div className="absolute inset-x-[36%] top-[58%] h-[10%] rounded-full bg-surface/50" />
-        {avatar.facialHair === "bigote" && (
-          <div className="absolute inset-x-[28%] top-[62%] h-[10%] rounded-full" style={{ backgroundColor: hair }} />
-        )}
-        {avatar.facialHair === "barba-corta" && (
-          <div className="absolute inset-x-[22%] top-[64%] h-[18%] rounded-b-[0.3rem]" style={{ backgroundColor: hair }} />
-        )}
-      </div>
-
-      <div
-        className={[
-          "absolute left-1/2 -translate-x-1/2 rounded-t-[0.4rem] rounded-b-[0.2rem] border-[3px] border-surface-container-highest",
-          sizes.body,
-          shoulderWidth,
-        ].join(" ")}
-        style={{ backgroundColor: palette.primary }}
-      >
-        <div className="absolute inset-x-[14%] top-2 h-2 rounded-full opacity-85" style={{ backgroundColor: palette.trim }} />
-        <div className="absolute left-1/2 top-0 h-full w-1 -translate-x-1/2 bg-black/25" />
-        <div className="absolute inset-x-[34%] bottom-0 h-[22%] bg-black/15" />
-      </div>
-
-      <div
-        className={`absolute left-1/2 -translate-x-1/2 rounded-b-sm border-x-[3px] border-b-[3px] border-surface-container-highest ${sizes.feet}`}
-        style={{ backgroundColor: avatar.base === "viajera" ? palette.trim : palette.primary }}
+        className="absolute inset-x-[10%] bottom-4 rounded-[1rem] border border-primary/20 bg-[radial-gradient(circle_at_50%_14%,rgba(255,190,110,0.22),transparent_44%),linear-gradient(180deg,rgba(255,255,255,0.05),rgba(24,18,16,0.2))]"
+        style={{ top: metrics.frameHeight * 0.08 }}
       />
 
-      {avatar.accessory !== "ninguno" && (
-        <div
-          className={`absolute -right-1 bottom-8 flex items-center justify-center rounded-none border-2 border-surface-container-highest bg-surface-container-low ${sizes.accessory}`}
-        >
-          {avatar.accessory === "libro" && (
-            <div className="relative h-[60%] w-[56%] rounded-[0.1rem] border-2 border-[#3c2412] bg-[#7c4a29]">
-              <div className="absolute inset-y-0 left-[18%] w-[2px] bg-[#ffcf93]" />
-              <div className="absolute inset-x-[20%] top-[18%] h-[2px] bg-[#ffcf93]/60" />
-            </div>
-          )}
-          {avatar.accessory === "te" && (
-            <div className="relative h-[58%] w-[62%]">
-              <div className="absolute bottom-0 left-[12%] h-[55%] w-[58%] rounded-b-[0.12rem] border-2 border-[#6c4300] bg-[#d2b98b]" />
-              <div className="absolute right-[6%] top-[18%] h-[34%] w-[22%] rounded-r-full border-2 border-[#6c4300]" />
-              <div className="absolute left-[28%] top-0 h-[20%] w-[2px] bg-white/60" />
-            </div>
-          )}
-          {avatar.accessory === "pluma" && (
-            <div className="relative h-[65%] w-[30%] rotate-12">
-              <div className="absolute inset-0 rounded-full bg-[#d8d4df]" />
-              <div className="absolute bottom-[-8%] left-1/2 h-[42%] w-[2px] -translate-x-1/2 bg-[#7c4a29]" />
-            </div>
-          )}
-          {avatar.accessory === "linterna" && (
-            <div className="relative h-[62%] w-[46%]">
-              <div className="absolute inset-x-[14%] top-0 h-[18%] rounded-t-full border-2 border-[#6c4300]" />
-              <div className="absolute inset-x-0 top-[18%] bottom-0 rounded-[0.12rem] border-2 border-[#6c4300] bg-[#ffcf93]" />
-              <div className="absolute inset-x-[22%] top-[32%] bottom-[12%] bg-[#ffb961]/70" />
-            </div>
-          )}
-        </div>
-      )}
-
-      <div className="absolute -left-2 top-1 flex h-7 w-7 items-center justify-center rounded-none border-2 border-surface-container-highest bg-surface-container-low">
-        <StateIcon size={14} className={state === "break" ? "text-tertiary" : state === "studying" ? "text-primary" : "text-outline"} />
+      <div
+        className={`absolute rounded-[1rem] border-2 border-surface-container-highest bg-surface-container/60 shadow-[0_12px_0_rgba(0,0,0,0.18)] ${
+          highlighted ? "ring-2 ring-primary ring-offset-2 ring-offset-surface" : ""
+        }`}
+        style={{
+          left: stageLeft,
+          top: stageTop,
+          width: spriteSize,
+          height: spriteSize,
+          imageRendering: "pixelated",
+        }}
+      >
+        {manifest.hairBack ? (
+          <SpriteSheetLayer
+            src={manifest.hairBack.src}
+            sheetWidth={manifest.hairBack.sheetWidth}
+            sheetHeight={manifest.hairBack.sheetHeight}
+            scale={spriteScale}
+          />
+        ) : null}
+        <SpriteSheetLayer
+          src={manifest.body.src}
+          sheetWidth={manifest.body.sheetWidth}
+          sheetHeight={manifest.body.sheetHeight}
+          scale={spriteScale}
+        />
+        <SpriteSheetLayer
+          src={manifest.pants.src}
+          sheetWidth={manifest.pants.sheetWidth}
+          sheetHeight={manifest.pants.sheetHeight}
+          scale={spriteScale}
+        />
+        <SpriteSheetLayer
+          src={manifest.shoes.src}
+          sheetWidth={manifest.shoes.sheetWidth}
+          sheetHeight={manifest.shoes.sheetHeight}
+          scale={spriteScale}
+        />
+        <SpriteSheetLayer
+          src={manifest.shirt.src}
+          sheetWidth={manifest.shirt.sheetWidth}
+          sheetHeight={manifest.shirt.sheetHeight}
+          scale={spriteScale}
+        />
+        <SpriteSheetLayer
+          src={manifest.head.src}
+          sheetWidth={manifest.head.sheetWidth}
+          sheetHeight={manifest.head.sheetHeight}
+          scale={spriteScale}
+        />
+        <FaceOverlay avatar={avatar} scale={spriteScale} />
+        {manifest.hairFront ? (
+          <SpriteSheetLayer
+            src={manifest.hairFront.src}
+            sheetWidth={manifest.hairFront.sheetWidth}
+            sheetHeight={manifest.hairFront.sheetHeight}
+            scale={spriteScale}
+          />
+        ) : null}
+        {manifest.hoodColor ? <HoodOverlay color={manifest.hoodColor} scale={spriteScale} /> : null}
       </div>
 
-      {name && (
+      <div
+        className="absolute left-1/2 top-5 h-10 -translate-x-1/2 rounded-full blur-2xl"
+        style={{
+          width: metrics.frameWidth * 0.56,
+          backgroundColor: `${manifest.accent.trim}25`,
+        }}
+      />
+
+      {showStatusBadge ? (
         <div
-          className={`absolute -bottom-5 left-1/2 min-w-max -translate-x-1/2 rounded-none border-2 border-surface-container-highest bg-surface px-2 py-1 font-headline font-bold uppercase tracking-widest text-outline ${sizes.label}`}
+          className="absolute left-1 top-1 flex items-center justify-center rounded-none border-2 border-surface-container-highest bg-surface-container-low"
+          style={{ width: metrics.badgeSize, height: metrics.badgeSize }}
+        >
+          <StateIcon
+            size={Math.round(metrics.badgeSize * 0.5)}
+            className={
+              state === "break" ? "text-tertiary" : state === "studying" ? "text-primary" : "text-outline"
+            }
+          />
+        </div>
+      ) : null}
+
+      {showAccessoryBadge ? <AccessoryBadge accessory={avatar.accessory} size={metrics.accessoryBox} /> : null}
+
+      {name ? (
+        <div
+          className={`absolute -bottom-5 left-1/2 min-w-max -translate-x-1/2 rounded-none border-2 border-surface-container-highest bg-surface px-2 py-1 font-headline font-bold uppercase tracking-widest text-outline ${metrics.labelClass}`}
         >
           {name}
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

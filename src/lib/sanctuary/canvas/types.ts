@@ -69,6 +69,7 @@ export interface SceneMap {
   tileSize: number;
   spawnLocal: TilePoint;
   seatLocal?: TilePoint;
+  seatSlots?: TilePoint[];
   wanderNodes: TilePoint[];
   remoteSlots: TilePoint[];
   props: SceneProp[];
