@@ -1171,6 +1171,21 @@ export function SceneEditor() {
         return;
       }
 
+      if (!event.metaKey && !event.ctrlKey && !event.altKey) {
+        const hotkey = event.key.toLowerCase();
+        if (hotkey === "v") {
+          event.preventDefault();
+          setTool("select");
+          return;
+        }
+
+        if (hotkey === "c") {
+          event.preventDefault();
+          setTool("prop");
+          return;
+        }
+      }
+
       if (isAtlasInspectorOpen && (event.code === "Space" || event.key === " ")) {
         const activeSource = selectedProp?.source;
         if (activeSource && selectedPropAtlasImage && selectedPropAtlasViewKey) {
@@ -1361,7 +1376,6 @@ export function SceneEditor() {
     redoStackRef.current.push(cloneDrafts(draftsRef.current));
     syncHistoryState();
     applyDrafts(cloneDrafts(previous));
-    setFlash("Cambio deshecho");
   }
 
   function redo() {
@@ -1376,7 +1390,6 @@ export function SceneEditor() {
     }
     syncHistoryState();
     applyDrafts(cloneDrafts(next));
-    setFlash("Cambio rehecho");
   }
 
   function toSceneCoordinates(event: React.PointerEvent<HTMLCanvasElement> | React.MouseEvent<HTMLCanvasElement>) {
@@ -2087,7 +2100,7 @@ export function SceneEditor() {
               <div>
                 <p className="font-headline text-[10px] font-bold uppercase tracking-[0.24em] text-outline">Flujo</p>
                 <p className="mt-2 text-sm leading-relaxed text-on-surface-variant">
-                  1. Elige escena. 2. Coloca props o markers. 3. Ajusta propiedades. 4. Haz doble clic en el canvas para mandar la selección al ratón. 5. Usa deshacer y rehacer si pruebas una variante. 6. Exporta el JSON.
+                  1. Elige escena. 2. Cambia rápido entre `V` para seleccionar y `C` para colocar props. 3. Ajusta propiedades. 4. Haz doble clic en el canvas para mandar la selección al ratón. 5. Usa deshacer y rehacer si pruebas una variante. 6. Exporta el JSON.
                 </p>
               </div>
               {flash ? (
@@ -2545,6 +2558,7 @@ export function SceneEditor() {
               <li>El editor guarda cada escena en local automáticamente.</li>
               <li>Los props se exportan en el mismo formato que usa el visor actual.</li>
               <li>Deshacer y rehacer actúan sobre el JSON de la escena activa y permiten revertir arrastres completos.</li>
+              <li>`V` activa seleccionar y `C` activa colocar props mientras no estés escribiendo en un campo.</li>
               <li>Por ahora el tamaño del canvas sigue el stage actual del juego: 20×12 tiles de 16 px.</li>
             </ul>
           </div>
