@@ -11,8 +11,14 @@ interface AuthModePanelProps {
 
 export function AuthModePanel({ contextLabel, compact = false }: AuthModePanelProps) {
   const sanctuary = useSanctuaryStore();
-  const avatar = sanctuary.profiles[sanctuary.currentUserId]?.avatar ?? sanctuary.profiles["guest-current"].avatar;
+  const currentProfile = sanctuary.profiles[sanctuary.currentUserId] ?? sanctuary.profiles["guest-current"];
+  const avatar = currentProfile.avatar;
   const rootRef = useRef<HTMLDivElement | null>(null);
+  const isAccount = sanctuary.authMode === "account";
+  const title = isAccount ? currentProfile.displayName : "Invitado del santuario";
+  const description = isAccount
+    ? `Sesión activa como ${currentProfile.handle} con progreso sincronizable entre dispositivos.`
+    : "Explora el santuario en modo invitado mientras el inicio de sesión sigue en preparación.";
 
   useGsapReveal(rootRef);
 
@@ -28,12 +34,12 @@ export function AuthModePanel({ contextLabel, compact = false }: AuthModePanelPr
               </div>
               <div className="min-w-0">
                 <p className="font-headline text-[10px] font-bold uppercase tracking-[0.25em] text-outline">{contextLabel}</p>
-                <h2 className="font-headline text-base font-black uppercase tracking-tighter text-on-surface md:text-lg">Invitado del santuario</h2>
+                <h2 className="font-headline text-base font-black uppercase tracking-tighter text-on-surface md:text-lg">{title}</h2>
               </div>
             </div>
             <div className="gsap-rise inline-flex items-center gap-2 rounded-none border border-outline-variant bg-surface-container-low px-3 py-2 font-headline text-[10px] font-bold uppercase tracking-[0.22em] text-outline">
               <UserRound size={12} />
-              Invitado
+              {isAccount ? "Cuenta activa" : "Invitado"}
             </div>
           </div>
         </div>
@@ -52,13 +58,13 @@ export function AuthModePanel({ contextLabel, compact = false }: AuthModePanelPr
             </div>
             <div>
               <p className="font-headline text-[10px] font-bold uppercase tracking-[0.25em] text-outline">{contextLabel}</p>
-              <h2 className="font-headline text-xl font-black uppercase tracking-tighter text-on-surface md:text-2xl">Invitado del santuario</h2>
-              <p className="mt-1 text-sm text-on-surface-variant">Explora el santuario en modo invitado mientras el inicio de sesión sigue en preparación.</p>
+              <h2 className="font-headline text-xl font-black uppercase tracking-tighter text-on-surface md:text-2xl">{title}</h2>
+              <p className="mt-1 text-sm text-on-surface-variant">{description}</p>
             </div>
           </div>
           <div className="gsap-rise inline-flex items-center gap-2 self-start rounded-none border border-outline-variant bg-surface-container-low px-4 py-3 font-headline text-[10px] font-bold uppercase tracking-[0.22em] text-outline md:self-auto">
             <UserRound size={14} />
-            Inicio de sesión próximamente
+            {isAccount ? "Conectado con GitHub" : "Inicio de sesión disponible"}
           </div>
         </div>
       </div>

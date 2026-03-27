@@ -247,6 +247,12 @@ export interface AchievementDefinition {
   description: string;
 }
 
+export interface RemoteAccountIdentity {
+  id: string;
+  displayName: string;
+  username: string;
+}
+
 export const garmentColorMeta: Record<
   AvatarGarmentColor,
   { label: string; description: string; source: string; swatch: string }
@@ -760,6 +766,65 @@ function cloneState<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T;
 }
 
+function normalizeStoredState(value: unknown) {
+  if (!isRecord(value)) {
+    return null;
+  }
+
+  const fallback = createInitialState();
+  const parsed = cloneState(value as unknown) as SanctuaryState;
+  if (parsed.version !== 3 && parsed.version !== 4 && parsed.version !== 5) {
+    return null;
+  }
+
+  parsed.version = 5;
+  parsed.authMode = parsed.authMode === "account" ? "account" : "guest";
+  parsed.currentUserId =
+    typeof parsed.currentUserId === "string" && parsed.currentUserId ? parsed.currentUserId : fallback.currentUserId;
+  parsed.currentRoomCode =
+    typeof parsed.currentRoomCode === "string" && parsed.currentRoomCode
+      ? parsed.currentRoomCode
+      : fallback.currentRoomCode;
+  parsed.profiles = {
+    ...fallback.profiles,
+    ...Object.fromEntries(
+      Object.entries(parsed.profiles ?? {}).map(([profileId, profile]) => [
+        profileId,
+        {
+          ...profile,
+          avatar: normalizeAvatarConfig(profile.avatar),
+        },
+      ]),
+    ),
+  };
+  parsed.rooms = {
+    ...fallback.rooms,
+    ...(parsed.rooms ?? {}),
+  };
+  parsed.presences = {
+    ...fallback.presences,
+    ...(parsed.presences ?? {}),
+  };
+  parsed.sessions = Array.isArray(parsed.sessions) ? parsed.sessions : [];
+  parsed.chronicleEntries = Array.isArray(parsed.chronicleEntries) ? parsed.chronicleEntries : [];
+  parsed.achievementUnlocks = Array.isArray(parsed.achievementUnlocks) ? parsed.achievementUnlocks : [];
+  parsed.friendIds = Array.isArray(parsed.friendIds) ? parsed.friendIds : fallback.friendIds;
+  parsed.timer = {
+    ...fallback.timer,
+    ...parsed.timer,
+  };
+  parsed.timer.focusDurationSeconds = parsed.timer.focusDurationSeconds ?? FOCUS_SECONDS;
+  parsed.timer.breakDurationSeconds = parsed.timer.breakDurationSeconds ?? BREAK_SECONDS;
+  parsed.timer.durationSeconds =
+    parsed.timer.durationSeconds ??
+    (parsed.timer.phase === "break" ? parsed.timer.breakDurationSeconds : parsed.timer.focusDurationSeconds);
+  parsed.timer.remainingSeconds =
+    parsed.timer.remainingSeconds ??
+    (parsed.timer.phase === "break" ? parsed.timer.breakDurationSeconds : parsed.timer.focusDurationSeconds);
+
+  return parsed;
+}
+
 function readStoredState() {
   if (!isBrowser()) {
     return createInitialState();
@@ -771,31 +836,7 @@ function readStoredState() {
   }
 
   try {
-    const parsed = JSON.parse(raw) as SanctuaryState;
-    if (parsed.version !== 3 && parsed.version !== 4 && parsed.version !== 5) {
-      return createInitialState();
-    }
-
-    parsed.version = 5;
-    parsed.profiles = Object.fromEntries(
-      Object.entries(parsed.profiles ?? {}).map(([profileId, profile]) => [
-        profileId,
-        {
-          ...profile,
-          avatar: normalizeAvatarConfig(profile.avatar),
-        },
-      ]),
-    );
-    parsed.timer.focusDurationSeconds = parsed.timer.focusDurationSeconds ?? FOCUS_SECONDS;
-    parsed.timer.breakDurationSeconds = parsed.timer.breakDurationSeconds ?? BREAK_SECONDS;
-    parsed.timer.durationSeconds =
-      parsed.timer.durationSeconds ??
-      (parsed.timer.phase === "break" ? parsed.timer.breakDurationSeconds : parsed.timer.focusDurationSeconds);
-    parsed.timer.remainingSeconds =
-      parsed.timer.remainingSeconds ??
-      (parsed.timer.phase === "break" ? parsed.timer.breakDurationSeconds : parsed.timer.focusDurationSeconds);
-
-    return parsed;
+    return normalizeStoredState(JSON.parse(raw)) ?? createInitialState();
   } catch {
     return createInitialState();
   }
@@ -818,6 +859,11 @@ function getRoomLabel(state: SanctuaryState, roomCode: string) {
     return "Santuario silencioso";
   }
   return state.rooms[roomCode]?.name ?? "Sala reservada";
+}
+
+function toRemoteHandle(username: string) {
+  const trimmed = username.trim().replace(/^@+/, "");
+  return `@${trimmed || "escriba"}`;
 }
 
 function setCurrentPresence(state: SanctuaryState, next: Partial<Presence>) {
@@ -1004,6 +1050,40 @@ function getStreakDays(sessions: StudySession[]) {
   return streak;
 }
 
+function remapUserReferences(state: SanctuaryState, fromUserId: string, toUserId: string) {
+  if (fromUserId === toUserId) {
+    return;
+  }
+
+  state.sessions = state.sessions.map((session) =>
+    session.userId === fromUserId ? { ...session, userId: toUserId } : session,
+  );
+  state.chronicleEntries = state.chronicleEntries.map((entry) =>
+    entry.userId === fromUserId ? { ...entry, userId: toUserId } : entry,
+  );
+  state.achievementUnlocks = state.achievementUnlocks.map((entry) =>
+    entry.userId === fromUserId ? { ...entry, userId: toUserId } : entry,
+  );
+
+  Object.values(state.rooms).forEach((room) => {
+    if (room.ownerId === fromUserId) {
+      room.ownerId = toUserId;
+    }
+
+    room.memberIds = Array.from(new Set(room.memberIds.map((memberId) => (memberId === fromUserId ? toUserId : memberId))));
+  });
+
+  state.friendIds = Array.from(new Set(state.friendIds.map((friendId) => (friendId === fromUserId ? toUserId : friendId))));
+
+  const previousPresence = state.presences[fromUserId];
+  if (previousPresence && !state.presences[toUserId]) {
+    state.presences[toUserId] = {
+      ...previousPresence,
+      userId: toUserId,
+    };
+  }
+}
+
 let currentState = createInitialState();
 let hydrated = false;
 let channel: BroadcastChannel | null = null;
@@ -1074,6 +1154,26 @@ function getSnapshot() {
 
 export function useSanctuaryStore() {
   return useSyncExternalStore(subscribe, getSnapshot, () => currentState);
+}
+
+export function getFullState() {
+  ensureHydrated();
+  const snapshot = cloneState(currentState);
+  syncExpiredTimer(snapshot);
+  return snapshot;
+}
+
+export function hydrateFromServer(value: unknown) {
+  ensureHydrated();
+  const nextState = normalizeStoredState(value);
+  if (!nextState) {
+    return false;
+  }
+
+  currentState = nextState;
+  persistState();
+  emitChange();
+  return true;
 }
 
 export function getCurrentTimer(state: SanctuaryState, now = Date.now()) {
@@ -1189,6 +1289,55 @@ export function getRoomMembers(state: SanctuaryState, roomCode: string, space: P
 }
 
 export const sanctuaryActions = {
+  connectGitHubAccount(identity: RemoteAccountIdentity) {
+    commit((state) => {
+      const previousUserId = state.currentUserId;
+      const existingProfile = state.profiles[identity.id];
+      const sourceProfile = existingProfile ?? state.profiles[previousUserId] ?? state.profiles["guest-current"];
+
+      remapUserReferences(state, previousUserId, identity.id);
+      state.authMode = "account";
+      state.currentUserId = identity.id;
+      state.currentRoomCode = state.rooms[state.currentRoomCode] ? state.currentRoomCode : PUBLIC_ROOM_CODE;
+      state.profiles[identity.id] = {
+        id: identity.id,
+        displayName: identity.displayName,
+        handle: toRemoteHandle(identity.username),
+        avatar: existingProfile?.avatar ?? sourceProfile?.avatar ?? guestAvatar,
+        bio: existingProfile?.bio ?? sourceProfile?.bio ?? `Cuenta del santuario conectada con GitHub como ${toRemoteHandle(identity.username)}.`,
+        createdAt: existingProfile?.createdAt ?? sourceProfile?.createdAt ?? Date.now(),
+      };
+
+      if (!state.rooms[PUBLIC_ROOM_CODE].memberIds.includes(identity.id)) {
+        state.rooms[PUBLIC_ROOM_CODE].memberIds.unshift(identity.id);
+      }
+
+      if (previousUserId !== identity.id && previousUserId !== "guest-current" && state.presences[previousUserId]) {
+        state.presences[previousUserId] = {
+          ...state.presences[previousUserId],
+          state: "offline",
+          message: "",
+          updatedAt: Date.now(),
+        };
+      }
+
+      if (!state.presences[identity.id]) {
+        setCurrentPresence(state, {
+          roomCode: PUBLIC_ROOM_CODE,
+          roomKind: "public",
+          state: "idle",
+          space: "library",
+          message: "",
+        });
+      }
+
+      if (state.timer.roomKind !== "solo" && !state.rooms[state.timer.roomCode]) {
+        state.timer.roomKind = "public";
+        state.timer.roomCode = PUBLIC_ROOM_CODE;
+      }
+    });
+  },
+
   activateLocalAccount(displayName: string) {
     commit((state) => {
       const trimmed = displayName.trim() || "Escriba mayor";
