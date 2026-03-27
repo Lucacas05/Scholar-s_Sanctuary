@@ -37,7 +37,7 @@ export interface RectSlice {
 
 export interface SceneProp {
   id: string;
-  atlas?: "library";
+  atlas?: string;
   source?: RectSlice;
   x: number;
   y: number;

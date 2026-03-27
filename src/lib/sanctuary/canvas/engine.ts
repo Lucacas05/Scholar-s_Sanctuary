@@ -1,6 +1,8 @@
 import type { AvatarConfig } from "@/lib/sanctuary/store";
 import { drawPixelAvatar, drawSpeechBubble } from "@/lib/sanctuary/canvas/avatarPainter";
-import { getSceneMap, LIBRARY_ATLAS_URL } from "@/lib/sanctuary/canvas/sceneMaps";
+import { sceneAtlasEntries } from "@/lib/sanctuary/canvas/atlasCatalog";
+import { getSceneMap } from "@/lib/sanctuary/canvas/sceneMaps";
+import { drawSceneBackground, drawSceneProp } from "@/lib/sanctuary/canvas/renderer";
 import type {
   ActorPose,
   ActorState,
@@ -54,7 +56,6 @@ export class SanctuaryCanvasEngine {
   private readonly ctx: CanvasRenderingContext2D;
   private map: SceneMap;
   private sceneKind: SceneKind;
-  private libraryAtlas: HTMLImageElement | null = null;
   private rafId = 0;
   private lastTimestamp = 0;
   private logicalWidth = LOGICAL_WIDTH;
@@ -62,6 +63,7 @@ export class SanctuaryCanvasEngine {
   private scale = 1;
   private tick = 0;
   private destroyed = false;
+  private atlasImages: Partial<Record<string, HTMLImageElement>> = {};
   private localActor: LocalActor;
   private remoteActors = new Map<string, RemoteActor>();
   private focusResolver: (() => void) | null = null;
@@ -101,10 +103,18 @@ export class SanctuaryCanvasEngine {
   }
 
   private async loadAssets() {
-    const image = new Image();
-    image.src = LIBRARY_ATLAS_URL;
-    await image.decode().catch(() => undefined);
-    this.libraryAtlas = image;
+    const loadedEntries = await Promise.all(
+      sceneAtlasEntries.map(
+        (entry) =>
+          new Promise<readonly [string, HTMLImageElement]>((resolve) => {
+            const image = new Image();
+            image.onload = () => resolve([entry.id, image] as const);
+            image.onerror = () => resolve([entry.id, image] as const);
+            image.src = entry.url;
+          }),
+      ),
+    );
+    this.atlasImages = Object.fromEntries(loadedEntries);
     this.render();
   }
 
@@ -342,109 +352,6 @@ export class SanctuaryCanvasEngine {
     return this.localActor.autoBubble;
   }
 
-  private drawBackground() {
-    const { ctx } = this;
-    const { theme, width, height, tileSize } = this.map;
-    const pixelWidth = width * tileSize;
-    const pixelHeight = height * tileSize;
-
-    const gradient = ctx.createLinearGradient(0, 0, 0, pixelHeight);
-    gradient.addColorStop(0, theme.skyTop);
-    gradient.addColorStop(1, theme.skyBottom);
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, pixelWidth, pixelHeight);
-
-    ctx.fillStyle = theme.glow ?? "transparent";
-    ctx.fillRect(84, 8, 152, 54);
-
-    for (let row = 0; row < height; row += 1) {
-      for (let col = 0; col < width; col += 1) {
-        ctx.fillStyle = (row + col) % 2 === 0 ? theme.floorA : theme.floorB;
-        ctx.fillRect(col * tileSize, Math.max(54, row * tileSize), tileSize, tileSize);
-        ctx.fillStyle = "rgba(255,255,255,0.03)";
-        ctx.fillRect(col * tileSize, Math.max(54, row * tileSize), tileSize, 1);
-      }
-    }
-
-    ctx.fillStyle = "rgba(0, 0, 0, 0.18)";
-    for (let col = 0; col <= width; col += 2) {
-      ctx.fillRect(col * tileSize, 54, 1, pixelHeight - 54);
-    }
-
-    ctx.strokeStyle = theme.border;
-    ctx.lineWidth = 1;
-    ctx.strokeRect(1, 1, pixelWidth - 2, pixelHeight - 2);
-  }
-
-  private drawProp(prop: SceneMap["props"][number]) {
-    const { ctx } = this;
-    if (prop.shape) {
-      this.drawProceduralProp(prop);
-      return;
-    }
-
-    if (!this.libraryAtlas || !prop.source) {
-      return;
-    }
-
-    ctx.save();
-    ctx.globalAlpha = prop.alpha ?? 1;
-    ctx.drawImage(
-      this.libraryAtlas,
-      prop.source.x,
-      prop.source.y,
-      prop.source.w,
-      prop.source.h,
-      prop.x,
-      prop.y,
-      prop.w,
-      prop.h,
-    );
-    ctx.restore();
-  }
-
-  private drawProceduralProp(prop: SceneMap["props"][number]) {
-    const { ctx } = this;
-
-    if (prop.shape === "path") {
-      ctx.fillStyle = "#9e8f71";
-      ctx.fillRect(prop.x, prop.y, prop.w, prop.h);
-      ctx.fillStyle = "#b7aa8a";
-      ctx.fillRect(prop.x + 3, prop.y + 3, prop.w - 6, prop.h - 6);
-      return;
-    }
-
-    if (prop.shape === "tree") {
-      ctx.fillStyle = "#3d2a1b";
-      ctx.fillRect(prop.x + Math.round(prop.w / 2) - 6, prop.y + prop.h - 26, 12, 26);
-      ctx.fillStyle = "#274e2f";
-      ctx.fillRect(prop.x + 6, prop.y + 10, prop.w - 12, 22);
-      ctx.fillStyle = "#35663e";
-      ctx.fillRect(prop.x + 2, prop.y + 22, prop.w - 4, 18);
-      ctx.fillStyle = "#4d8c52";
-      ctx.fillRect(prop.x + 10, prop.y, prop.w - 20, 18);
-      return;
-    }
-
-    if (prop.shape === "column") {
-      ctx.fillStyle = "#90918f";
-      ctx.fillRect(prop.x, prop.y + 6, prop.w, prop.h - 6);
-      ctx.fillStyle = "#b4b5b2";
-      ctx.fillRect(prop.x + 2, prop.y + 10, prop.w - 4, prop.h - 12);
-      ctx.fillStyle = "#6d6e6b";
-      ctx.fillRect(prop.x - 3, prop.y + prop.h - 8, prop.w + 6, 8);
-      return;
-    }
-
-    if (prop.shape === "bench") {
-      ctx.fillStyle = "#6b472f";
-      ctx.fillRect(prop.x, prop.y + 12, prop.w, 8);
-      ctx.fillRect(prop.x + 4, prop.y, prop.w - 8, 8);
-      ctx.fillRect(prop.x + 8, prop.y + 20, 4, 10);
-      ctx.fillRect(prop.x + prop.w - 12, prop.y + 20, 4, 10);
-    }
-  }
-
   private render() {
     const { ctx } = this;
     const { width, height, tileSize } = this.map;
@@ -452,11 +359,11 @@ export class SanctuaryCanvasEngine {
     const pixelHeight = height * tileSize;
 
     ctx.clearRect(0, 0, pixelWidth, pixelHeight);
-    this.drawBackground();
+    drawSceneBackground(ctx, this.map);
 
     const backProps = this.map.props.filter((prop) => prop.layer === "back");
     const frontProps = this.map.props.filter((prop) => prop.layer === "front");
-    backProps.forEach((prop) => this.drawProp(prop));
+    backProps.forEach((prop) => drawSceneProp(ctx, prop, this.atlasImages));
 
     const actors = [
       {
@@ -499,9 +406,9 @@ export class SanctuaryCanvasEngine {
       drawSpeechBubble(ctx, actor.bubble, drawX, drawY - 8);
     });
 
-    frontProps.forEach((prop) => this.drawProp(prop));
+    frontProps.forEach((prop) => drawSceneProp(ctx, prop, this.atlasImages));
 
-    if (!this.libraryAtlas && this.sceneKind !== "garden") {
+    if (Object.keys(this.atlasImages).length === 0 && this.sceneKind !== "garden") {
       ctx.fillStyle = "#f0d6b0";
       ctx.font = "bold 10px monospace";
       ctx.fillText("Cargando atlas...", 12, pixelHeight - 12);

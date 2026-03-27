@@ -1,7 +1,5 @@
 import type { SceneKind, SceneMap } from "@/lib/sanctuary/canvas/types";
 
-export const LIBRARY_ATLAS_URL = "/game/atlases/library-props.png";
-
 const libraryWall = { x: 747, y: 0, w: 741, h: 160 } as const;
 const rugLarge = { x: 451, y: 4, w: 159, h: 61 } as const;
 const rugSmall = { x: 451, y: 76, w: 155, h: 60 } as const;
