@@ -605,11 +605,15 @@ function AtlasSourcePreview({
   atlasImage,
   viewportOrigin,
   onViewportChange,
+  width = 220,
+  height = 136,
 }: {
   source: NonNullable<SceneProp["source"]>;
   atlasImage: HTMLImageElement | null;
   viewportOrigin?: AtlasViewportOrigin | null;
   onViewportChange?: (next: AtlasViewportOrigin) => void;
+  width?: number;
+  height?: number;
 }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const dragStateRef = useRef<{
@@ -641,8 +645,6 @@ function AtlasSourcePreview({
       return;
     }
 
-    const width = 220;
-    const height = 136;
     canvas.width = width;
     canvas.height = height;
     ctx.imageSmoothingEnabled = false;
@@ -771,6 +773,7 @@ export function SceneEditor() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const viewportShellRef = useRef<HTMLDivElement | null>(null);
   const dragRef = useRef<DragState | null>(null);
+  const lastNonEmptySelectionRef = useRef<Exclude<Selection, null> | null>(null);
   const [atlasImages, setAtlasImages] = useState<Partial<Record<string, HTMLImageElement>>>({});
   const [atlasViewPositions, setAtlasViewPositions] = useState<Record<string, AtlasViewportOrigin>>(() => loadAtlasViewPositions());
   const [drafts, setDrafts] = useState<EditorDrafts>(() => loadDrafts());
@@ -783,6 +786,7 @@ export function SceneEditor() {
   const [showGrid, setShowGrid] = useState(true);
   const [importBuffer, setImportBuffer] = useState("");
   const [flash, setFlash] = useState("");
+  const [isAtlasInspectorOpen, setIsAtlasInspectorOpen] = useState(false);
   const scene = drafts[sceneKind];
   const selectedProp = selection?.kind === "prop" ? findProp(scene, selection.id) : null;
   const selectedCatalog = catalog.find((item) => item.key === selectedCatalogKey) ?? null;
@@ -865,6 +869,18 @@ export function SceneEditor() {
   }, [flash]);
 
   useEffect(() => {
+    if (!selectedProp?.source) {
+      setIsAtlasInspectorOpen(false);
+    }
+  }, [selectedProp]);
+
+  useEffect(() => {
+    if (selection) {
+      lastNonEmptySelectionRef.current = selection;
+    }
+  }, [selection]);
+
+  useEffect(() => {
     window.render_game_to_text = () =>
       JSON.stringify({
         mode: "editor-escenas",
@@ -877,6 +893,7 @@ export function SceneEditor() {
         seatLocal: scene.seatLocal ?? null,
         wanderNodes: scene.wanderNodes.length,
         remoteSlots: scene.remoteSlots.length,
+        atlasInspectorOpen: isAtlasInspectorOpen,
         atlasView:
           selectedPropAtlasViewKey && atlasViewPositions[selectedPropAtlasViewKey]
             ? atlasViewPositions[selectedPropAtlasViewKey]
@@ -901,10 +918,16 @@ export function SceneEditor() {
       delete window.render_game_to_text;
       delete window.advanceTime;
     };
-  }, [scene, tool, selection, atlasViewPositions, selectedPropAtlasViewKey]);
+  }, [scene, tool, selection, atlasViewPositions, selectedPropAtlasViewKey, isAtlasInspectorOpen]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && isAtlasInspectorOpen) {
+        event.preventDefault();
+        setIsAtlasInspectorOpen(false);
+        return;
+      }
+
       if (event.key !== "Delete" && event.key !== "Backspace") {
         return;
       }
@@ -919,7 +942,7 @@ export function SceneEditor() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selection, scene]);
+  }, [isAtlasInspectorOpen, selection, scene]);
 
   function renderCanvas() {
     const canvas = canvasRef.current;
@@ -999,7 +1022,7 @@ export function SceneEditor() {
     });
   }
 
-  function toSceneCoordinates(event: React.PointerEvent<HTMLCanvasElement>) {
+  function toSceneCoordinates(event: React.PointerEvent<HTMLCanvasElement> | React.MouseEvent<HTMLCanvasElement>) {
     const canvas = canvasRef.current;
     if (!canvas) {
       return { x: 0, y: 0 };
@@ -1022,6 +1045,30 @@ export function SceneEditor() {
       } else if (target.kind === "remoteSlots") {
         draft.remoteSlots[target.index] = point;
       }
+    });
+  }
+
+  function moveSelectionToPointer(target: Exclude<Selection, null> | null, pointerX: number, pointerY: number) {
+    if (!target) {
+      return;
+    }
+
+    if (target.kind === "prop") {
+      updateScene((draft) => {
+        const prop = draft.props.find((entry) => entry.id === target.id);
+        if (!prop) {
+          return;
+        }
+
+        prop.x = clamp(snapPixel(pointerX - prop.w / 2), 0, draft.width * draft.tileSize - prop.w);
+        prop.y = clamp(snapPixel(pointerY - prop.h / 2), 0, draft.height * draft.tileSize - prop.h);
+      });
+      return;
+    }
+
+    updateMarkerPoint(target, {
+      x: clamp(snapTile(pointerX / scene.tileSize), 0, scene.width),
+      y: clamp(snapTile(pointerY / scene.tileSize), 0, scene.height),
     });
   }
 
@@ -1174,6 +1221,16 @@ export function SceneEditor() {
 
   function handleCanvasPointerUp() {
     dragRef.current = null;
+  }
+
+  function handleCanvasDoubleClick(event: React.MouseEvent<HTMLCanvasElement>) {
+    const target = selection ?? lastNonEmptySelectionRef.current;
+    if (!target) {
+      return;
+    }
+
+    const { x, y } = toSceneCoordinates(event);
+    moveSelectionToPointer(target, x, y);
   }
 
   function updateSelectedProp(mutator: (prop: SceneProp) => void) {
@@ -1549,6 +1606,7 @@ export function SceneEditor() {
                 onPointerMove={handleCanvasPointerMove}
                 onPointerUp={handleCanvasPointerUp}
                 onPointerLeave={handleCanvasPointerUp}
+                onDoubleClick={handleCanvasDoubleClick}
               />
             </div>
           </div>
@@ -1558,7 +1616,7 @@ export function SceneEditor() {
               <div>
                 <p className="font-headline text-[10px] font-bold uppercase tracking-[0.24em] text-outline">Flujo</p>
                 <p className="mt-2 text-sm leading-relaxed text-on-surface-variant">
-                  1. Elige escena. 2. Coloca props o markers. 3. Ajusta propiedades. 4. Exporta el JSON.
+                  1. Elige escena. 2. Coloca props o markers. 3. Ajusta propiedades. 4. Haz doble clic en el canvas para mandar la selección al ratón. 5. Exporta el JSON.
                 </p>
               </div>
               {flash ? (
@@ -1755,7 +1813,7 @@ export function SceneEditor() {
                         Recorte del atlas
                       </p>
                       <p className="mt-1 text-xs leading-relaxed text-on-surface-variant">
-                        Ajusta `x`, `y`, `w` y `h` del sprite original si el recorte viene mal o se está comiendo parte del elemento. Puedes arrastrar la vista con el ratón y se recordará por pieza. Al recortar, el tamaño visible mantendrá la misma escala.
+                        Ajusta `x`, `y`, `w` y `h` del sprite original si el recorte viene mal o se está comiendo parte del elemento. La vista grande del atlas ahora se abre fuera del flujo para que no apriete el inspector.
                       </p>
                     </div>
 
@@ -1789,18 +1847,23 @@ export function SceneEditor() {
                       </select>
                     </label>
 
-                    <AtlasSourcePreview
-                      source={selectedProp.source}
-                      atlasImage={selectedPropAtlasImage}
-                      viewportOrigin={selectedPropAtlasView}
-                      onViewportChange={(next) => {
-                        if (!selectedPropAtlasViewKey) return;
-                        setAtlasViewPositions((current) => ({
-                          ...current,
-                          [selectedPropAtlasViewKey]: next,
-                        }));
-                      }}
-                    />
+                    <div className="flex items-center justify-between gap-3 border border-outline-variant bg-surface-variant px-3 py-3">
+                      <div>
+                        <p className="font-headline text-[10px] font-bold uppercase tracking-[0.16em] text-outline">
+                          Vista del atlas
+                        </p>
+                        <p className="mt-1 text-xs leading-relaxed text-on-surface-variant">
+                          Ábrela en grande para moverte mejor por la hoja y ajustar el recorte con más aire.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setIsAtlasInspectorOpen(true)}
+                        className="shrink-0 border border-primary bg-primary/12 px-3 py-2 font-headline text-[10px] font-bold uppercase tracking-[0.16em] text-primary"
+                      >
+                        Abrir atlas grande
+                      </button>
+                    </div>
 
                     <div className="grid grid-cols-2 gap-3">
                       <label className="space-y-1">
@@ -1995,6 +2058,88 @@ export function SceneEditor() {
           </div>
         </aside>
       </section>
+
+      {isAtlasInspectorOpen && selectedProp?.source ? (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/72 px-4 py-6 backdrop-blur-sm">
+          <div className="w-full max-w-5xl border border-outline-variant bg-surface-container-lowest shadow-[0_28px_80px_rgba(0,0,0,0.45)]">
+            <div className="flex flex-wrap items-start justify-between gap-4 border-b border-outline-variant px-5 py-4">
+              <div>
+                <p className="font-headline text-[10px] font-bold uppercase tracking-[0.24em] text-outline">
+                  Atlas ampliado
+                </p>
+                <h3 className="mt-2 font-headline text-2xl font-black uppercase tracking-tight text-on-surface">
+                  {getAtlasMeta(selectedProp.atlas)?.label ?? "Atlas"}
+                </h3>
+                <p className="mt-2 max-w-2xl text-sm leading-relaxed text-on-surface-variant">
+                  Arrastra la vista para moverte por la hoja. El recorte sigue controlándose desde `Source X/Y/W/H` y la posición se guarda por pieza.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsAtlasInspectorOpen(false)}
+                className="border border-outline-variant bg-surface px-3 py-2 font-headline text-[10px] font-bold uppercase tracking-[0.16em] text-on-surface"
+              >
+                Cerrar
+              </button>
+            </div>
+
+            <div className="grid gap-5 px-5 py-5 lg:grid-cols-[minmax(0,1fr)_16rem]">
+              <div className="border border-outline-variant bg-surface p-3">
+                <AtlasSourcePreview
+                  source={selectedProp.source}
+                  atlasImage={selectedPropAtlasImage}
+                  viewportOrigin={selectedPropAtlasView}
+                  width={720}
+                  height={460}
+                  onViewportChange={(next) => {
+                    if (!selectedPropAtlasViewKey) return;
+                    setAtlasViewPositions((current) => ({
+                      ...current,
+                      [selectedPropAtlasViewKey]: next,
+                    }));
+                  }}
+                />
+              </div>
+
+              <div className="space-y-3">
+                <div className="border border-outline-variant bg-surface px-3 py-3">
+                  <p className="font-headline text-[10px] font-bold uppercase tracking-[0.16em] text-outline">
+                    Pieza activa
+                  </p>
+                  <p className="mt-2 font-headline text-sm font-black uppercase tracking-[0.16em] text-on-surface">
+                    {selectedProp.id}
+                  </p>
+                  <p className="mt-2 text-xs leading-relaxed text-on-surface-variant">
+                    Doble clic en el canvas principal para recolocar esta pieza rápidamente.
+                  </p>
+                </div>
+
+                <div className="border border-outline-variant bg-surface px-3 py-3">
+                  <p className="font-headline text-[10px] font-bold uppercase tracking-[0.16em] text-outline">
+                    Recorte actual
+                  </p>
+                  <div className="mt-3 grid grid-cols-2 gap-2 text-sm text-on-surface">
+                    <span>X: {selectedProp.source.x}</span>
+                    <span>Y: {selectedProp.source.y}</span>
+                    <span>W: {selectedProp.source.w}</span>
+                    <span>H: {selectedProp.source.h}</span>
+                  </div>
+                </div>
+
+                <div className="border border-outline-variant bg-surface px-3 py-3">
+                  <p className="font-headline text-[10px] font-bold uppercase tracking-[0.16em] text-outline">
+                    Escala visual
+                  </p>
+                  <p className="mt-2 font-headline text-lg font-black uppercase tracking-[0.14em] text-primary">
+                    {getPropScaleValue(selectedProp)}x
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
