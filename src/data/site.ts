@@ -72,7 +72,7 @@ export const siteContent = {
       titleStart: "Santuario",
       titleAccent: "silencioso",
       description:
-        "Cuando quieras estudiar a solas, este ala te reserva una mesa, un reloj y el silencio suficiente para sostener el ritmo sin ruido social.",
+        "Cuando quieras estudiar a solas, esta sala te ofrece una mesa, un reloj y el silencio necesario para mantener el ritmo sin distracciones sociales.",
       primaryCta: "Entrar al santuario",
       primaryHref: "/estudio",
       secondaryCta: "Ver los espacios",
