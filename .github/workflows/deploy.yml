@@ -17,7 +17,9 @@ jobs:
         username: ${{ secrets.VPS_USER }}
         password: ${{ secrets.VPS_PASSWORD }}
         script: |
+          set -e
           cd /var/www/Scholar-s_Sanctuary
+          git config --global --add safe.directory /var/www/Scholar-s_Sanctuary
           git pull origin main
           npm install
           npm run build
