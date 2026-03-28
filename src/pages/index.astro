@@ -65,24 +65,26 @@ const { dashboard } = siteContent;
           const Icon = ICONS[item.icon];
           return (
             <div class="md:col-span-3">
-              <PixelCard variant="low" class="h-full flex flex-col gap-4">
-                <div class="w-12 h-12 bg-surface-container-highest flex items-center justify-center border-b-4 border-secondary-container">
-                  <Icon className={item.icon === "History" ? "text-tertiary" : "text-primary"} size={24} />
+              <PixelCard variant="low" class="h-full flex flex-col">
+                <div class="flex h-full flex-col gap-6">
+                  <div class="w-12 h-12 bg-surface-container-highest flex items-center justify-center border-b-4 border-secondary-container">
+                    <Icon className={item.icon === "History" ? "text-tertiary" : "text-primary"} size={24} />
+                  </div>
+                  <div class="space-y-3">
+                    <h4 class="font-headline font-bold uppercase tracking-widest text-on-surface text-sm">{item.title}</h4>
+                    <p class="text-xs text-outline font-body leading-relaxed">{item.description}</p>
+                  </div>
+                  <PixelButton href={item.href} variant="ghost" fullWidth={true} class={`mt-auto border-2 ${item.accentClass}`}>
+                    {item.cta}
+                  </PixelButton>
                 </div>
-                <div>
-                  <h4 class="font-headline font-bold uppercase tracking-widest text-on-surface text-sm">{item.title}</h4>
-                  <p class="text-xs text-outline mt-1 font-body">{item.description}</p>
-                </div>
-                <PixelButton href={item.href} variant="ghost" fullWidth={true} class={`mt-auto border-2 ${item.accentClass}`}>
-                  {item.cta}
-                </PixelButton>
               </PixelCard>
             </div>
           );
         })}
 
         <div class="md:col-span-6">
-          <PixelCard variant="default" class="relative overflow-hidden group">
+          <PixelCard variant="default" class="relative h-full overflow-hidden group">
             <div class="absolute top-0 right-0 w-24 h-24 dither-bg opacity-10"></div>
             <div class="flex items-start justify-between gap-6">
               <div class="max-w-[60%]">
