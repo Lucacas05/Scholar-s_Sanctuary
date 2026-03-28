@@ -1,23 +1,23 @@
 # Lumina
 
-<div align="center">
-  <img width="1200" height="475" alt="Lumina banner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+Lumina es una experiencia de estudio con estética de fantasía construida con Astro, Tailwind CSS v4 y islas de React para las partes interactivas. La propuesta actual funciona como un santuario social de estudio: una biblioteca central, una sala silenciosa privada, una biblioteca compartida, un jardín para descansos, un editor de personaje y crónicas que crecen a partir de sesiones reales de Pomodoro.
 
-Lumina is a fantasy-styled study product built with Astro, Tailwind CSS v4, and React islands for the interactive parts. The current direction is a social study sanctuary: a hub in the library, a private silent room, a shared library, a garden for breaks, a character editor, and chronicles that grow from real Pomodoro sessions.
+## Sitio web activo
 
-The project currently ships its interface in Spanish while preserving the original visual identity and the `Lumina` brand.
+La página web está actualmente activa en:
 
-## Highlights
+https://luminalibrary.duckdns.org/
 
-- Biblioteca as a portal toward the sanctuary spaces
-- Santuario silencioso with an editable Pomodoro timer
-- Biblioteca compartida and jardin backed by local sanctuary state
-- Refinar with a modular avatar editor
-- Cronicas e hitos driven by real Pomodoro sessions stored in the browser
-- Responsive Astro routes with client-only React islands where state is needed
+## Características principales
 
-## Tech Stack
+- Biblioteca como portal hacia los distintos espacios del santuario
+- Santuario silencioso con temporizador Pomodoro editable
+- Biblioteca compartida y jardín con estado local del santuario
+- Refinar con editor modular de avatar
+- Crónicas e hitos impulsados por sesiones reales de Pomodoro guardadas en el navegador
+- Rutas responsivas en Astro con islas de React solo donde hace falta estado
+
+## Tecnologías
 
 - Astro 5
 - React 19
@@ -25,61 +25,47 @@ The project currently ships its interface in Spanish while preserving the origin
 - Tailwind CSS 4
 - Lucide React
 
-## Run Locally
+## Ejecutar en local
 
-### Prerequisites
+### Requisitos
 
-- Node.js 18+
+- Node.js 18 o superior
 - npm
 
-### Setup
+### Instalación
 
-1. Install dependencies:
+1. Instala las dependencias:
 
    ```bash
    npm install
    ```
 
-2. Start the development server:
+2. Inicia el servidor de desarrollo:
 
    ```bash
    npm run dev
    ```
 
-3. Open [http://localhost:3000](http://localhost:3000).
+3. Abre [http://localhost:3000](http://localhost:3000).
 
-## Available Scripts
+## Scripts disponibles
 
-- `npm run dev` starts the Astro dev server on port `3000`
-- `npm run build` creates a production build
-- `npm run preview` serves the production build locally
-- `npm run lint` runs `astro check`
-- `npm run clean` removes the `dist` directory
+- `npm run dev` inicia el servidor de desarrollo de Astro en el puerto `3000`
+- `npm run build` genera la versión de producción
+- `npm run preview` sirve la versión de producción en local
+- `npm run lint` ejecuta `astro check`
+- `npm run clean` elimina el directorio `dist`
 
-## Project Structure
+## Estructura del proyecto
 
 ```text
-docs/         Workflow and integration notes for the repo
-references/   Local design references that should not become Astro routes
+docs/         Notas de flujo de trabajo e integración del repositorio
+references/   Referencias visuales locales que no deben convertirse en rutas de Astro
 src/
-  components/   Reusable Astro UI building blocks
-  data/         Centralized Spanish content and asset references
-  islands/      Interactive React islands
-  layouts/      Shared Astro layouts
-  pages/        Astro routes
-  lib/          Shared runtime helpers such as icon mapping
+  components/   Bloques de interfaz reutilizables en Astro
+  data/         Contenido centralizado en español y referencias de assets
+  islands/      Islas interactivas de React
+  layouts/      Layouts compartidos
+  pages/        Rutas de Astro
+  lib/          Utilidades compartidas en tiempo de ejecución, como el mapeo de iconos
 ```
-
-## Integration Guardrails
-
-- `faby` is the working branch for product evolution.
-- The Astro route structure is the baseline and must stay intact.
-- Spanish is the source language for visible UI copy, except for the brand name.
-- Future changes from `main` should be reviewed and ported selectively instead of merged blindly.
-- Visual references should live outside `src/pages` so Astro does not publish them as routes.
-
-See [`docs/faby-integration-workflow.md`](docs/faby-integration-workflow.md) for the sync workflow.
-
-## AI Studio
-
-Original AI Studio app link: [ai.studio/apps/2e4ee65b-30ce-4d0d-bfb9-a3ffa274c1ec](https://ai.studio/apps/2e4ee65b-30ce-4d0d-bfb9-a3ffa274c1ec)
