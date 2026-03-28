@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "astro dev --host 0.0.0.0 --port 3000",
     "build": "astro build",
+    "start": "node dist/server/entry.mjs",
     "preview": "astro preview --host 0.0.0.0 --port 3000",
     "clean": "rm -rf dist",
     "lint": "astro check"

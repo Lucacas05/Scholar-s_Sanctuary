@@ -21,3 +21,5 @@ jobs:
           git pull origin main
           npm install
           npm run build
+          sudo systemctl restart lumina
+          sudo systemctl --no-pager --full status lumina
