@@ -64,7 +64,7 @@ const { dashboard } = siteContent;
         {dashboard.spaces.secondaryLinks.map((item) => {
           const Icon = ICONS[item.icon];
           return (
-            <div class="md:col-span-3">
+            <div class="md:col-span-6 lg:col-span-4">
               <PixelCard variant="low" class="h-full flex flex-col">
                 <div class="flex h-full flex-col gap-6">
                   <div class="w-12 h-12 bg-surface-container-highest flex items-center justify-center border-b-4 border-secondary-container">
@@ -83,14 +83,20 @@ const { dashboard } = siteContent;
           );
         })}
 
-        <div class="md:col-span-6">
+        <div class="md:col-span-6 lg:col-span-4">
           <PixelCard variant="default" class="relative h-full overflow-hidden group">
             <div class="absolute top-0 right-0 w-24 h-24 dither-bg opacity-10"></div>
-            <div class="flex items-start justify-between gap-6">
-              <div class="max-w-[60%]">
-                <h4 class="font-headline font-black uppercase text-2xl tracking-tighter text-secondary">{dashboard.progressPanel.title}</h4>
-                <p class="text-sm text-on-surface-variant mt-2 font-body">{dashboard.progressPanel.description}</p>
-                <div class="mt-6">
+            <div class="flex h-full flex-col gap-6">
+              <div class="flex items-start justify-between gap-4">
+                <div class="flex flex-1 flex-col pt-3">
+                  <h4 class="font-headline text-xl font-black uppercase tracking-tighter text-secondary xl:text-2xl">{dashboard.progressPanel.title}</h4>
+                  <p class="mt-3 text-sm leading-relaxed text-on-surface-variant font-body">{dashboard.progressPanel.description}</p>
+                </div>
+                <div class="h-20 w-20 shrink-0 bg-surface-container-highest border-4 border-outline-variant flex items-center justify-center p-2 xl:h-24 xl:w-24">
+                  <img src={images.questBadge} alt={dashboard.progressPanel.alt} class="w-full h-full" loading="lazy" decoding="async" />
+                </div>
+              </div>
+              <div class="mt-auto pt-2">
                   <div class="w-full h-4 bg-tertiary-container relative">
                     <div class="absolute inset-y-0 left-0 bg-primary w-[65%] flex items-center justify-end pr-1">
                       <ICONS.Flame className="text-on-primary animate-pulse" size={10} />
@@ -100,10 +106,6 @@ const { dashboard } = siteContent;
                     <span class="text-[10px] font-headline font-bold uppercase text-outline">{dashboard.progressPanel.progressLabel}</span>
                     <span class="text-[10px] font-headline font-bold uppercase text-primary">{dashboard.progressPanel.progressValue}</span>
                   </div>
-                </div>
-              </div>
-              <div class="w-24 h-24 bg-surface-container-highest border-4 border-outline-variant flex items-center justify-center p-2 shrink-0">
-                <img src={images.questBadge} alt={dashboard.progressPanel.alt} class="w-full h-full" loading="lazy" decoding="async" />
               </div>
             </div>
           </PixelCard>
