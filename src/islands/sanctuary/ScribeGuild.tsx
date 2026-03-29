@@ -26,6 +26,7 @@ import {
   sanctuaryActions,
   useSanctuaryStore,
 } from "@/lib/sanctuary/store";
+import { ErrorBlock } from "@/islands/sanctuary/ErrorBlock";
 import * as realtime from "@/lib/sanctuary/realtime";
 import type { ServerMessage } from "@/lib/server/ws-types";
 
@@ -245,6 +246,7 @@ export function ScribeGuild() {
     null,
   );
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState(false);
   const ownedRooms = rooms.filter(
     (room) => room.ownerId === sanctuary.currentUserId,
   );
@@ -281,9 +283,12 @@ export function ScribeGuild() {
             }),
           ),
         );
+        setLoadError(false);
+      } else {
+        setLoadError(true);
       }
     } catch {
-      /* network error — keep previous state */
+      setLoadError(true);
     }
   }, []);
 
@@ -378,8 +383,8 @@ export function ScribeGuild() {
     }
   }, []);
 
-  useEffect(() => {
-    if (isAnonymous) return;
+  const reloadAll = useCallback(() => {
+    setLoadError(false);
     fetchFriends();
     fetchRequests();
     fetchRooms();
@@ -393,6 +398,11 @@ export function ScribeGuild() {
     fetchRooms,
     fetchSocialMetrics,
   ]);
+
+  useEffect(() => {
+    if (isAnonymous) return;
+    reloadAll();
+  }, [isAnonymous, reloadAll]);
 
   useEffect(() => {
     if (isAnonymous) return;
@@ -808,6 +818,15 @@ export function ScribeGuild() {
           </button>
         </div>
       </section>
+
+      {loadError && (
+        <div className="gsap-rise">
+          <ErrorBlock
+            message="No se pudieron cargar los datos del gremio."
+            onRetry={reloadAll}
+          />
+        </div>
+      )}
 
       {feedback ? (
         <div

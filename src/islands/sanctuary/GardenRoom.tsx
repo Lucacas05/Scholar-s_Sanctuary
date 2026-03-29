@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { MessageSquareQuote, Trees } from "lucide-react";
+import { MessageSquareQuote, Shrub, Trees } from "lucide-react";
+import { EmptyState } from "@/islands/sanctuary/EmptyState";
 import {
   getCurrentPresence,
   getCurrentRoom,
@@ -147,7 +148,23 @@ export function GardenRoom({ backgroundUrl: _backgroundUrl }: GardenRoomProps) {
   }
 
   if (!currentRoom) {
-    return null;
+    return (
+      <div className="bg-surface-container pixel-border">
+        <EmptyState
+          icon={Shrub}
+          title="Ninguna sala seleccionada"
+          description="Entra a la biblioteca compartida primero para que el jardín de descanso se active con tu sala."
+          action={
+            <a
+              href="/biblioteca-compartida"
+              className="inline-flex items-center justify-center gap-2 border-b-[3px] border-on-tertiary-fixed-variant bg-tertiary px-5 py-3 font-headline text-xs font-bold uppercase tracking-widest text-on-tertiary"
+            >
+              Ir a la biblioteca
+            </a>
+          }
+        />
+      </div>
+    );
   }
 
   return (

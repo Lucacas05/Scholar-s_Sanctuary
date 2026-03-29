@@ -1683,12 +1683,11 @@ function readStoredState() {
     return createInitialState();
   }
 
-  const raw = window.localStorage.getItem(STORAGE_KEY);
-  if (!raw) {
-    return createInitialState();
-  }
-
   try {
+    const raw = window.localStorage?.getItem(STORAGE_KEY);
+    if (!raw) {
+      return createInitialState();
+    }
     return normalizeStoredState(JSON.parse(raw)) ?? createInitialState();
   } catch {
     return createInitialState();
@@ -2114,7 +2113,11 @@ function persistState() {
     return;
   }
 
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(currentState));
+  try {
+    window.localStorage?.setItem(STORAGE_KEY, JSON.stringify(currentState));
+  } catch {
+    // localStorage may be unavailable (e.g. in tests or private browsing)
+  }
   channel?.postMessage(currentState);
 }
 
@@ -2205,8 +2208,12 @@ export function __resetSanctuaryStoreForTests() {
   hydrated = false;
   currentState = createInitialState();
 
-  if (isBrowser()) {
-    window.localStorage.removeItem(STORAGE_KEY);
+  try {
+    if (isBrowser() && window.localStorage) {
+      window.localStorage.removeItem(STORAGE_KEY);
+    }
+  } catch {
+    // localStorage may be unavailable in test environments
   }
 }
 

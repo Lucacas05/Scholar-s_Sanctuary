@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { BarChart3, Clock, Flame, TrendingUp, Zap } from "lucide-react";
+import { ErrorBlock } from "@/islands/sanctuary/ErrorBlock";
 
 interface DailyEntry {
   day: string;
@@ -158,17 +159,21 @@ export function PomodoroAnalytics() {
   const [stats, setStats] = useState<PomodoroStats | null>(null);
   const [range, setRange] = useState<"weekly" | "monthly">("weekly");
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
-  useEffect(() => {
+  const fetchStats = useCallback((currentRange: "weekly" | "monthly") => {
     let cancelled = false;
 
     setLoading(true);
-    fetch(`/api/pomodoro/stats?range=${range}`)
-      .then((r) => (r.ok ? r.json() : null))
+    setError(false);
+    fetch(`/api/pomodoro/stats?range=${currentRange}`)
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error("fetch"))))
       .then((data) => {
-        if (!cancelled && data) setStats(data);
+        if (!cancelled) setStats(data);
       })
-      .catch(() => {})
+      .catch(() => {
+        if (!cancelled) setError(true);
+      })
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
@@ -176,12 +181,25 @@ export function PomodoroAnalytics() {
     return () => {
       cancelled = true;
     };
-  }, [range]);
+  }, []);
+
+  useEffect(() => fetchStats(range), [range, fetchStats]);
 
   if (loading && !stats) {
     return (
       <div className="bg-surface-container pixel-border p-6">
         <p className="text-sm text-on-surface-variant">Cargando analíticas…</p>
+      </div>
+    );
+  }
+
+  if (error && !stats) {
+    return (
+      <div className="bg-surface-container pixel-border p-6">
+        <ErrorBlock
+          message="No se pudieron cargar las analíticas."
+          onRetry={() => fetchStats(range)}
+        />
       </div>
     );
   }
