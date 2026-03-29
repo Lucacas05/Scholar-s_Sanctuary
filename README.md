@@ -53,6 +53,7 @@ https://luminalibrary.duckdns.org/
 - `npm run dev` inicia el servidor de desarrollo de Astro en el puerto `3000`
 - `npm run build` genera la versión de producción
 - `npm run preview` sirve la versión de producción en local
+- `npm run db:check` valida integridad SQLite y claves foráneas antes de desplegar
 - `npm run lint` ejecuta `astro check` y ESLint
 - `npm run typecheck` ejecuta `tsc --noEmit`
 - `npm run test` ejecuta la base de tests con Vitest
@@ -74,10 +75,12 @@ https://luminalibrary.duckdns.org/
 - Requiere estos secrets en GitHub:
   - `VPS_IP`
   - `VPS_USER`
-  - `VPS_PASSWORD`
+  - `VPS_SSH_KEY`
+  - `VPS_HOST_FINGERPRINT`
 - El workflow:
   - hace `git pull`
   - ejecuta `npm ci`
+  - valida SQLite con `npm run db:check`
   - construye la app
   - reinicia `lumina`
   - valida `/api/me` como health check

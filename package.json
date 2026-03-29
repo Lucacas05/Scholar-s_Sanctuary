@@ -9,6 +9,7 @@
     "start": "node dist/server/entry.mjs",
     "preview": "astro preview --host 0.0.0.0 --port 3000",
     "clean": "rm -rf dist",
+    "db:check": "node scripts/check-db-integrity.mjs",
     "lint": "npm run lint:astro && npm run lint:eslint",
     "lint:astro": "astro check",
     "lint:eslint": "eslint .",

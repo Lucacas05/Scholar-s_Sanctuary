@@ -11,11 +11,12 @@ jobs:
 
     steps:
       - name: Conectando al VPS y actualizando
-        uses: appleboy/ssh-action@v1.2.2
+        uses: appleboy/ssh-action@2ead5e36573f08b82fbfce1504f1a4b05a647c6f # v1.2.2
         with:
           host: ${{ secrets.VPS_IP }}
           username: ${{ secrets.VPS_USER }}
-          password: ${{ secrets.VPS_PASSWORD }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          fingerprint: ${{ secrets.VPS_HOST_FINGERPRINT }}
           script: |
             set -e
             export PATH="/usr/local/bin:/usr/bin:/bin:$PATH"
@@ -24,6 +25,7 @@ jobs:
             git pull origin main
             node --version
             npm ci
+            npm run db:check
             npm run build
             sudo systemctl restart lumina
             sleep 5

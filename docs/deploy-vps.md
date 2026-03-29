@@ -55,6 +55,23 @@ sudo systemctl reload nginx
 
 If you use Certbot, re-issue or attach TLS after the HTTP site works.
 
+## GitHub Actions secrets
+
+The deploy workflow expects:
+
+- `VPS_IP`
+- `VPS_USER`
+- `VPS_SSH_KEY`
+- `VPS_HOST_FINGERPRINT`
+
+To get the host fingerprint on the VPS:
+
+```bash
+ssh-keygen -l -f /etc/ssh/ssh_host_ed25519_key.pub | awk '{print $2}'
+```
+
+Copy the full private key into `VPS_SSH_KEY` including the `BEGIN/END OPENSSH PRIVATE KEY` lines.
+
 ## Deploys after setup
 
 The GitHub Action now pulls, installs, builds, and restarts `lumina`:
@@ -63,6 +80,7 @@ The GitHub Action now pulls, installs, builds, and restarts `lumina`:
 cd /var/www/Scholar-s_Sanctuary
 git pull origin main
 npm ci
+npm run db:check
 npm run build
 sudo systemctl restart lumina
 sudo systemctl status lumina --no-pager
