@@ -355,6 +355,132 @@ describe("vistas principales del santuario", () => {
     });
   });
 
+  it("muestra solicitudes enviadas con respuesta anidada del API", async () => {
+    authenticate();
+
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url =
+        typeof input === "string"
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url;
+
+      if (url.includes("/api/friends") && !url.includes("/requests")) {
+        return new Response(JSON.stringify({ friends: [] }), {
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      if (url.includes("/api/friends/requests")) {
+        return new Response(
+          JSON.stringify({
+            incoming: [],
+            outgoing: [
+              {
+                id: "req-1",
+                user: {
+                  id: "github-3",
+                  username: "ana",
+                  displayName: "Ana",
+                  avatarUrl: null,
+                },
+              },
+            ],
+          }),
+          { headers: { "Content-Type": "application/json" } },
+        );
+      }
+
+      if (url.endsWith("/api/rooms")) {
+        return new Response(JSON.stringify({ rooms: [] }), {
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      if (url.endsWith("/api/rooms/invitations")) {
+        return new Response(JSON.stringify({ invitations: [] }), {
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      return new Response(JSON.stringify({}), {
+        headers: { "Content-Type": "application/json" },
+      });
+    });
+
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<ScribeGuild />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Solicitudes/)).toBeTruthy();
+    });
+
+    fireEvent.click(screen.getByText(/Solicitudes/));
+
+    await waitFor(() => {
+      expect(screen.getByText("Ana")).toBeTruthy();
+    });
+    expect(screen.getByText("@ana")).toBeTruthy();
+    expect(screen.getByText("Pendiente")).toBeTruthy();
+  });
+
+  it("muestra error cuando falla la carga de solicitudes", async () => {
+    authenticate();
+
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url =
+        typeof input === "string"
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url;
+
+      if (url.includes("/api/friends") && !url.includes("/requests")) {
+        return new Response(JSON.stringify({ friends: [] }), {
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      if (url.includes("/api/friends/requests")) {
+        return new Response("Internal Server Error", { status: 500 });
+      }
+
+      if (url.endsWith("/api/rooms")) {
+        return new Response(JSON.stringify({ rooms: [] }), {
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      if (url.endsWith("/api/rooms/invitations")) {
+        return new Response(JSON.stringify({ invitations: [] }), {
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      return new Response(JSON.stringify({}), {
+        headers: { "Content-Type": "application/json" },
+      });
+    });
+
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<ScribeGuild />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Solicitudes/)).toBeTruthy();
+    });
+
+    fireEvent.click(screen.getByText(/Solicitudes/));
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("No se pudieron cargar las solicitudes enviadas."),
+      ).toBeTruthy();
+    });
+  });
+
   it("renderiza onboarding por pasos", () => {
     render(
       <OnboardingFlow

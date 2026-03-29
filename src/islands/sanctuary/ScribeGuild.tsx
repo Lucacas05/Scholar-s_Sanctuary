@@ -247,6 +247,7 @@ export function ScribeGuild() {
   );
   const [feedback, setFeedback] = useState<string | null>(null);
   const [loadError, setLoadError] = useState(false);
+  const [requestsError, setRequestsError] = useState(false);
   const ownedRooms = rooms.filter(
     (room) => room.ownerId === sanctuary.currentUserId,
   );
@@ -297,13 +298,35 @@ export function ScribeGuild() {
       const res = await fetch("/api/friends/requests");
       if (res.ok) {
         const data = await res.json();
-        setPendingRequests({
-          incoming: data.incoming ?? [],
-          outgoing: data.outgoing ?? [],
+        const mapRow = (row: {
+          id: string;
+          user?: {
+            id: string;
+            username: string;
+            displayName: string;
+            avatarUrl: string | null;
+          };
+          userId?: string;
+          username?: string;
+          displayName?: string;
+          avatarUrl?: string | null;
+        }): PendingRequest => ({
+          id: row.id,
+          userId: row.user?.id ?? row.userId ?? "",
+          username: row.user?.username ?? row.username ?? "",
+          displayName: row.user?.displayName ?? row.displayName ?? "",
+          avatarUrl: row.user?.avatarUrl ?? row.avatarUrl ?? null,
         });
+        setPendingRequests({
+          incoming: (data.incoming ?? []).map(mapRow),
+          outgoing: (data.outgoing ?? []).map(mapRow),
+        });
+        setRequestsError(false);
+      } else {
+        setRequestsError(true);
       }
     } catch {
-      /* network error */
+      setRequestsError(true);
     }
   }, []);
 
@@ -1132,7 +1155,14 @@ export function ScribeGuild() {
                   </span>
                 </div>
                 <div className="divide-y divide-surface-container-highest">
-                  {pendingRequests.outgoing.length === 0 ? (
+                  {requestsError ? (
+                    <div className="px-5 pb-4">
+                      <ErrorBlock
+                        message="No se pudieron cargar las solicitudes enviadas."
+                        onRetry={() => void fetchRequests()}
+                      />
+                    </div>
+                  ) : pendingRequests.outgoing.length === 0 ? (
                     <div className="px-5 pb-4">
                       <p className="text-xs text-on-surface-variant font-body">
                         No has enviado solicitudes.
