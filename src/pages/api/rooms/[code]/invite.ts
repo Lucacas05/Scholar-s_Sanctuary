@@ -11,38 +11,83 @@ const checkMembershipStatement = db.prepare(
 
 const findUserStatement = db.prepare("SELECT id FROM users WHERE id = ?");
 
-const findInvitationStatement = db.prepare(
-  `SELECT id, status
-   FROM room_invitations
-   WHERE room_code = ?
-     AND invitee_id = ?
-   LIMIT 1`,
+const findPendingInvitationStatement = db.prepare(
+  "SELECT id FROM room_invitations WHERE room_code = ? AND invitee_id = ? AND status = 'pending' AND revoked_at IS NULL AND (expires_at IS NULL OR expires_at > datetime('now'))",
 );
 
 const insertInvitationStatement = db.prepare(
-  `INSERT INTO room_invitations (
-     id,
-     room_code,
-     inviter_id,
-     invitee_id,
-     invite_code,
-     status,
-     expires_at
-   ) VALUES (?, ?, ?, ?, ?, 'pending', ?)`,
+  "INSERT INTO room_invitations (id, room_code, inviter_id, invitee_id, invite_code, expires_at, status) VALUES (?, ?, ?, ?, ?, ?, 'pending')",
 );
 
-const resetInvitationStatement = db.prepare(`
-  UPDATE room_invitations
-  SET inviter_id = ?,
-      invite_code = ?,
-      status = 'pending',
-      expires_at = ?,
-      accepted_at = NULL,
-      revoked_at = NULL
-  WHERE id = ?
+const selectActiveInvitationsStatement = db.prepare(`
+  SELECT
+    ri.id,
+    ri.invitee_id AS inviteeId,
+    ri.invite_code AS inviteCode,
+    ri.created_at AS createdAt,
+    ri.expires_at AS expiresAt,
+    u.username,
+    u.display_name AS displayName
+  FROM room_invitations ri
+  INNER JOIN users u ON u.id = ri.invitee_id
+  WHERE ri.room_code = ?
+    AND ri.status = 'pending'
+    AND ri.revoked_at IS NULL
+    AND (ri.expires_at IS NULL OR ri.expires_at > datetime('now'))
+  ORDER BY ri.created_at DESC
 `);
 
+const revokeInvitationStatement = db.prepare(
+  "UPDATE room_invitations SET revoked_at = datetime('now'), status = 'revoked' WHERE id = ? AND room_code = ?",
+);
+
 export const prerender = false;
+
+function inviteLink(roomCode: string, inviteCode: string) {
+  return `/social?codigo=${encodeURIComponent(roomCode)}&invite=${encodeURIComponent(inviteCode)}`;
+}
+
+export async function GET({ locals, params }: APIContext) {
+  if (!locals.user) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const room = selectRoomStatement.get(params.code) as
+    | { code: string; ownerId: string; privacy: "public" | "private" }
+    | undefined;
+
+  if (!room) {
+    return Response.json({ error: "Room not found" }, { status: 404 });
+  }
+
+  if (room.ownerId !== locals.user.id) {
+    return Response.json({ error: "Only owner can manage invitations" }, { status: 403 });
+  }
+
+  const invitations = (selectActiveInvitationsStatement.all(params.code) as {
+    id: string;
+    inviteeId: string;
+    inviteCode: string;
+    createdAt: string;
+    expiresAt: string | null;
+    username: string;
+    displayName: string;
+  }[]).map((row) => ({
+    id: row.id,
+    inviteeId: row.inviteeId,
+    inviteCode: row.inviteCode,
+    createdAt: row.createdAt,
+    expiresAt: row.expiresAt,
+    invitee: {
+      id: row.inviteeId,
+      username: row.username,
+      displayName: row.displayName,
+    },
+    inviteLink: inviteLink(params.code!, row.inviteCode),
+  }));
+
+  return Response.json({ invitations });
+}
 
 export async function POST({ locals, params, request }: APIContext) {
   if (!locals.user) {
@@ -63,13 +108,13 @@ export async function POST({ locals, params, request }: APIContext) {
     return Response.json({ error: "Room not found" }, { status: 404 });
   }
 
+  if (room.ownerId !== locals.user.id) {
+    return Response.json({ error: "Only owner can invite to this room" }, { status: 403 });
+  }
+
   const isMember = checkMembershipStatement.get(params.code, locals.user.id);
   if (!isMember) {
     return Response.json({ error: "Not a member of this room" }, { status: 403 });
-  }
-
-  if (room.ownerId !== locals.user.id) {
-    return Response.json({ error: "Only the room owner can issue invitations" }, { status: 403 });
   }
 
   const targetUser = findUserStatement.get(body.userId) as { id: string } | undefined;
@@ -82,38 +127,62 @@ export async function POST({ locals, params, request }: APIContext) {
     return Response.json({ error: "User is already a member" }, { status: 409 });
   }
 
-  const existingInvitation = findInvitationStatement.get(params.code, body.userId) as
-    | { id: string; status: string }
+  const existingInvitation = findPendingInvitationStatement.get(params.code, body.userId) as
+    | { id: string }
     | undefined;
-  if (existingInvitation?.status === "pending") {
+  if (existingInvitation) {
     return Response.json({ error: "Invitation already pending" }, { status: 409 });
   }
 
-  const id = crypto.randomUUID();
-  const inviteCode = crypto.randomUUID().replace(/-/g, "").slice(0, 10).toUpperCase();
-  const expiresInHours =
-    typeof body.expiresInHours === "number" && Number.isFinite(body.expiresInHours)
-      ? Math.min(24 * 14, Math.max(1, Math.round(body.expiresInHours)))
-      : 24 * 7;
-  const expiresAt = new Date(Date.now() + expiresInHours * 60 * 60 * 1000).toISOString();
+  const expiresInHours = Number.isFinite(body.expiresInHours) && (body.expiresInHours ?? 0) > 0
+    ? Math.min(168, Math.max(1, Math.round(body.expiresInHours!)))
+    : 72;
 
-  if (existingInvitation) {
-    resetInvitationStatement.run(locals.user.id, inviteCode, expiresAt, existingInvitation.id);
-  } else {
-    insertInvitationStatement.run(id, params.code, locals.user.id, body.userId, inviteCode, expiresAt);
-  }
+  const id = crypto.randomUUID();
+  const inviteCode = crypto.randomUUID().replace(/-/g, "").slice(0, 12).toUpperCase();
+  const expiresAt = new Date(Date.now() + expiresInHours * 3600 * 1000).toISOString();
+  insertInvitationStatement.run(id, params.code, locals.user.id, body.userId, inviteCode, expiresAt);
 
   return Response.json({
     invitation: {
-      id: existingInvitation?.id ?? id,
+      id,
       roomCode: params.code,
       inviterId: locals.user.id,
       inviteeId: body.userId,
       inviteCode,
+      inviteLink: inviteLink(params.code!, inviteCode),
       expiresAt,
-      privacy: room.privacy,
       status: "pending",
       createdAt: new Date().toISOString(),
     },
   });
+}
+
+export async function DELETE({ locals, params, request }: APIContext) {
+  if (!locals.user) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const room = selectRoomStatement.get(params.code) as
+    | { code: string; ownerId: string }
+    | undefined;
+  if (!room) {
+    return Response.json({ error: "Room not found" }, { status: 404 });
+  }
+
+  if (room.ownerId !== locals.user.id) {
+    return Response.json({ error: "Only owner can revoke invitations" }, { status: 403 });
+  }
+
+  const body = (await request.json().catch(() => null)) as { invitationId?: string } | null;
+  if (!body?.invitationId) {
+    return Response.json({ error: "invitationId is required" }, { status: 400 });
+  }
+
+  const result = revokeInvitationStatement.run(body.invitationId, params.code);
+  if (result.changes === 0) {
+    return Response.json({ error: "Invitation not found" }, { status: 404 });
+  }
+
+  return Response.json({ ok: true });
 }

@@ -1,6 +1,8 @@
 import type { APIContext } from "astro";
 import { db } from "@/lib/server/db";
 
+type RoomPrivacy = "public" | "private";
+
 const selectRoomsStatement = db.prepare(`
   SELECT
     r.code,
@@ -33,7 +35,7 @@ export async function GET({ locals }: APIContext) {
     code: string;
     name: string;
     ownerId: string;
-    privacy: "public" | "private";
+    privacy: RoomPrivacy;
     memberCount: number;
     createdAt: string;
   }[];
@@ -47,15 +49,14 @@ export async function POST({ locals, request }: APIContext) {
   }
 
   const body = (await request.json().catch(() => null)) as
-    | { name?: string; privacy?: "public" | "private" }
+    | { name?: string; privacy?: RoomPrivacy }
     | null;
   if (!body?.name) {
     return Response.json({ error: "Name is required" }, { status: 400 });
   }
 
-  const privacy = body.privacy === "public" ? "public" : "private";
-
-  const code = crypto.randomUUID().slice(0, 8);
+  const privacy: RoomPrivacy = body.privacy === "public" ? "public" : "private";
+  const code = crypto.randomUUID().slice(0, 8).toUpperCase();
 
   const insertRoom = db.transaction(() => {
     insertRoomStatement.run(code, body.name, locals.user!.id, privacy);
