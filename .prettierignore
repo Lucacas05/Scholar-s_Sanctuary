@@ -1,0 +1,8 @@
+dist
+node_modules
+output
+img
+references
+.playwright-cli
+data/sanctuary.db
+src/lib/server/schema.sql

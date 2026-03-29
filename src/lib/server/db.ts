@@ -11,9 +11,11 @@ const globalForDb = globalThis as typeof globalThis & {
 
 function getColumnNames(database: Database.Database, tableName: string) {
   return new Set(
-    (database.prepare(`PRAGMA table_info(${tableName})`).all() as Array<{ name: string }>).map(
-      (column) => column.name,
-    ),
+    (
+      database.prepare(`PRAGMA table_info(${tableName})`).all() as Array<{
+        name: string;
+      }>
+    ).map((column) => column.name),
   );
 }
 
@@ -28,10 +30,38 @@ function ensureColumn(
     return;
   }
 
-  database.exec(`ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${definition}`);
+  database.exec(
+    `ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${definition}`,
+  );
 }
 
 function runMigrations(database: Database.Database) {
+  database.exec(`
+    CREATE TABLE IF NOT EXISTS pomodoro_sessions (
+      id TEXT PRIMARY KEY,
+      client_session_id TEXT NOT NULL,
+      user_id TEXT NOT NULL REFERENCES users(id),
+      room_code TEXT NOT NULL,
+      room_kind TEXT NOT NULL,
+      focus_duration_seconds INTEGER NOT NULL,
+      break_duration_seconds INTEGER NOT NULL,
+      started_at TEXT NOT NULL,
+      completed_at TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'completed',
+      created_at TEXT DEFAULT (datetime('now')),
+      UNIQUE(user_id, client_session_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS achievement_unlocks (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id),
+      achievement_id TEXT NOT NULL,
+      unlocked_at TEXT NOT NULL,
+      created_at TEXT DEFAULT (datetime('now')),
+      UNIQUE(user_id, achievement_id)
+    );
+  `);
+
   ensureColumn(database, "users", "last_seen_at", "TEXT");
   ensureColumn(database, "rooms", "privacy", "TEXT NOT NULL DEFAULT 'private'");
   ensureColumn(database, "room_invitations", "invite_code", "TEXT");
@@ -61,13 +91,20 @@ function runMigrations(database: Database.Database) {
 
     CREATE INDEX IF NOT EXISTS idx_achievement_unlocks_user
       ON achievement_unlocks(user_id, unlocked_at DESC);
+
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_achievement_unlocks_user_achievement
+      ON achievement_unlocks(user_id, achievement_id);
   `);
 
   const rows = database
-    .prepare("SELECT id FROM room_invitations WHERE invite_code IS NULL OR invite_code = ''")
+    .prepare(
+      "SELECT id FROM room_invitations WHERE invite_code IS NULL OR invite_code = ''",
+    )
     .all() as { id: string }[];
 
-  const fillCode = database.prepare("UPDATE room_invitations SET invite_code = ? WHERE id = ?");
+  const fillCode = database.prepare(
+    "UPDATE room_invitations SET invite_code = ? WHERE id = ?",
+  );
   for (const row of rows) {
     fillCode.run(crypto.randomUUID().slice(0, 10).toUpperCase(), row.id);
   }

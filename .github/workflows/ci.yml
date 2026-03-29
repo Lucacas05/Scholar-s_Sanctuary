@@ -11,20 +11,26 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Descargar el repositorio
-      uses: actions/checkout@v4
+      - name: Descargar el repositorio
+        uses: actions/checkout@v4
 
-    - name: Preparar Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: 22
-        cache: npm
+      - name: Preparar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
 
-    - name: Instalar dependencias
-      run: npm ci
+      - name: Instalar dependencias
+        run: npm ci
 
-    - name: Revisar tipos y Astro
-      run: npm run lint
+      - name: Revisar tipos y Astro
+        run: npm run lint
 
-    - name: Construir la aplicación
-      run: npm run build
+      - name: Verificar TypeScript
+        run: npm run typecheck
+
+      - name: Ejecutar tests
+        run: npm run test
+
+      - name: Construir la aplicación
+        run: npm run build

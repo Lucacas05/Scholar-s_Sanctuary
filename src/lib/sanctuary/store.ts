@@ -275,19 +275,54 @@ export const garmentColorMeta: Record<
   AvatarGarmentColor,
   { label: string; description: string; source: string; swatch: string }
 > = {
-  amber: { label: "Ámbar", description: "Dorado cálido.", source: "Amber", swatch: "#b8782d" },
-  amethyst: { label: "Amatista", description: "Violeta profundo.", source: "Amethyst", swatch: "#6a4a8c" },
-  barberry: { label: "Agracejo", description: "Rojo oscuro.", source: "Barberry", swatch: "#7a2338" },
-  black: { label: "Negro", description: "Negro puro.", source: "Black", swatch: "#262223" },
-  blue: { label: "Azul", description: "Azul vivo.", source: "Blue", swatch: "#3d69a6" },
+  amber: {
+    label: "Ámbar",
+    description: "Dorado cálido.",
+    source: "Amber",
+    swatch: "#b8782d",
+  },
+  amethyst: {
+    label: "Amatista",
+    description: "Violeta profundo.",
+    source: "Amethyst",
+    swatch: "#6a4a8c",
+  },
+  barberry: {
+    label: "Agracejo",
+    description: "Rojo oscuro.",
+    source: "Barberry",
+    swatch: "#7a2338",
+  },
+  black: {
+    label: "Negro",
+    description: "Negro puro.",
+    source: "Black",
+    swatch: "#262223",
+  },
+  blue: {
+    label: "Azul",
+    description: "Azul vivo.",
+    source: "Blue",
+    swatch: "#3d69a6",
+  },
   "blue-violet": {
     label: "Azul violeta",
     description: "Mezcla azul y violeta.",
     source: "Blue Violet",
     swatch: "#5650a2",
   },
-  bronze: { label: "Bronce", description: "Bronce mate.", source: "Bronze", swatch: "#98714f" },
-  brown: { label: "Marrón", description: "Marrón clásico.", source: "Brown", swatch: "#72503b" },
+  bronze: {
+    label: "Bronce",
+    description: "Bronce mate.",
+    source: "Bronze",
+    swatch: "#98714f",
+  },
+  brown: {
+    label: "Marrón",
+    description: "Marrón clásico.",
+    source: "Brown",
+    swatch: "#72503b",
+  },
   "burnt-orange": {
     label: "Naranja quemado",
     description: "Naranja tostado.",
@@ -300,40 +335,210 @@ export const garmentColorMeta: Record<
     source: "Burnt Umber",
     swatch: "#7a4b32",
   },
-  cerise: { label: "Cereza", description: "Rosa cereza.", source: "Cerise", swatch: "#a13668" },
-  chocolate: { label: "Chocolate", description: "Marrón oscuro.", source: "Chocolate", swatch: "#5b3323" },
-  coffee: { label: "Café", description: "Café profundo.", source: "Coffee", swatch: "#5d4336" },
-  cornflower: { label: "Aciano", description: "Azul aciano.", source: "Cornflower", swatch: "#6d85d5" },
-  cream: { label: "Crema", description: "Crema suave.", source: "Cream", swatch: "#d8c5a3" },
-  cyan: { label: "Cian", description: "Cian brillante.", source: "Cyan", swatch: "#3e9ca7" },
-  fern: { label: "Helecho", description: "Verde helecho.", source: "Fern", swatch: "#4c7a45" },
-  forest: { label: "Bosque", description: "Verde bosque.", source: "Forest", swatch: "#355a3d" },
-  gray: { label: "Gris", description: "Gris neutro.", source: "Gray", swatch: "#6f7075" },
-  green: { label: "Verde", description: "Verde limpio.", source: "Green", swatch: "#4a8244" },
-  ice: { label: "Hielo", description: "Celeste pálido.", source: "Ice", swatch: "#95d3eb" },
-  indigo: { label: "Índigo", description: "Índigo oscuro.", source: "Indigo", swatch: "#433f7e" },
-  ivory: { label: "Marfil", description: "Marfil claro.", source: "Ivory", swatch: "#efe7d5" },
-  lavender: { label: "Lavanda", description: "Lavanda suave.", source: "Lavender", swatch: "#927eb7" },
-  leather: { label: "Cuero", description: "Cuero curtido.", source: "Leather", swatch: "#886048" },
-  mustard: { label: "Mostaza", description: "Mostaza dorada.", source: "Mustard", swatch: "#9e8130" },
-  navy: { label: "Marino", description: "Azul marino.", source: "Navy", swatch: "#2e446e" },
-  neptune: { label: "Neptuno", description: "Azul verdoso profundo.", source: "Neptune", swatch: "#2f6a78" },
-  olivine: { label: "Olivino", description: "Verde oliva claro.", source: "Olivine", swatch: "#728b4d" },
-  orange: { label: "Naranja", description: "Naranja vivo.", source: "Orange", swatch: "#c36b22" },
-  peach: { label: "Melocotón", description: "Melocotón suave.", source: "Peach", swatch: "#d8a38a" },
-  pink: { label: "Rosa", description: "Rosa claro.", source: "Pink", swatch: "#c77ea4" },
-  plum: { label: "Ciruela", description: "Morado ciruela.", source: "Plum", swatch: "#69415a" },
-  red: { label: "Rojo", description: "Rojo intenso.", source: "Red", swatch: "#a53a36" },
-  sepia: { label: "Sepia", description: "Sepia oscuro.", source: "Sepia", swatch: "#6a4d3f" },
-  silver: { label: "Plata", description: "Plata fría.", source: "Silver", swatch: "#9ca5b0" },
-  smoke: { label: "Humo", description: "Gris ahumado.", source: "Smoke", swatch: "#8b8583" },
-  spring: { label: "Primavera", description: "Verde primavera.", source: "Spring", swatch: "#69a04f" },
-  swamp: { label: "Pantano", description: "Verde oscuro apagado.", source: "Swamp", swatch: "#536246" },
-  tan: { label: "Tostado", description: "Tostado medio.", source: "Tan", swatch: "#b18462" },
-  tumeric: { label: "Cúrcuma", description: "Amarillo cálido.", source: "Tumeric", swatch: "#b78e28" },
-  umber: { label: "Sombra", description: "Marrón umber.", source: "Umber", swatch: "#694a39" },
-  white: { label: "Blanco", description: "Blanco limpio.", source: "White", swatch: "#f3f3f1" },
-  yellow: { label: "Amarillo", description: "Amarillo vivo.", source: "Yellow", swatch: "#d6b730" },
+  cerise: {
+    label: "Cereza",
+    description: "Rosa cereza.",
+    source: "Cerise",
+    swatch: "#a13668",
+  },
+  chocolate: {
+    label: "Chocolate",
+    description: "Marrón oscuro.",
+    source: "Chocolate",
+    swatch: "#5b3323",
+  },
+  coffee: {
+    label: "Café",
+    description: "Café profundo.",
+    source: "Coffee",
+    swatch: "#5d4336",
+  },
+  cornflower: {
+    label: "Aciano",
+    description: "Azul aciano.",
+    source: "Cornflower",
+    swatch: "#6d85d5",
+  },
+  cream: {
+    label: "Crema",
+    description: "Crema suave.",
+    source: "Cream",
+    swatch: "#d8c5a3",
+  },
+  cyan: {
+    label: "Cian",
+    description: "Cian brillante.",
+    source: "Cyan",
+    swatch: "#3e9ca7",
+  },
+  fern: {
+    label: "Helecho",
+    description: "Verde helecho.",
+    source: "Fern",
+    swatch: "#4c7a45",
+  },
+  forest: {
+    label: "Bosque",
+    description: "Verde bosque.",
+    source: "Forest",
+    swatch: "#355a3d",
+  },
+  gray: {
+    label: "Gris",
+    description: "Gris neutro.",
+    source: "Gray",
+    swatch: "#6f7075",
+  },
+  green: {
+    label: "Verde",
+    description: "Verde limpio.",
+    source: "Green",
+    swatch: "#4a8244",
+  },
+  ice: {
+    label: "Hielo",
+    description: "Celeste pálido.",
+    source: "Ice",
+    swatch: "#95d3eb",
+  },
+  indigo: {
+    label: "Índigo",
+    description: "Índigo oscuro.",
+    source: "Indigo",
+    swatch: "#433f7e",
+  },
+  ivory: {
+    label: "Marfil",
+    description: "Marfil claro.",
+    source: "Ivory",
+    swatch: "#efe7d5",
+  },
+  lavender: {
+    label: "Lavanda",
+    description: "Lavanda suave.",
+    source: "Lavender",
+    swatch: "#927eb7",
+  },
+  leather: {
+    label: "Cuero",
+    description: "Cuero curtido.",
+    source: "Leather",
+    swatch: "#886048",
+  },
+  mustard: {
+    label: "Mostaza",
+    description: "Mostaza dorada.",
+    source: "Mustard",
+    swatch: "#9e8130",
+  },
+  navy: {
+    label: "Marino",
+    description: "Azul marino.",
+    source: "Navy",
+    swatch: "#2e446e",
+  },
+  neptune: {
+    label: "Neptuno",
+    description: "Azul verdoso profundo.",
+    source: "Neptune",
+    swatch: "#2f6a78",
+  },
+  olivine: {
+    label: "Olivino",
+    description: "Verde oliva claro.",
+    source: "Olivine",
+    swatch: "#728b4d",
+  },
+  orange: {
+    label: "Naranja",
+    description: "Naranja vivo.",
+    source: "Orange",
+    swatch: "#c36b22",
+  },
+  peach: {
+    label: "Melocotón",
+    description: "Melocotón suave.",
+    source: "Peach",
+    swatch: "#d8a38a",
+  },
+  pink: {
+    label: "Rosa",
+    description: "Rosa claro.",
+    source: "Pink",
+    swatch: "#c77ea4",
+  },
+  plum: {
+    label: "Ciruela",
+    description: "Morado ciruela.",
+    source: "Plum",
+    swatch: "#69415a",
+  },
+  red: {
+    label: "Rojo",
+    description: "Rojo intenso.",
+    source: "Red",
+    swatch: "#a53a36",
+  },
+  sepia: {
+    label: "Sepia",
+    description: "Sepia oscuro.",
+    source: "Sepia",
+    swatch: "#6a4d3f",
+  },
+  silver: {
+    label: "Plata",
+    description: "Plata fría.",
+    source: "Silver",
+    swatch: "#9ca5b0",
+  },
+  smoke: {
+    label: "Humo",
+    description: "Gris ahumado.",
+    source: "Smoke",
+    swatch: "#8b8583",
+  },
+  spring: {
+    label: "Primavera",
+    description: "Verde primavera.",
+    source: "Spring",
+    swatch: "#69a04f",
+  },
+  swamp: {
+    label: "Pantano",
+    description: "Verde oscuro apagado.",
+    source: "Swamp",
+    swatch: "#536246",
+  },
+  tan: {
+    label: "Tostado",
+    description: "Tostado medio.",
+    source: "Tan",
+    swatch: "#b18462",
+  },
+  tumeric: {
+    label: "Cúrcuma",
+    description: "Amarillo cálido.",
+    source: "Tumeric",
+    swatch: "#b78e28",
+  },
+  umber: {
+    label: "Sombra",
+    description: "Marrón umber.",
+    source: "Umber",
+    swatch: "#694a39",
+  },
+  white: {
+    label: "Blanco",
+    description: "Blanco limpio.",
+    source: "White",
+    swatch: "#f3f3f1",
+  },
+  yellow: {
+    label: "Amarillo",
+    description: "Amarillo vivo.",
+    source: "Yellow",
+    swatch: "#d6b730",
+  },
 };
 
 const garmentColorOptions = GARMENT_COLOR_VALUES.map((value) => ({
@@ -349,41 +554,129 @@ export const BREAK_SECONDS = 5 * 60;
 
 export const avatarOptions = {
   sex: [
-    { value: "masculino", label: "Hombre", description: "Modelo masculino del pack LPC." },
-    { value: "femenino", label: "Mujer", description: "Modelo femenino del pack LPC." },
+    {
+      value: "masculino",
+      label: "Hombre",
+      description: "Modelo masculino del pack LPC.",
+    },
+    {
+      value: "femenino",
+      label: "Mujer",
+      description: "Modelo femenino del pack LPC.",
+    },
   ] satisfies AvatarOption<AvatarConfig["sex"]>[],
   skinTone: [
     { value: "amber", label: "Ámbar", description: "Tono cálido claro." },
     { value: "bronze", label: "Bronce", description: "Profundo y cálido." },
     { value: "brown", label: "Moreno", description: "Moreno medio." },
-    { value: "chocolate", label: "Chocolate", description: "Oscuro con base rojiza." },
+    {
+      value: "chocolate",
+      label: "Chocolate",
+      description: "Oscuro con base rojiza.",
+    },
     { value: "coffee", label: "Café", description: "Oscuro y neutro." },
     { value: "cream", label: "Crema", description: "Claro suave." },
     { value: "ivory", label: "Marfil", description: "Muy claro." },
     { value: "leather", label: "Cuero", description: "Bronce curtido." },
     { value: "peach", label: "Melocotón", description: "Rosado claro." },
-    { value: "sepia", label: "Sepia", description: "Oscuro con matiz castaño." },
+    {
+      value: "sepia",
+      label: "Sepia",
+      description: "Oscuro con matiz castaño.",
+    },
     { value: "tan", label: "Tostado", description: "Tostado medio." },
   ] satisfies AvatarOption<AvatarConfig["skinTone"]>[],
   hairStyle: [
-    { value: "short-01-buzzcut", label: "Buzzcut", description: "Muy corto y limpio." },
-    { value: "short-02-parted", label: "Corto con raya", description: "Peinado corto abierto." },
-    { value: "short-03-curly", label: "Corto rizado", description: "Rizo compacto." },
-    { value: "short-04-cowlick", label: "Corto despeinado", description: "Con mechón levantado." },
-    { value: "short-05-natural", label: "Natural corto", description: "Textura natural." },
-    { value: "short-06-balding", label: "Entradas", description: "Frontal despejado." },
-    { value: "short-07-flat-top", label: "Flat top", description: "Plano y alto." },
-    { value: "short-08-flat-top-fade", label: "Flat top fade", description: "Plano con fade." },
-    { value: "medium-01-page", label: "Page", description: "Media melena recta." },
-    { value: "medium-02-curly", label: "Media melena rizada", description: "Curvas amplias." },
-    { value: "medium-03-idol", label: "Idol", description: "Peinado con volumen frontal." },
-    { value: "medium-04-bangs-bun", label: "Flequillo y moño", description: "Recogido con fleco." },
-    { value: "medium-05-cornrows", label: "Cornrows", description: "Trenzas pegadas." },
-    { value: "medium-06-dreadlocks", label: "Dreadlocks", description: "Melenita de rastas." },
-    { value: "medium-07-bob-side-part", label: "Bob lateral", description: "Bob con raya al lado." },
-    { value: "medium-08-bob-bangs", label: "Bob con flequillo", description: "Bob recto." },
-    { value: "medium-09-twists", label: "Twists", description: "Twists medios." },
-    { value: "medium-10-twists-fade", label: "Twists con fade", description: "Laterales rebajados." },
+    {
+      value: "short-01-buzzcut",
+      label: "Buzzcut",
+      description: "Muy corto y limpio.",
+    },
+    {
+      value: "short-02-parted",
+      label: "Corto con raya",
+      description: "Peinado corto abierto.",
+    },
+    {
+      value: "short-03-curly",
+      label: "Corto rizado",
+      description: "Rizo compacto.",
+    },
+    {
+      value: "short-04-cowlick",
+      label: "Corto despeinado",
+      description: "Con mechón levantado.",
+    },
+    {
+      value: "short-05-natural",
+      label: "Natural corto",
+      description: "Textura natural.",
+    },
+    {
+      value: "short-06-balding",
+      label: "Entradas",
+      description: "Frontal despejado.",
+    },
+    {
+      value: "short-07-flat-top",
+      label: "Flat top",
+      description: "Plano y alto.",
+    },
+    {
+      value: "short-08-flat-top-fade",
+      label: "Flat top fade",
+      description: "Plano con fade.",
+    },
+    {
+      value: "medium-01-page",
+      label: "Page",
+      description: "Media melena recta.",
+    },
+    {
+      value: "medium-02-curly",
+      label: "Media melena rizada",
+      description: "Curvas amplias.",
+    },
+    {
+      value: "medium-03-idol",
+      label: "Idol",
+      description: "Peinado con volumen frontal.",
+    },
+    {
+      value: "medium-04-bangs-bun",
+      label: "Flequillo y moño",
+      description: "Recogido con fleco.",
+    },
+    {
+      value: "medium-05-cornrows",
+      label: "Cornrows",
+      description: "Trenzas pegadas.",
+    },
+    {
+      value: "medium-06-dreadlocks",
+      label: "Dreadlocks",
+      description: "Melenita de rastas.",
+    },
+    {
+      value: "medium-07-bob-side-part",
+      label: "Bob lateral",
+      description: "Bob con raya al lado.",
+    },
+    {
+      value: "medium-08-bob-bangs",
+      label: "Bob con flequillo",
+      description: "Bob recto.",
+    },
+    {
+      value: "medium-09-twists",
+      label: "Twists",
+      description: "Twists medios.",
+    },
+    {
+      value: "medium-10-twists-fade",
+      label: "Twists con fade",
+      description: "Laterales rebajados.",
+    },
   ] satisfies AvatarOption<AvatarConfig["hairStyle"]>[],
   hairColor: [
     { value: "ash-brown", label: "Ceniza", description: "Marrón ceniza." },
@@ -405,43 +698,159 @@ export const avatarOptions = {
     { value: "white", label: "Blanco", description: "Blanco." },
   ] satisfies AvatarOption<AvatarConfig["hairColor"]>[],
   accessory: [
-    { value: "ninguno", label: "Sin accesorio", description: "Sin complemento extra." },
-    { value: "bigote", label: "Bigote", description: "Detalle facial sencillo." },
-    { value: "barba-corta", label: "Barba corta", description: "Sombra compacta." },
-    { value: "barbarian", label: "Casco bárbaro", description: "Yelmo abierto con remate agresivo." },
-    { value: "barbarian-nasal", label: "Casco bárbaro nasal", description: "Protección frontal con nasal." },
-    { value: "barbarian-viking", label: "Casco vikingo", description: "Perfil bárbaro con alas." },
-    { value: "barbuta", label: "Barbuta", description: "Yelmo medieval cerrado." },
-    { value: "barbuta-simple", label: "Barbuta simple", description: "Barbuta ligera." },
-    { value: "close", label: "Casco cerrado", description: "Frontal más protegido." },
-    { value: "flattop", label: "Flat top", description: "Casco de copa plana." },
-    { value: "greathelm", label: "Greathelm", description: "Yelmo pesado de placa." },
-    { value: "nasal", label: "Casco nasal", description: "Protección con nasal clásico." },
-    { value: "spangenhelm", label: "Spangenhelm", description: "Casco segmentado." },
-    { value: "spangenhelm-viking", label: "Spangenhelm vikingo", description: "Variante nórdica." },
-    { value: "sugarloaf", label: "Sugarloaf", description: "Yelmo puntiagudo." },
-    { value: "sugarloaf-simple", label: "Sugarloaf simple", description: "Versión ligera." },
+    {
+      value: "ninguno",
+      label: "Sin accesorio",
+      description: "Sin complemento extra.",
+    },
+    {
+      value: "bigote",
+      label: "Bigote",
+      description: "Detalle facial sencillo.",
+    },
+    {
+      value: "barba-corta",
+      label: "Barba corta",
+      description: "Sombra compacta.",
+    },
+    {
+      value: "barbarian",
+      label: "Casco bárbaro",
+      description: "Yelmo abierto con remate agresivo.",
+    },
+    {
+      value: "barbarian-nasal",
+      label: "Casco bárbaro nasal",
+      description: "Protección frontal con nasal.",
+    },
+    {
+      value: "barbarian-viking",
+      label: "Casco vikingo",
+      description: "Perfil bárbaro con alas.",
+    },
+    {
+      value: "barbuta",
+      label: "Barbuta",
+      description: "Yelmo medieval cerrado.",
+    },
+    {
+      value: "barbuta-simple",
+      label: "Barbuta simple",
+      description: "Barbuta ligera.",
+    },
+    {
+      value: "close",
+      label: "Casco cerrado",
+      description: "Frontal más protegido.",
+    },
+    {
+      value: "flattop",
+      label: "Flat top",
+      description: "Casco de copa plana.",
+    },
+    {
+      value: "greathelm",
+      label: "Greathelm",
+      description: "Yelmo pesado de placa.",
+    },
+    {
+      value: "nasal",
+      label: "Casco nasal",
+      description: "Protección con nasal clásico.",
+    },
+    {
+      value: "spangenhelm",
+      label: "Spangenhelm",
+      description: "Casco segmentado.",
+    },
+    {
+      value: "spangenhelm-viking",
+      label: "Spangenhelm vikingo",
+      description: "Variante nórdica.",
+    },
+    {
+      value: "sugarloaf",
+      label: "Sugarloaf",
+      description: "Yelmo puntiagudo.",
+    },
+    {
+      value: "sugarloaf-simple",
+      label: "Sugarloaf simple",
+      description: "Versión ligera.",
+    },
   ] satisfies AvatarOption<AvatarConfig["accessory"]>[],
   upper: [
-    { value: "shirt-01-longsleeve", label: "Camisa larga 01", description: "Manga larga básica." },
-    { value: "shirt-02-vneck-longsleeve", label: "Camisa larga 02", description: "Manga larga con pico." },
-    { value: "shirt-03-scoop-longsleeve", label: "Camisa larga 03", description: "Manga larga redondeada." },
-    { value: "shirt-04-tee", label: "Camiseta 01", description: "Camiseta recta." },
-    { value: "shirt-05-vneck-tee", label: "Camiseta 02", description: "Camiseta con pico." },
-    { value: "shirt-06-scoop-tee", label: "Camiseta 03", description: "Camiseta redondeada." },
+    {
+      value: "shirt-01-longsleeve",
+      label: "Camisa larga 01",
+      description: "Manga larga básica.",
+    },
+    {
+      value: "shirt-02-vneck-longsleeve",
+      label: "Camisa larga 02",
+      description: "Manga larga con pico.",
+    },
+    {
+      value: "shirt-03-scoop-longsleeve",
+      label: "Camisa larga 03",
+      description: "Manga larga redondeada.",
+    },
+    {
+      value: "shirt-04-tee",
+      label: "Camiseta 01",
+      description: "Camiseta recta.",
+    },
+    {
+      value: "shirt-05-vneck-tee",
+      label: "Camiseta 02",
+      description: "Camiseta con pico.",
+    },
+    {
+      value: "shirt-06-scoop-tee",
+      label: "Camiseta 03",
+      description: "Camiseta redondeada.",
+    },
   ] satisfies AvatarOption<AvatarConfig["upper"]>[],
   upperColor: garmentColorOptions,
   lower: [
-    { value: "pants-01-hose", label: "Pantalón 01", description: "Base tipo hose." },
-    { value: "pants-02-leggings", label: "Pantalón 02", description: "Leggings." },
-    { value: "pants-03-pants", label: "Pantalón 03", description: "Pantalón recto." },
-    { value: "pants-04-cuffed", label: "Pantalón 04", description: "Pantalón remangado." },
-    { value: "pants-05-overalls", label: "Pantalón 05", description: "Mono/overalls." },
+    {
+      value: "pants-01-hose",
+      label: "Pantalón 01",
+      description: "Base tipo hose.",
+    },
+    {
+      value: "pants-02-leggings",
+      label: "Pantalón 02",
+      description: "Leggings.",
+    },
+    {
+      value: "pants-03-pants",
+      label: "Pantalón 03",
+      description: "Pantalón recto.",
+    },
+    {
+      value: "pants-04-cuffed",
+      label: "Pantalón 04",
+      description: "Pantalón remangado.",
+    },
+    {
+      value: "pants-05-overalls",
+      label: "Pantalón 05",
+      description: "Mono/overalls.",
+    },
   ] satisfies AvatarOption<AvatarConfig["lower"]>[],
   lowerColor: garmentColorOptions,
   socks: [
-    { value: "socks-01-ankle", label: "Calcetines bajos", description: "Tobilleros." },
-    { value: "socks-02-high", label: "Calcetines altos", description: "Altos hasta media pierna." },
+    {
+      value: "socks-01-ankle",
+      label: "Calcetines bajos",
+      description: "Tobilleros.",
+    },
+    {
+      value: "socks-02-high",
+      label: "Calcetines altos",
+      description: "Altos hasta media pierna.",
+    },
   ] satisfies AvatarOption<AvatarConfig["socks"]>[],
   socksColor: garmentColorOptions,
 };
@@ -482,7 +891,11 @@ const legacyOutfitPreset = {
   },
 } as const;
 
-function normalizeAvatarValue<T extends string>(value: unknown, allowed: Set<T>, fallback: T) {
+function normalizeAvatarValue<T extends string>(
+  value: unknown,
+  allowed: Set<T>,
+  fallback: T,
+) {
   if (typeof value === "string" && allowed.has(value as T)) {
     return value as T;
   }
@@ -499,7 +912,9 @@ export function normalizeAvatarConfig(value: unknown): AvatarConfig {
 
   const fallback: AvatarConfig = {
     sex:
-      raw.base === "viajera" ? "femenino" : normalizeAvatarValue(raw.sex, avatarOptionSets.sex, "masculino"),
+      raw.base === "viajera"
+        ? "femenino"
+        : normalizeAvatarValue(raw.sex, avatarOptionSets.sex, "masculino"),
     skinTone:
       raw.skinTone === "marfil"
         ? "ivory"
@@ -509,7 +924,11 @@ export function normalizeAvatarConfig(value: unknown): AvatarConfig {
             ? "bronze"
             : raw.skinTone === "umbra"
               ? "sepia"
-              : normalizeAvatarValue(raw.skinTone, avatarOptionSets.skinTone, "amber"),
+              : normalizeAvatarValue(
+                  raw.skinTone,
+                  avatarOptionSets.skinTone,
+                  "amber",
+                ),
     hairStyle:
       raw.hairStyle === "corto"
         ? "short-02-parted"
@@ -519,7 +938,11 @@ export function normalizeAvatarConfig(value: unknown): AvatarConfig {
             ? "medium-04-bangs-bun"
             : raw.hairStyle === "capucha"
               ? "short-06-balding"
-              : normalizeAvatarValue(raw.hairStyle, avatarOptionSets.hairStyle, "short-02-parted"),
+              : normalizeAvatarValue(
+                  raw.hairStyle,
+                  avatarOptionSets.hairStyle,
+                  "short-02-parted",
+                ),
     hairColor:
       raw.hairColor === "obsidiana"
         ? "black"
@@ -529,19 +952,51 @@ export function normalizeAvatarConfig(value: unknown): AvatarConfig {
             ? "orange"
             : raw.hairColor === "plata"
               ? "white"
-              : normalizeAvatarValue(raw.hairColor, avatarOptionSets.hairColor, "brown"),
+              : normalizeAvatarValue(
+                  raw.hairColor,
+                  avatarOptionSets.hairColor,
+                  "brown",
+                ),
     accessory:
       raw.facialHair === "bigote"
         ? "bigote"
         : raw.facialHair === "barba-corta"
           ? "barba-corta"
-          : normalizeAvatarValue(raw.accessory, avatarOptionSets.accessory, "ninguno"),
-    upper: normalizeAvatarValue(raw.upper, avatarOptionSets.upper, legacyOutfit.upper),
-    upperColor: normalizeAvatarValue(raw.upperColor, avatarOptionSets.upperColor, "smoke"),
-    lower: normalizeAvatarValue(raw.lower, avatarOptionSets.lower, legacyOutfit.lower),
-    lowerColor: normalizeAvatarValue(raw.lowerColor, avatarOptionSets.lowerColor, "umber"),
-    socks: normalizeAvatarValue(raw.socks, avatarOptionSets.socks, legacyOutfit.socks),
-    socksColor: normalizeAvatarValue(raw.socksColor, avatarOptionSets.socksColor, "cream"),
+          : normalizeAvatarValue(
+              raw.accessory,
+              avatarOptionSets.accessory,
+              "ninguno",
+            ),
+    upper: normalizeAvatarValue(
+      raw.upper,
+      avatarOptionSets.upper,
+      legacyOutfit.upper,
+    ),
+    upperColor: normalizeAvatarValue(
+      raw.upperColor,
+      avatarOptionSets.upperColor,
+      "smoke",
+    ),
+    lower: normalizeAvatarValue(
+      raw.lower,
+      avatarOptionSets.lower,
+      legacyOutfit.lower,
+    ),
+    lowerColor: normalizeAvatarValue(
+      raw.lowerColor,
+      avatarOptionSets.lowerColor,
+      "umber",
+    ),
+    socks: normalizeAvatarValue(
+      raw.socks,
+      avatarOptionSets.socks,
+      legacyOutfit.socks,
+    ),
+    socksColor: normalizeAvatarValue(
+      raw.socksColor,
+      avatarOptionSets.socksColor,
+      "cream",
+    ),
   };
 
   if (fallback.accessory !== "ninguno") {
@@ -551,7 +1006,10 @@ export function normalizeAvatarConfig(value: unknown): AvatarConfig {
   return {
     ...fallback,
     accessory:
-      raw.accessory === "linterna" || raw.accessory === "libro" || raw.accessory === "te" || raw.accessory === "pluma"
+      raw.accessory === "linterna" ||
+      raw.accessory === "libro" ||
+      raw.accessory === "te" ||
+      raw.accessory === "pluma"
         ? "ninguno"
         : fallback.accessory,
   };
@@ -559,7 +1017,8 @@ export function normalizeAvatarConfig(value: unknown): AvatarConfig {
 
 const STORAGE_KEY = "scholars-sanctuary-state-v3";
 const CHANNEL_NAME = "scholars-sanctuary-live";
-const DEFAULT_PRIVATE_DESCRIPTION = "Sala reservada para amistades invitadas y foco compartido.";
+const DEFAULT_PRIVATE_DESCRIPTION =
+  "Sala reservada para amistades invitadas y foco compartido.";
 
 interface UserBootstrapPayload {
   user: RemoteAccountIdentity | null;
@@ -669,7 +1128,9 @@ const demoProfiles: Profile[] = [
 
 function createInitialState(): SanctuaryState {
   const createdAt = Date.now();
-  const profiles = Object.fromEntries(demoProfiles.map((profile) => [profile.id, profile]));
+  const profiles = Object.fromEntries(
+    demoProfiles.map((profile) => [profile.id, profile]),
+  );
 
   return {
     version: 8,
@@ -685,7 +1146,8 @@ function createInitialState(): SanctuaryState {
         code: PUBLIC_ROOM_CODE,
         kind: "public",
         name: "Gran lectorio compartido",
-        description: "La sala pública del santuario donde se ve el pulso del resto.",
+        description:
+          "La sala pública del santuario donde se ve el pulso del resto.",
         memberIds: demoProfiles.map((profile) => profile.id),
         createdAt,
       },
@@ -747,13 +1209,15 @@ function createInitialState(): SanctuaryState {
 }
 
 function toHandle(value: string) {
-  return `@${value
-    .toLowerCase()
-    .trim()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "") || "escriba"}`;
+  return `@${
+    value
+      .toLowerCase()
+      .trim()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "") || "escriba"
+  }`;
 }
 
 function createPrivateCode(value: string) {
@@ -766,7 +1230,9 @@ function createPrivateCode(value: string) {
     .replace(/^-+|-+$/g, "")
     .slice(0, 18);
 
-  return slug ? `sala-${slug}` : `sala-${Math.random().toString(36).slice(2, 8)}`;
+  return slug
+    ? `sala-${slug}`
+    : `sala-${Math.random().toString(36).slice(2, 8)}`;
 }
 
 function isBrowser() {
@@ -804,14 +1270,24 @@ function normalizeStoredState(value: unknown) {
 
   parsed.version = 8;
   parsed.sessionState =
-    parsed.sessionState === "authenticated" || parsed.authMode === "account" ? "authenticated" : "anonymous";
-  parsed.currentUserId = typeof parsed.currentUserId === "string" && parsed.currentUserId ? parsed.currentUserId : null;
+    parsed.sessionState === "authenticated" || parsed.authMode === "account"
+      ? "authenticated"
+      : "anonymous";
+  parsed.currentUserId =
+    typeof parsed.currentUserId === "string" && parsed.currentUserId
+      ? parsed.currentUserId
+      : null;
   parsed.onboardingCompleted =
-    typeof parsed.onboardingCompleted === "boolean" ? parsed.onboardingCompleted : fallback.onboardingCompleted;
+    typeof parsed.onboardingCompleted === "boolean"
+      ? parsed.onboardingCompleted
+      : fallback.onboardingCompleted;
   parsed.onboardingGoal =
-    typeof parsed.onboardingGoal === "string" ? parsed.onboardingGoal : fallback.onboardingGoal;
+    typeof parsed.onboardingGoal === "string"
+      ? parsed.onboardingGoal
+      : fallback.onboardingGoal;
   parsed.preferredStartPath =
-    parsed.preferredStartPath === "/estudio" || parsed.preferredStartPath === "/biblioteca-compartida"
+    parsed.preferredStartPath === "/estudio" ||
+    parsed.preferredStartPath === "/biblioteca-compartida"
       ? parsed.preferredStartPath
       : fallback.preferredStartPath;
   parsed.currentRoomCode =
@@ -841,47 +1317,68 @@ function normalizeStoredState(value: unknown) {
   };
   Object.values(parsed.presences).forEach((presence) => {
     presence.lastSeenAt =
-      typeof presence.lastSeenAt === "number" && Number.isFinite(presence.lastSeenAt)
+      typeof presence.lastSeenAt === "number" &&
+      Number.isFinite(presence.lastSeenAt)
         ? presence.lastSeenAt
         : null;
   });
   delete parsed.presences["guest-current"];
   parsed.sessions = (Array.isArray(parsed.sessions) ? parsed.sessions : [])
-    .filter((session) => typeof session.userId === "string" && session.userId !== "guest-current")
+    .filter(
+      (session) =>
+        typeof session.userId === "string" &&
+        session.userId !== "guest-current",
+    )
     .map((session) => ({
       ...session,
       breakSeconds:
-        typeof session.breakSeconds === "number" && Number.isFinite(session.breakSeconds)
+        typeof session.breakSeconds === "number" &&
+        Number.isFinite(session.breakSeconds)
           ? session.breakSeconds
           : BREAK_SECONDS,
       startedAt:
-        typeof session.startedAt === "number" && Number.isFinite(session.startedAt)
+        typeof session.startedAt === "number" &&
+        Number.isFinite(session.startedAt)
           ? session.startedAt
           : typeof session.completedAt === "number"
             ? session.completedAt - session.focusSeconds * 1000
             : Date.now() - session.focusSeconds * 1000,
       serverId: typeof session.serverId === "string" ? session.serverId : null,
       persistedAt:
-        typeof session.persistedAt === "number" && Number.isFinite(session.persistedAt)
+        typeof session.persistedAt === "number" &&
+        Number.isFinite(session.persistedAt)
           ? session.persistedAt
           : null,
     }));
-  parsed.chronicleEntries = (Array.isArray(parsed.chronicleEntries) ? parsed.chronicleEntries : []).filter(
-    (entry) => typeof entry.userId === "string" && entry.userId !== "guest-current",
+  parsed.chronicleEntries = (
+    Array.isArray(parsed.chronicleEntries) ? parsed.chronicleEntries : []
+  ).filter(
+    (entry) =>
+      typeof entry.userId === "string" && entry.userId !== "guest-current",
   );
-  parsed.achievementUnlocks = (Array.isArray(parsed.achievementUnlocks) ? parsed.achievementUnlocks : [])
-    .filter((entry) => typeof entry.userId === "string" && entry.userId !== "guest-current")
+  parsed.achievementUnlocks = (
+    Array.isArray(parsed.achievementUnlocks) ? parsed.achievementUnlocks : []
+  )
+    .filter(
+      (entry) =>
+        typeof entry.userId === "string" && entry.userId !== "guest-current",
+    )
     .map((entry) => ({
       ...entry,
       persistedAt:
-        typeof entry.persistedAt === "number" && Number.isFinite(entry.persistedAt)
+        typeof entry.persistedAt === "number" &&
+        Number.isFinite(entry.persistedAt)
           ? entry.persistedAt
           : null,
     }));
-  parsed.friendIds = Array.isArray(parsed.friendIds) ? parsed.friendIds : fallback.friendIds;
+  parsed.friendIds = Array.isArray(parsed.friendIds)
+    ? parsed.friendIds
+    : fallback.friendIds;
   parsed.notificationPreferences = {
     ...fallback.notificationPreferences,
-    ...(isRecord(parsed.notificationPreferences) ? parsed.notificationPreferences : {}),
+    ...(isRecord(parsed.notificationPreferences)
+      ? parsed.notificationPreferences
+      : {}),
   };
   parsed.notificationPreferences.inAppEnabled =
     typeof parsed.notificationPreferences.inAppEnabled === "boolean"
@@ -899,14 +1396,20 @@ function normalizeStoredState(value: unknown) {
     ...fallback.timer,
     ...parsed.timer,
   };
-  parsed.timer.focusDurationSeconds = parsed.timer.focusDurationSeconds ?? FOCUS_SECONDS;
-  parsed.timer.breakDurationSeconds = parsed.timer.breakDurationSeconds ?? BREAK_SECONDS;
+  parsed.timer.focusDurationSeconds =
+    parsed.timer.focusDurationSeconds ?? FOCUS_SECONDS;
+  parsed.timer.breakDurationSeconds =
+    parsed.timer.breakDurationSeconds ?? BREAK_SECONDS;
   parsed.timer.durationSeconds =
     parsed.timer.durationSeconds ??
-    (parsed.timer.phase === "break" ? parsed.timer.breakDurationSeconds : parsed.timer.focusDurationSeconds);
+    (parsed.timer.phase === "break"
+      ? parsed.timer.breakDurationSeconds
+      : parsed.timer.focusDurationSeconds);
   parsed.timer.remainingSeconds =
     parsed.timer.remainingSeconds ??
-    (parsed.timer.phase === "break" ? parsed.timer.breakDurationSeconds : parsed.timer.focusDurationSeconds);
+    (parsed.timer.phase === "break"
+      ? parsed.timer.breakDurationSeconds
+      : parsed.timer.focusDurationSeconds);
 
   if (!parsed.currentUserId || !parsed.profiles[parsed.currentUserId]) {
     parsed.sessionState = "anonymous";
@@ -999,27 +1502,32 @@ function setCurrentPresence(state: SanctuaryState, next: Partial<Presence>) {
     ...current,
     ...next,
     updatedAt: Date.now(),
-    lastSeenAt: next.state === "offline" ? Date.now() : (next.lastSeenAt ?? null),
+    lastSeenAt:
+      next.state === "offline" ? Date.now() : (next.lastSeenAt ?? null),
   };
 }
 
 function recalculateAchievements(state: SanctuaryState, userId: string) {
-  const sessions = state.sessions.filter((session) => session.userId === userId);
+  const sessions = state.sessions.filter(
+    (session) => session.userId === userId,
+  );
   const existingById = new Map(
     state.achievementUnlocks
       .filter((entry) => entry.userId === userId)
       .map((entry) => [entry.id, entry] as const),
   );
-  const nextUnlocks = computeAchievementUnlocks(sessions).map(({ id, unlockedAt }) => {
-    const existing = existingById.get(id);
+  const nextUnlocks = computeAchievementUnlocks(sessions).map(
+    ({ id, unlockedAt }) => {
+      const existing = existingById.get(id);
 
-    return {
-      id,
-      userId,
-      unlockedAt: existing?.unlockedAt ?? unlockedAt,
-      persistedAt: existing?.persistedAt ?? null,
-    };
-  });
+      return {
+        id,
+        userId,
+        unlockedAt: existing?.unlockedAt ?? unlockedAt,
+        persistedAt: existing?.persistedAt ?? null,
+      };
+    },
+  );
 
   state.achievementUnlocks = [
     ...state.achievementUnlocks.filter((entry) => entry.userId !== userId),
@@ -1114,7 +1622,8 @@ function resetFocusState(state: SanctuaryState) {
   };
 
   setCurrentPresence(state, {
-    roomCode: state.timer.roomKind === "solo" ? SOLO_ROOM_CODE : state.timer.roomCode,
+    roomCode:
+      state.timer.roomKind === "solo" ? SOLO_ROOM_CODE : state.timer.roomCode,
     roomKind: state.timer.roomKind,
     state: "idle",
     space: state.timer.roomKind === "solo" ? "solo" : "library",
@@ -1137,7 +1646,11 @@ function syncExpiredTimer(state: SanctuaryState, now = Date.now()) {
     return;
   }
 
-  while (state.timer.status === "running" && state.timer.endsAt && now >= state.timer.endsAt) {
+  while (
+    state.timer.status === "running" &&
+    state.timer.endsAt &&
+    now >= state.timer.endsAt
+  ) {
     if (state.timer.phase === "focus") {
       completeFocusSession(state);
       transitionToBreak(state);
@@ -1157,7 +1670,11 @@ function getTimeLeft(state: SanctuaryState, now = Date.now()) {
   return Math.max(0, Math.ceil((state.timer.endsAt - now) / 1000));
 }
 
-function remapUserReferences(state: SanctuaryState, fromUserId: string | null, toUserId: string) {
+function remapUserReferences(
+  state: SanctuaryState,
+  fromUserId: string | null,
+  toUserId: string,
+) {
   if (!fromUserId || fromUserId === toUserId) {
     return;
   }
@@ -1177,10 +1694,22 @@ function remapUserReferences(state: SanctuaryState, fromUserId: string | null, t
       room.ownerId = toUserId;
     }
 
-    room.memberIds = Array.from(new Set(room.memberIds.map((memberId) => (memberId === fromUserId ? toUserId : memberId))));
+    room.memberIds = Array.from(
+      new Set(
+        room.memberIds.map((memberId) =>
+          memberId === fromUserId ? toUserId : memberId,
+        ),
+      ),
+    );
   });
 
-  state.friendIds = Array.from(new Set(state.friendIds.map((friendId) => (friendId === fromUserId ? toUserId : friendId))));
+  state.friendIds = Array.from(
+    new Set(
+      state.friendIds.map((friendId) =>
+        friendId === fromUserId ? toUserId : friendId,
+      ),
+    ),
+  );
 
   const previousPresence = state.presences[fromUserId];
   if (previousPresence && !state.presences[toUserId]) {
@@ -1191,7 +1720,10 @@ function remapUserReferences(state: SanctuaryState, fromUserId: string | null, t
   }
 }
 
-function attachAuthenticatedIdentity(state: SanctuaryState, identity: RemoteAccountIdentity) {
+function attachAuthenticatedIdentity(
+  state: SanctuaryState,
+  identity: RemoteAccountIdentity,
+) {
   const previousUserId = state.currentUserId;
   const existingProfile = state.profiles[identity.id];
   const sourceProfile =
@@ -1202,24 +1734,34 @@ function attachAuthenticatedIdentity(state: SanctuaryState, identity: RemoteAcco
   remapUserReferences(state, previousUserId, identity.id);
   state.sessionState = "authenticated";
   state.currentUserId = identity.id;
-  state.currentRoomCode = state.rooms[state.currentRoomCode] ? state.currentRoomCode : PUBLIC_ROOM_CODE;
+  state.currentRoomCode = state.rooms[state.currentRoomCode]
+    ? state.currentRoomCode
+    : PUBLIC_ROOM_CODE;
   state.profiles[identity.id] = {
     id: identity.id,
     displayName: identity.displayName,
     handle: toRemoteHandle(identity.username),
-    avatar: existingProfile?.avatar ?? sourceProfile?.avatar ?? anonymousPreviewAvatar,
+    avatar:
+      existingProfile?.avatar ??
+      sourceProfile?.avatar ??
+      anonymousPreviewAvatar,
     bio:
       existingProfile?.bio ??
       sourceProfile?.bio ??
       `Cuenta del santuario conectada con GitHub como ${toRemoteHandle(identity.username)}.`,
-    createdAt: existingProfile?.createdAt ?? sourceProfile?.createdAt ?? Date.now(),
+    createdAt:
+      existingProfile?.createdAt ?? sourceProfile?.createdAt ?? Date.now(),
   };
 
   if (!state.rooms[PUBLIC_ROOM_CODE].memberIds.includes(identity.id)) {
     state.rooms[PUBLIC_ROOM_CODE].memberIds.unshift(identity.id);
   }
 
-  if (previousUserId && previousUserId !== identity.id && state.presences[previousUserId]) {
+  if (
+    previousUserId &&
+    previousUserId !== identity.id &&
+    state.presences[previousUserId]
+  ) {
     state.presences[previousUserId] = {
       ...state.presences[previousUserId],
       state: "offline",
@@ -1261,7 +1803,9 @@ function emitTimerEvent(event: TimerEvent) {
 
 export function subscribeTimerEvents(listener: TimerEventListener) {
   timerEventListeners.add(listener);
-  return () => { timerEventListeners.delete(listener); };
+  return () => {
+    timerEventListeners.delete(listener);
+  };
 }
 
 let currentState = createInitialState();
@@ -1293,13 +1837,18 @@ function ensureHydrated() {
   if (bootstrap?.user) {
     attachAuthenticatedIdentity(currentState, bootstrap.user);
     currentState.onboardingCompleted = Boolean(bootstrap.onboardingCompleted);
-    currentState.onboardingGoal = bootstrap.onboardingGoal?.trim() ?? currentState.onboardingGoal;
+    currentState.onboardingGoal =
+      bootstrap.onboardingGoal?.trim() ?? currentState.onboardingGoal;
     currentState.preferredStartPath =
-      bootstrap.preferredStartPath === "/estudio" || bootstrap.preferredStartPath === "/biblioteca-compartida"
+      bootstrap.preferredStartPath === "/estudio" ||
+      bootstrap.preferredStartPath === "/biblioteca-compartida"
         ? bootstrap.preferredStartPath
         : currentState.preferredStartPath;
   }
-  channel = new BroadcastChannel(CHANNEL_NAME);
+  channel =
+    typeof BroadcastChannel !== "undefined"
+      ? new BroadcastChannel(CHANNEL_NAME)
+      : null;
 
   window.addEventListener("storage", (event) => {
     if (event.key !== STORAGE_KEY || !event.newValue) {
@@ -1315,7 +1864,7 @@ function ensureHydrated() {
     }
   });
 
-  channel.addEventListener("message", (event) => {
+  channel?.addEventListener("message", (event) => {
     currentState = event.data as SanctuaryState;
     emitChange();
   });
@@ -1353,6 +1902,22 @@ export function getFullState() {
   return snapshot;
 }
 
+export function __resetSanctuaryStoreForTests() {
+  if (channel) {
+    channel.close();
+    channel = null;
+  }
+
+  listeners.clear();
+  timerEventListeners.clear();
+  hydrated = false;
+  currentState = createInitialState();
+
+  if (isBrowser()) {
+    window.localStorage.removeItem(STORAGE_KEY);
+  }
+}
+
 export function hydrateFromServer(value: unknown) {
   ensureHydrated();
   const nextState = normalizeStoredState(value);
@@ -1378,18 +1943,27 @@ export function getCurrentTimer(state: SanctuaryState, now = Date.now()) {
 
 export function getCurrentProfileSummary(state: SanctuaryState) {
   const profile = getRenderableCurrentProfile(state);
-  const sessions = state.sessions.filter((session) => session.userId === profile.id);
-  const validAchievementIds = new Set(achievementDefinitions.map((achievement) => achievement.id));
+  const sessions = state.sessions.filter(
+    (session) => session.userId === profile.id,
+  );
+  const validAchievementIds = new Set(
+    achievementDefinitions.map((achievement) => achievement.id),
+  );
   const achievements = state.achievementUnlocks.filter(
     (entry) => entry.userId === profile.id && validAchievementIds.has(entry.id),
   );
   const latestChronicle =
-    state.chronicleEntries.find((entry) => entry.userId === profile.id && entry.origin === "timer") ?? null;
+    state.chronicleEntries.find(
+      (entry) => entry.userId === profile.id && entry.origin === "timer",
+    ) ?? null;
 
   return {
     profile,
     sessionsCount: sessions.length,
-    focusHours: (sessions.reduce((total, session) => total + session.focusSeconds, 0) / 3600).toFixed(1),
+    focusHours: (
+      sessions.reduce((total, session) => total + session.focusSeconds, 0) /
+      3600
+    ).toFixed(1),
     streakDays: getStreakDays(sessions),
     archiveDays: getDistinctSessionDays(sessions),
     achievementsCount: achievements.length,
@@ -1402,7 +1976,9 @@ export function getChroniclesForCurrentProfile(state: SanctuaryState) {
     return [];
   }
 
-  return state.chronicleEntries.filter((entry) => entry.userId === state.currentUserId && entry.origin === "timer");
+  return state.chronicleEntries.filter(
+    (entry) => entry.userId === state.currentUserId && entry.origin === "timer",
+  );
 }
 
 export function getAchievementsForCurrentProfile(state: SanctuaryState) {
@@ -1436,7 +2012,10 @@ export function getPrivateRoomsForCurrentProfile(state: SanctuaryState) {
 
   const currentUserId = state.currentUserId;
   return Object.values(state.rooms)
-    .filter((room) => room.kind === "private" && room.memberIds.includes(currentUserId))
+    .filter(
+      (room) =>
+        room.kind === "private" && room.memberIds.includes(currentUserId),
+    )
     .sort((left, right) => right.createdAt - left.createdAt);
 }
 
@@ -1444,10 +2023,19 @@ export function getFriendsForCurrentProfile(state: SanctuaryState) {
   return state.friendIds.map((id) => state.profiles[id]).filter(Boolean);
 }
 
-export function getRoomMembers(state: SanctuaryState, roomCode: string, space: PresenceSpace) {
+export function getRoomMembers(
+  state: SanctuaryState,
+  roomCode: string,
+  space: PresenceSpace,
+) {
   const room = state.rooms[roomCode];
   const members = Object.values(state.presences)
-    .filter((presence) => presence.roomCode === roomCode && presence.space === space && presence.state !== "offline")
+    .filter(
+      (presence) =>
+        presence.roomCode === roomCode &&
+        presence.space === space &&
+        presence.state !== "offline",
+    )
     .map((presence) => ({
       presence,
       profile: state.profiles[presence.userId],
@@ -1462,7 +2050,8 @@ export function getRoomMembers(state: SanctuaryState, roomCode: string, space: P
       }
 
       const existingPresenceInRoom = Object.values(state.presences).find(
-        (presence) => presence.userId === memberId && presence.roomCode === roomCode,
+        (presence) =>
+          presence.userId === memberId && presence.roomCode === roomCode,
       );
       if (existingPresenceInRoom) {
         return;
@@ -1491,7 +2080,9 @@ export function getRoomMembers(state: SanctuaryState, roomCode: string, space: P
 
   return members
     .filter((entry) => entry.presence.space === space)
-    .sort((left, right) => Number(right.isCurrentUser) - Number(left.isCurrentUser));
+    .sort(
+      (left, right) => Number(right.isCurrentUser) - Number(left.isCurrentUser),
+    );
 }
 
 export const sanctuaryActions = {
@@ -1590,7 +2181,9 @@ export const sanctuaryActions = {
         return;
       }
       state.currentRoomCode = PUBLIC_ROOM_CODE;
-      if (!state.rooms[PUBLIC_ROOM_CODE].memberIds.includes(state.currentUserId)) {
+      if (
+        !state.rooms[PUBLIC_ROOM_CODE].memberIds.includes(state.currentUserId)
+      ) {
         state.rooms[PUBLIC_ROOM_CODE].memberIds.unshift(state.currentUserId);
       }
       setCurrentPresence(state, {
@@ -1610,7 +2203,9 @@ export const sanctuaryActions = {
 
       const trimmed = name.trim() || "Círculo privado";
       const code = createPrivateCode(trimmed);
-      const memberIds = Array.from(new Set([state.currentUserId, ...invitedIds.filter(Boolean)]));
+      const memberIds = Array.from(
+        new Set([state.currentUserId, ...invitedIds.filter(Boolean)]),
+      );
 
       state.rooms[code] = {
         code,
@@ -1726,8 +2321,16 @@ export const sanctuaryActions = {
         roomCode,
         roomKind,
         state: state.timer.phase === "break" ? "break" : "studying",
-        space: roomKind === "solo" ? "solo" : state.timer.phase === "break" ? "garden" : "library",
-        message: state.timer.phase === "break" ? state.presences[state.currentUserId]?.message || "Descansando" : "Estudiando",
+        space:
+          roomKind === "solo"
+            ? "solo"
+            : state.timer.phase === "break"
+              ? "garden"
+              : "library",
+        message:
+          state.timer.phase === "break"
+            ? state.presences[state.currentUserId]?.message || "Descansando"
+            : "Estudiando",
       });
 
       if (isFocusPhase && !wasPaused) {
@@ -1753,7 +2356,10 @@ export const sanctuaryActions = {
 
       setCurrentPresence(state, {
         state: state.timer.phase === "break" ? "break" : "idle",
-        message: state.timer.phase === "break" ? state.presences[state.currentUserId]?.message || "Descansando" : "",
+        message:
+          state.timer.phase === "break"
+            ? state.presences[state.currentUserId]?.message || "Descansando"
+            : "",
       });
     });
   },
@@ -1793,10 +2399,16 @@ export const sanctuaryActions = {
         return;
       }
 
-      const safeFocusMinutes = Number.isFinite(focusMinutes) ? focusMinutes : state.timer.focusDurationSeconds / 60;
-      const safeBreakMinutes = Number.isFinite(breakMinutes) ? breakMinutes : state.timer.breakDurationSeconds / 60;
-      const nextFocusSeconds = Math.min(180, Math.max(5, Math.round(safeFocusMinutes))) * 60;
-      const nextBreakSeconds = Math.min(60, Math.max(1, Math.round(safeBreakMinutes))) * 60;
+      const safeFocusMinutes = Number.isFinite(focusMinutes)
+        ? focusMinutes
+        : state.timer.focusDurationSeconds / 60;
+      const safeBreakMinutes = Number.isFinite(breakMinutes)
+        ? breakMinutes
+        : state.timer.breakDurationSeconds / 60;
+      const nextFocusSeconds =
+        Math.min(180, Math.max(5, Math.round(safeFocusMinutes))) * 60;
+      const nextBreakSeconds =
+        Math.min(60, Math.max(1, Math.round(safeBreakMinutes))) * 60;
 
       state.timer.focusDurationSeconds = nextFocusSeconds;
       state.timer.breakDurationSeconds = nextBreakSeconds;
@@ -1805,7 +2417,8 @@ export const sanctuaryActions = {
         return;
       }
 
-      const nextDuration = state.timer.phase === "break" ? nextBreakSeconds : nextFocusSeconds;
+      const nextDuration =
+        state.timer.phase === "break" ? nextBreakSeconds : nextFocusSeconds;
       state.timer.durationSeconds = nextDuration;
       state.timer.remainingSeconds = nextDuration;
       state.timer.endsAt = null;
@@ -1813,7 +2426,11 @@ export const sanctuaryActions = {
     });
   },
 
-  markSessionPersisted(sessionId: string, serverId: string, persistedAt: number) {
+  markSessionPersisted(
+    sessionId: string,
+    serverId: string,
+    persistedAt: number,
+  ) {
     commit((state) => {
       const session = state.sessions.find((entry) => entry.id === sessionId);
       if (!session) {
@@ -1874,14 +2491,18 @@ export const sanctuaryActions = {
 
       if (payload.chronicleEntries) {
         state.chronicleEntries = [
-          ...state.chronicleEntries.filter((entry) => !(entry.userId === userId && entry.origin === "timer")),
+          ...state.chronicleEntries.filter(
+            (entry) => !(entry.userId === userId && entry.origin === "timer"),
+          ),
           ...payload.chronicleEntries.map((entry) => ({ ...entry, userId })),
         ].sort((left, right) => right.timestamp - left.timestamp);
       }
 
       if (payload.achievementUnlocks) {
         state.achievementUnlocks = [
-          ...state.achievementUnlocks.filter((entry) => entry.userId !== userId),
+          ...state.achievementUnlocks.filter(
+            (entry) => entry.userId !== userId,
+          ),
           ...payload.achievementUnlocks.map((entry) => ({
             ...entry,
             userId,
@@ -2012,10 +2633,16 @@ export const sanctuaryActions = {
       if (presence) {
         presence.state = data.state as PresenceState;
         presence.space =
-          data.state === "break" ? "garden" : data.state === "away" ? presence.space : "library";
+          data.state === "break"
+            ? "garden"
+            : data.state === "away"
+              ? presence.space
+              : "library";
         presence.message = data.message;
         presence.updatedAt = Date.now();
-        presence.lastSeenAt = data.lastSeenAt ? Date.parse(data.lastSeenAt) : presence.lastSeenAt ?? null;
+        presence.lastSeenAt = data.lastSeenAt
+          ? Date.parse(data.lastSeenAt)
+          : (presence.lastSeenAt ?? null);
       }
     });
   },

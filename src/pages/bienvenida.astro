@@ -3,9 +3,12 @@ import BaseLayout from "@/layouts/BaseLayout.astro";
 import { OnboardingFlow } from "@/islands/sanctuary/OnboardingFlow";
 
 const nextPath = Astro.url.searchParams.get("next");
+const replay = Astro.url.searchParams.get("repetir") === "1";
 
 if (!Astro.locals.user) {
-  return Astro.redirect(`/api/auth/login?next=${encodeURIComponent("/bienvenida")}`);
+  return Astro.redirect(
+    `/api/auth/login?next=${encodeURIComponent(replay ? "/bienvenida?repetir=1" : "/bienvenida")}`,
+  );
 }
 ---
 

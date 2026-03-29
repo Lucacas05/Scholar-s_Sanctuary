@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { LogIn, LogOut, UserCircle } from "lucide-react";
 import {
+  getAchievementsForCurrentProfile,
   getFullState,
   hydrateFromServer,
   sanctuaryActions,
@@ -27,9 +28,14 @@ interface MeResponse {
 
 type AuthFeedback = "success" | "error" | null;
 
-export function IdentityBadge({ initialUser = null, oauthAvailable = true }: IdentityBadgeProps) {
+export function IdentityBadge({
+  initialUser = null,
+  oauthAvailable = true,
+}: IdentityBadgeProps) {
   const sanctuary = useSanctuaryStore();
-  const [sessionUser, setSessionUser] = useState<SessionUser | null>(initialUser);
+  const [sessionUser, setSessionUser] = useState<SessionUser | null>(
+    initialUser,
+  );
   const [isReady, setIsReady] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isOAuthAvailable, setIsOAuthAvailable] = useState(oauthAvailable);
@@ -148,7 +154,8 @@ export function IdentityBadge({ initialUser = null, oauthAvailable = true }: Ide
   useEffect(() => {
     const url = new URL(window.location.href);
     const status = url.searchParams.get("auth");
-    const nextFeedback = status === "success" ? "success" : status === "error" ? "error" : null;
+    const nextFeedback =
+      status === "success" ? "success" : status === "error" ? "error" : null;
 
     if (!nextFeedback) {
       return;
@@ -164,7 +171,10 @@ export function IdentityBadge({ initialUser = null, oauthAvailable = true }: Ide
       return;
     }
 
-    if (sanctuary.sessionState !== "authenticated" || sanctuary.currentUserId !== sessionUser.id) {
+    if (
+      sanctuary.sessionState !== "authenticated" ||
+      sanctuary.currentUserId !== sessionUser.id
+    ) {
       return;
     }
 
@@ -174,7 +184,10 @@ export function IdentityBadge({ initialUser = null, oauthAvailable = true }: Ide
       (session) => session.userId === sessionUser.id && !session.persistedAt,
     );
 
-    if (serializedState === lastSyncedStateRef.current && unsyncedSessions.length === 0) {
+    if (
+      serializedState === lastSyncedStateRef.current &&
+      unsyncedSessions.length === 0
+    ) {
       return;
     }
 
@@ -199,7 +212,9 @@ export function IdentityBadge({ initialUser = null, oauthAvailable = true }: Ide
                 roomKind: session.roomKind,
                 focusSeconds: session.focusSeconds,
                 breakSeconds: session.breakSeconds ?? 5 * 60,
-                startedAt: session.startedAt ?? session.completedAt - session.focusSeconds * 1000,
+                startedAt:
+                  session.startedAt ??
+                  session.completedAt - session.focusSeconds * 1000,
                 completedAt: session.completedAt,
               }),
               credentials: "include",
@@ -222,7 +237,11 @@ export function IdentityBadge({ initialUser = null, oauthAvailable = true }: Ide
             }
 
             const payload = (await response.json()) as {
-              session?: { serverId: string; clientSessionId: string; persistedAt: number };
+              session?: {
+                serverId: string;
+                clientSessionId: string;
+                persistedAt: number;
+              };
             };
 
             if (payload.session) {
@@ -298,6 +317,19 @@ export function IdentityBadge({ initialUser = null, oauthAvailable = true }: Ide
 
   const label = sessionUser?.displayName ?? "Sin sesión";
   const detail = sessionUser ? `@${sessionUser.username}` : "Solo lectura";
+  const unlockedAchievements =
+    sessionUser &&
+    sanctuary.sessionState === "authenticated" &&
+    sanctuary.currentUserId === sessionUser.id
+      ? getAchievementsForCurrentProfile(sanctuary).filter(
+          (achievement) => achievement.unlockedAt,
+        )
+      : [];
+  const highlightedAchievements = unlockedAchievements.slice(0, 3);
+  const settingsLink =
+    typeof window !== "undefined"
+      ? `/ajustes?next=${encodeURIComponent(window.location.pathname + window.location.search)}`
+      : "/ajustes";
   const feedbackText =
     authFeedback === "success"
       ? "Sesión iniciada correctamente."
@@ -309,22 +341,48 @@ export function IdentityBadge({ initialUser = null, oauthAvailable = true }: Ide
     <div className="flex flex-col items-end gap-2">
       <div className="flex items-center gap-3">
         <div className="hidden text-right sm:block">
-          <p className="font-headline text-xs font-bold uppercase tracking-widest text-primary">{label}</p>
+          <p className="font-headline text-xs font-bold uppercase tracking-widest text-primary">
+            {label}
+          </p>
           <p className="font-headline text-[10px] font-bold uppercase tracking-[0.25em] text-outline">
             {detail}
           </p>
+          {sessionUser ? (
+            <div className="mt-2 flex flex-wrap justify-end gap-2">
+              {highlightedAchievements.map((achievement) => (
+                <span
+                  key={achievement.id}
+                  className="border border-outline-variant bg-surface-container-high px-2 py-1 font-headline text-[9px] font-bold uppercase tracking-[0.2em] text-secondary"
+                  title={achievement.title}
+                >
+                  {achievement.title}
+                </span>
+              ))}
+              <span className="border border-outline-variant bg-surface-container-low px-2 py-1 font-headline text-[9px] font-bold uppercase tracking-[0.2em] text-outline">
+                {unlockedAchievements.length} insignias
+              </span>
+            </div>
+          ) : null}
         </div>
 
         {sessionUser ? (
-          <button
-            type="button"
-            onClick={() => void handleLogout()}
-            disabled={isLoggingOut}
-            className="inline-flex items-center justify-center gap-2 border-b-[3px] border-on-primary-fixed-variant bg-primary px-4 py-2 font-headline text-xs font-bold uppercase tracking-widest text-on-primary disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <LogOut size={16} />
-            {isLoggingOut ? "Cerrando..." : "Cerrar sesión"}
-          </button>
+          <div className="flex items-center gap-2">
+            <a
+              href={settingsLink}
+              className="inline-flex items-center justify-center gap-2 border-b-[3px] border-outline-variant bg-surface-container-high px-4 py-2 font-headline text-xs font-bold uppercase tracking-widest text-on-surface"
+            >
+              Ajustes
+            </a>
+            <button
+              type="button"
+              onClick={() => void handleLogout()}
+              disabled={isLoggingOut}
+              className="inline-flex items-center justify-center gap-2 border-b-[3px] border-on-primary-fixed-variant bg-primary px-4 py-2 font-headline text-xs font-bold uppercase tracking-widest text-on-primary disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <LogOut size={16} />
+              {isLoggingOut ? "Cerrando..." : "Cerrar sesión"}
+            </button>
+          </div>
         ) : isOAuthAvailable ? (
           <a
             href="/api/auth/login"
@@ -347,7 +405,11 @@ export function IdentityBadge({ initialUser = null, oauthAvailable = true }: Ide
 
         <div className="hidden h-10 w-10 items-center justify-center overflow-hidden border-2 border-outline-variant bg-surface-container-highest lg:flex">
           {sessionUser?.avatarUrl ? (
-            <img src={sessionUser.avatarUrl} alt={sessionUser.displayName} className="h-full w-full object-cover" />
+            <img
+              src={sessionUser.avatarUrl}
+              alt={sessionUser.displayName}
+              className="h-full w-full object-cover"
+            />
           ) : (
             <UserCircle className="text-primary" size={22} />
           )}

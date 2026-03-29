@@ -12,9 +12,9 @@ https://luminalibrary.duckdns.org/
 
 - Biblioteca como portal hacia los distintos espacios del santuario
 - Santuario silencioso con temporizador Pomodoro editable
-- Biblioteca compartida y jardín con estado local del santuario
+- Biblioteca compartida y jardín con presencia social en tiempo real
 - Refinar con editor modular de avatar
-- Crónicas e hitos impulsados por sesiones reales de Pomodoro guardadas en el navegador
+- Crónicas e hitos impulsados por sesiones reales de Pomodoro persistidas en SQLite
 - Rutas responsivas en Astro con islas de React solo donde hace falta estado
 
 ## Tecnologías
@@ -29,7 +29,7 @@ https://luminalibrary.duckdns.org/
 
 ### Requisitos
 
-- Node.js 18 o superior
+- Node.js 22 o 24
 - npm
 
 ### Instalación
@@ -37,7 +37,7 @@ https://luminalibrary.duckdns.org/
 1. Instala las dependencias:
 
    ```bash
-   npm install
+   npm ci
    ```
 
 2. Inicia el servidor de desarrollo:
@@ -53,8 +53,34 @@ https://luminalibrary.duckdns.org/
 - `npm run dev` inicia el servidor de desarrollo de Astro en el puerto `3000`
 - `npm run build` genera la versión de producción
 - `npm run preview` sirve la versión de producción en local
-- `npm run lint` ejecuta `astro check`
+- `npm run lint` ejecuta `astro check` y ESLint
+- `npm run typecheck` ejecuta `tsc --noEmit`
+- `npm run test` ejecuta la base de tests con Vitest
 - `npm run clean` elimina el directorio `dist`
+
+## Validación continua
+
+- GitHub Actions ejecuta en `push` y `pull_request`:
+  - `npm ci`
+  - `npm run lint`
+  - `npm run typecheck`
+  - `npm run test`
+  - `npm run build`
+
+## Deploy a VPS
+
+- El despliegue usa `.github/workflows/deploy.yml`.
+- La referencia de despliegue y CI sigue siendo Node 22 mediante `.nvmrc`.
+- Requiere estos secrets en GitHub:
+  - `VPS_IP`
+  - `VPS_USER`
+  - `VPS_SSH_KEY`
+- El workflow:
+  - hace `git pull`
+  - ejecuta `npm ci`
+  - construye la app
+  - reinicia `lumina`
+  - valida `/api/me` como health check
 
 ## Estructura del proyecto
 

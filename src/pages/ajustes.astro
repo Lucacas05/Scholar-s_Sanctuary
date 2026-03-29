@@ -1,0 +1,75 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+
+const returnPath =
+  Astro.url.searchParams.get("next") || "/biblioteca-compartida";
+---
+
+<BaseLayout title="Ajustes" currentPath="/ajustes" showFab={false}>
+  <section class="mx-auto max-w-4xl space-y-8">
+    <header class="bg-surface-container-low pixel-border p-8">
+      <p
+        class="font-headline text-[10px] font-bold uppercase tracking-[0.25em] text-outline"
+      >
+        Preferencias de cuenta
+      </p>
+      <h1
+        class="mt-3 font-headline text-4xl font-black uppercase tracking-tight text-on-surface"
+      >
+        Ajustes del santuario
+      </h1>
+      <p class="mt-4 max-w-2xl text-sm leading-relaxed text-on-surface-variant">
+        Desde aquí puedes rehacer tu entrada inicial al archivo y volver a
+        definir el perfil base con el que entras en Lumina.
+      </p>
+    </header>
+
+    <div class="grid gap-6 lg:grid-cols-2">
+      <article class="bg-surface-container pixel-border p-6">
+        <p
+          class="font-headline text-[10px] font-bold uppercase tracking-[0.25em] text-outline"
+        >
+          Onboarding
+        </p>
+        <h2
+          class="mt-2 font-headline text-2xl font-black uppercase tracking-tight text-on-surface"
+        >
+          Repetir bienvenida
+        </h2>
+        <p class="mt-3 text-sm leading-relaxed text-on-surface-variant">
+          Vuelve a editar nombre visible, objetivo inicial, sala preferida y
+          avatar base.
+        </p>
+        <a
+          href={`/bienvenida?repetir=1&next=${encodeURIComponent(returnPath)}`}
+          class="mt-6 inline-flex items-center justify-center border-b-[3px] border-on-primary-fixed-variant bg-primary px-4 py-3 font-headline text-xs font-bold uppercase tracking-widest text-on-primary"
+        >
+          Abrir bienvenida
+        </a>
+      </article>
+
+      <article class="bg-surface-container pixel-border p-6">
+        <p
+          class="font-headline text-[10px] font-bold uppercase tracking-[0.25em] text-outline"
+        >
+          Perfil
+        </p>
+        <h2
+          class="mt-2 font-headline text-2xl font-black uppercase tracking-tight text-on-surface"
+        >
+          Ajustar avatar
+        </h2>
+        <p class="mt-3 text-sm leading-relaxed text-on-surface-variant">
+          Si solo quieres cambiar la apariencia sin repetir todo el onboarding,
+          entra directamente en Refinar.
+        </p>
+        <a
+          href="/refinar"
+          class="mt-6 inline-flex items-center justify-center border-b-[3px] border-outline-variant bg-surface-container-high px-4 py-3 font-headline text-xs font-bold uppercase tracking-widest text-on-surface"
+        >
+          Ir a Refinar
+        </a>
+      </article>
+    </div>
+  </section>
+</BaseLayout>

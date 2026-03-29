@@ -52,3 +52,27 @@ CREATE TABLE IF NOT EXISTS room_invitations (
   created_at TEXT DEFAULT (datetime('now')),
   UNIQUE(room_code, invitee_id)
 );
+
+CREATE TABLE IF NOT EXISTS pomodoro_sessions (
+  id TEXT PRIMARY KEY,
+  client_session_id TEXT NOT NULL,
+  user_id TEXT NOT NULL REFERENCES users(id),
+  room_code TEXT NOT NULL,
+  room_kind TEXT NOT NULL,
+  focus_duration_seconds INTEGER NOT NULL,
+  break_duration_seconds INTEGER NOT NULL,
+  started_at TEXT NOT NULL,
+  completed_at TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'completed',
+  created_at TEXT DEFAULT (datetime('now')),
+  UNIQUE(user_id, client_session_id)
+);
+
+CREATE TABLE IF NOT EXISTS achievement_unlocks (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id),
+  achievement_id TEXT NOT NULL,
+  unlocked_at TEXT NOT NULL,
+  created_at TEXT DEFAULT (datetime('now')),
+  UNIQUE(user_id, achievement_id)
+);

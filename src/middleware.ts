@@ -14,14 +14,21 @@ const ACCOUNT_ONLY_PATHS = [
   "/refinar",
   "/cronicas",
   "/social",
+  "/ajustes",
 ] as const;
 const ONBOARDING_PATH = "/bienvenida";
 
 function isAccountOnlyPath(pathname: string) {
-  return ACCOUNT_ONLY_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
+  return ACCOUNT_ONLY_PATHS.some(
+    (path) => pathname === path || pathname.startsWith(`${path}/`),
+  );
 }
 
-function buildRedirectURL(request: Request, pathname: string, nextPath?: string) {
+function buildRedirectURL(
+  request: Request,
+  pathname: string,
+  nextPath?: string,
+) {
   const url = new URL(pathname, request.url);
   if (nextPath) {
     url.searchParams.set("next", nextPath);
@@ -29,7 +36,10 @@ function buildRedirectURL(request: Request, pathname: string, nextPath?: string)
   return url;
 }
 
-export const onRequest: MiddlewareHandler = async ({ cookies, locals, request }, next) => {
+export const onRequest: MiddlewareHandler = async (
+  { cookies, locals, request },
+  next,
+) => {
   locals.user = null;
   locals.sessionId = null;
   locals.userState = null;
@@ -53,13 +63,17 @@ export const onRequest: MiddlewareHandler = async ({ cookies, locals, request },
   const currentURL = new URL(request.url);
   const pathname = currentURL.pathname;
   const nextPath = `${pathname}${currentURL.search}`;
+  const isReplayOnboarding = currentURL.searchParams.get("repetir") === "1";
 
   if (pathname === ONBOARDING_PATH) {
     if (!locals.user) {
-      return Response.redirect(buildRedirectURL(request, "/api/auth/login", nextPath), 302);
+      return Response.redirect(
+        buildRedirectURL(request, "/api/auth/login", nextPath),
+        302,
+      );
     }
 
-    if (locals.onboardingCompleted) {
+    if (locals.onboardingCompleted && !isReplayOnboarding) {
       return Response.redirect(
         buildRedirectURL(
           request,
@@ -72,11 +86,17 @@ export const onRequest: MiddlewareHandler = async ({ cookies, locals, request },
 
   if (isAccountOnlyPath(pathname)) {
     if (!locals.user) {
-      return Response.redirect(buildRedirectURL(request, "/api/auth/login", nextPath), 302);
+      return Response.redirect(
+        buildRedirectURL(request, "/api/auth/login", nextPath),
+        302,
+      );
     }
 
     if (!locals.onboardingCompleted) {
-      return Response.redirect(buildRedirectURL(request, ONBOARDING_PATH, nextPath), 302);
+      return Response.redirect(
+        buildRedirectURL(request, ONBOARDING_PATH, nextPath),
+        302,
+      );
     }
   }
 

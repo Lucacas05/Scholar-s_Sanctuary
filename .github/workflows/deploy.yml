@@ -10,20 +10,22 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Conectando al VPS y actualizando
-      uses: appleboy/ssh-action@v1.2.2
-      with:
-        host: ${{ secrets.VPS_IP }}
-        username: ${{ secrets.VPS_USER }}
-        password: ${{ secrets.VPS_PASSWORD }}
-        script: |
-          set -e
-          cd /var/www/Scholar-s_Sanctuary
-          git config --global --add safe.directory /var/www/Scholar-s_Sanctuary
-          git pull origin main
-          npm ci
-          npm run build
-          sudo systemctl restart lumina
-          sleep 5
-          curl --fail --silent --show-error http://127.0.0.1:3000/api/me > /tmp/lumina-healthcheck.json
-          sudo systemctl --no-pager --full status lumina
+      - name: Conectando al VPS y actualizando
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.VPS_IP }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            set -e
+            export PATH="/usr/local/bin:/usr/bin:/bin:$PATH"
+            cd /var/www/Scholar-s_Sanctuary
+            git config --global --add safe.directory /var/www/Scholar-s_Sanctuary
+            git pull origin main
+            node --version
+            npm ci
+            npm run build
+            sudo systemctl restart lumina
+            sleep 5
+            curl --fail --silent --show-error http://127.0.0.1:3000/api/me > /tmp/lumina-healthcheck.json
+            sudo systemctl --no-pager --full status lumina
