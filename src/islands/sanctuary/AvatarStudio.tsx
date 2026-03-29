@@ -15,7 +15,6 @@ import { useGsapReveal } from "@/islands/sanctuary/useGsapReveal";
 import {
   WARDROBE_CONFIG_EVENT,
   formatWardrobeDuration,
-  getWardrobeLevel,
   getWardrobeRequirementLevel,
   isWardrobeItemUnlocked,
   listVisibleWardrobeRulesByField,
@@ -99,11 +98,6 @@ export function AvatarStudio() {
   const rootRef = useRef<HTMLDivElement | null>(null);
   const wardrobeManaged = isWardrobeManagedField(activeField);
   const totalFocusSeconds = stats?.totalFocusSeconds ?? 0;
-  const currentLevel = getWardrobeLevel(
-    totalFocusSeconds,
-    wardrobeConfig.levelStepFocusSeconds,
-  );
-
   const currentOptions = useMemo(() => {
     if (!wardrobeManaged) {
       return avatarOptions[activeField];
@@ -124,10 +118,6 @@ export function AvatarStudio() {
     ? garmentColorFieldByField[activeField]
     : null;
   const colorOptions = activeColorField ? avatarOptions[activeColorField] : [];
-  const activeOption =
-    avatarOptions[activeField].find(
-      (option) => option.value === avatar[activeField],
-    ) ?? null;
   const activeRequirementLevel = wardrobeManaged
     ? getWardrobeRequirementLevel(
         activeField,
@@ -143,10 +133,6 @@ export function AvatarStudio() {
         wardrobeConfig,
       )
     : true;
-  const activeColorValue = activeColorField ? avatar[activeColorField] : null;
-  const activeColorMeta = activeColorValue
-    ? garmentColorMeta[activeColorValue]
-    : null;
 
   useGsapReveal(rootRef);
 
@@ -278,40 +264,30 @@ export function AvatarStudio() {
           </div>
         ) : null}
 
-        <div className="gsap-rise grid gap-6 xl:grid-cols-[minmax(0,0.98fr)_minmax(18rem,0.82fr)]">
+        <div className="gsap-rise grid gap-6 xl:grid-cols-[minmax(0,1.14fr)_minmax(18rem,0.7fr)]">
           <div className="relative overflow-hidden border border-outline-variant bg-[radial-gradient(circle_at_50%_16%,rgba(255,193,112,0.18),transparent_34%),linear-gradient(180deg,#221915_0%,#17100e_58%,#120c0a_100%)] px-6 py-8 sm:px-8">
             <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.018) 1px,transparent 1px),linear-gradient(180deg,rgba(255,255,255,0.018) 1px,transparent 1px)] bg-[size:28px_28px] opacity-35" />
             <div className="absolute left-1/2 top-14 h-40 w-40 -translate-x-1/2 rounded-full bg-primary/14 blur-3xl" />
             <div className="absolute inset-x-[13%] bottom-7 h-24 rounded-[2rem] border border-primary/16 bg-[linear-gradient(180deg,rgba(255,190,110,0.08),rgba(20,15,13,0.12))]" />
 
-            <div className="relative flex min-h-[31rem] flex-col">
-              <div className="flex items-start justify-between gap-4">
+            <div className="relative flex min-h-[35rem] flex-col">
+              <div>
                 <div>
                   <p className="font-headline text-[10px] font-bold uppercase tracking-[0.26em] text-outline">
-                    Vista activa
+                    Vista previa
                   </p>
                   <h1 className="mt-2 font-headline text-3xl font-black uppercase tracking-tight text-on-surface">
-                    {fieldLabels[activeField]}
+                    Refinar avatar
                   </h1>
                   <p className="mt-3 max-w-md text-sm leading-relaxed text-on-surface-variant">
-                    {activeOption?.description ??
-                      "La vista previa grande refleja al momento cualquier cambio que hagas en tu avatar."}
+                    La vista grande refleja al momento cualquier cambio que
+                    hagas en tu avatar.
                   </p>
                 </div>
-                {wardrobeManaged ? (
-                  <div className="border border-primary/35 bg-primary/10 px-3 py-2">
-                    <p className="font-headline text-[10px] font-bold uppercase tracking-[0.2em] text-outline">
-                      Nivel actual
-                    </p>
-                    <p className="font-headline text-xl font-black uppercase tracking-tight text-primary">
-                      {currentLevel}
-                    </p>
-                  </div>
-                ) : null}
               </div>
 
-              <div className="mt-4 flex flex-1 items-center justify-center">
-                <div className="scale-[1.16] sm:scale-[1.24]">
+              <div className="mt-6 flex flex-1 items-center justify-center">
+                <div className="scale-[1.3] sm:scale-[1.42]">
                   <PixelAvatar
                     avatar={avatar}
                     size="xxl"
@@ -322,67 +298,10 @@ export function AvatarStudio() {
                   />
                 </div>
               </div>
-
-              <div className="grid gap-3 sm:grid-cols-3">
-                <div className="border-l-4 border-primary bg-surface-container px-4 py-3">
-                  <p className="font-headline text-[10px] font-bold uppercase tracking-[0.24em] text-outline">
-                    Pieza activa
-                  </p>
-                  <p className="mt-2 font-headline text-sm font-black uppercase tracking-tight text-primary">
-                    {activeOption?.label ?? avatar[activeField]}
-                  </p>
-                </div>
-                <div className="border-l-4 border-secondary bg-surface-container px-4 py-3">
-                  <p className="font-headline text-[10px] font-bold uppercase tracking-[0.24em] text-outline">
-                    Estado
-                  </p>
-                  <p className="mt-2 font-headline text-sm font-black uppercase tracking-tight text-secondary">
-                    {wardrobeManaged
-                      ? activeUnlocked
-                        ? `Abierta en nivel ${activeRequirementLevel}`
-                        : `Bloqueada hasta nivel ${activeRequirementLevel}`
-                      : "Edición libre"}
-                  </p>
-                </div>
-                <div className="border-l-4 border-tertiary bg-surface-container px-4 py-3">
-                  <p className="font-headline text-[10px] font-bold uppercase tracking-[0.24em] text-outline">
-                    Color activo
-                  </p>
-                  <p className="mt-2 font-headline text-sm font-black uppercase tracking-tight text-tertiary">
-                    {activeColorMeta?.label ?? "Sin color editable"}
-                  </p>
-                </div>
-              </div>
             </div>
           </div>
 
           <div className="space-y-4">
-            <div className="gsap-rise border border-outline-variant bg-surface-container p-4">
-              <p className="font-headline text-[10px] font-bold uppercase tracking-[0.24em] text-outline">
-                Pieza elegida
-              </p>
-              <div className="mt-4 flex items-center gap-4">
-                <div className="flex h-24 w-24 items-center justify-center overflow-hidden border border-outline-variant bg-surface-container-low">
-                  {activeOption ? (
-                    <ItemModelPreview
-                      field={activeField}
-                      value={activeOption.value}
-                      avatar={avatar}
-                    />
-                  ) : null}
-                </div>
-                <div>
-                  <p className="font-headline text-lg font-black uppercase tracking-tight text-on-surface">
-                    {activeOption?.label ?? fieldLabels[activeField]}
-                  </p>
-                  <p className="mt-2 text-sm leading-relaxed text-on-surface-variant">
-                    {activeOption?.description ??
-                      "Selecciona una opción del catálogo para ver su vista previa aquí."}
-                  </p>
-                </div>
-              </div>
-            </div>
-
             {activeColorField ? (
               <div className="gsap-rise border border-outline-variant bg-surface-container p-4">
                 <p className="font-headline text-[10px] font-bold uppercase tracking-[0.24em] text-outline">
