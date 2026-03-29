@@ -1,0 +1,34 @@
+---
+interface Props {
+  src?: string | null;
+  alt: string;
+  fallbackSrc: string;
+  class?: string;
+  loading?: "lazy" | "eager";
+  decoding?: "async" | "sync" | "auto";
+  style?: string;
+}
+
+const {
+  src,
+  alt,
+  fallbackSrc,
+  class: className,
+  loading = "lazy",
+  decoding = "async",
+  style,
+} = Astro.props as Props;
+
+const safeSrc = src && src.trim().length > 0 ? src : fallbackSrc;
+const onError = `if(this.src!==window.location.origin+'${fallbackSrc}'&&this.getAttribute('src')!=='${fallbackSrc}'){this.src='${fallbackSrc}';}`;
+---
+
+<img
+  src={safeSrc}
+  alt={alt}
+  class={className}
+  loading={loading}
+  decoding={decoding}
+  style={style}
+  onerror={onError}
+/>

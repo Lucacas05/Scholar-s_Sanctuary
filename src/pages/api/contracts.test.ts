@@ -3,6 +3,8 @@ import { db } from "@/lib/server/db";
 import { GET as getFriends } from "./friends/index";
 import { DELETE as deleteFriend } from "./friends/[friendId]";
 import { POST as inviteToRoom } from "./rooms/[code]/invite";
+import { GET as getSocialFeed } from "./social/feed";
+import { GET as getSocialLeaderboard } from "./social/leaderboard";
 import { GET as searchUsers } from "./users/search";
 
 interface TestUser {
@@ -59,6 +61,45 @@ function insertUser(user: TestUser) {
 
 async function toJson<T>(response: Response) {
   return (await response.json()) as T;
+}
+
+function insertPomodoroSession(options: {
+  id: string;
+  clientSessionId: string;
+  userId: string;
+  roomCode?: string;
+  roomKind?: "solo" | "public" | "private";
+  focusSeconds: number;
+  breakSeconds?: number;
+  startedAt: string;
+  completedAt: string;
+}) {
+  db.prepare(
+    `
+      INSERT INTO pomodoro_sessions (
+        id,
+        client_session_id,
+        user_id,
+        room_code,
+        room_kind,
+        focus_duration_seconds,
+        break_duration_seconds,
+        started_at,
+        completed_at,
+        status
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'completed')
+    `,
+  ).run(
+    options.id,
+    options.clientSessionId,
+    options.userId,
+    options.roomCode ?? "santuario-silencioso",
+    options.roomKind ?? "solo",
+    options.focusSeconds,
+    options.breakSeconds ?? 300,
+    options.startedAt,
+    options.completedAt,
+  );
 }
 
 describe("contratos API del santuario", () => {
@@ -261,6 +302,180 @@ describe("contratos API del santuario", () => {
     await expect(toJson<{ error: string }>(response)).resolves.toEqual({
       error: "Only owner can invite to this room",
     });
+  });
+
+  it("oculta del ranking a quien desactiva aparecer en leaderboard", async () => {
+    const currentUser = {
+      id: "github-1",
+      githubId: 1,
+      username: "faby",
+      displayName: "Faby",
+    };
+    const visibleFriend = {
+      id: "github-2",
+      githubId: 2,
+      username: "lucas",
+      displayName: "Lucas",
+    };
+    const hiddenFriend = {
+      id: "github-3",
+      githubId: 3,
+      username: "ines",
+      displayName: "Inés",
+    };
+
+    insertUser(currentUser);
+    insertUser(visibleFriend);
+    db.prepare(
+      "INSERT INTO users (id, github_id, username, display_name, state_json) VALUES (?, ?, ?, ?, ?)",
+    ).run(
+      hiddenFriend.id,
+      hiddenFriend.githubId,
+      hiddenFriend.username,
+      hiddenFriend.displayName,
+      JSON.stringify({
+        socialPrivacy: {
+          shareActivity: false,
+          showOnLeaderboard: false,
+        },
+      }),
+    );
+
+    db.prepare(
+      "INSERT INTO friendships (id, user_id, friend_id, status) VALUES (?, ?, ?, 'accepted')",
+    ).run("friendship-1", currentUser.id, visibleFriend.id);
+    db.prepare(
+      "INSERT INTO friendships (id, user_id, friend_id, status) VALUES (?, ?, ?, 'accepted')",
+    ).run("friendship-2", currentUser.id, hiddenFriend.id);
+
+    const now = Date.now();
+    insertPomodoroSession({
+      id: "ps-1",
+      clientSessionId: "client-1",
+      userId: currentUser.id,
+      focusSeconds: 1500,
+      startedAt: new Date(now - 45 * 60 * 1000).toISOString(),
+      completedAt: new Date(now - 20 * 60 * 1000).toISOString(),
+    });
+    insertPomodoroSession({
+      id: "ps-2",
+      clientSessionId: "client-2",
+      userId: visibleFriend.id,
+      focusSeconds: 1800,
+      startedAt: new Date(now - 2 * 60 * 60 * 1000).toISOString(),
+      completedAt: new Date(now - 90 * 60 * 1000).toISOString(),
+    });
+    insertPomodoroSession({
+      id: "ps-3",
+      clientSessionId: "client-3",
+      userId: hiddenFriend.id,
+      focusSeconds: 2400,
+      startedAt: new Date(now - 100 * 60 * 1000).toISOString(),
+      completedAt: new Date(now - 70 * 60 * 1000).toISOString(),
+    });
+
+    const response = await getSocialLeaderboard(
+      createApiContext({
+        user: currentUser,
+        url: "https://lumina.test/api/social/leaderboard",
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    const payload = await toJson<{
+      rangeLabel: string;
+      leaderboard: Array<{ user: { id: string } }>;
+    }>(response);
+
+    expect(payload.rangeLabel.length).toBeGreaterThan(0);
+    expect(payload.leaderboard.map((entry) => entry.user.id)).toEqual([
+      visibleFriend.id,
+      currentUser.id,
+    ]);
+  });
+
+  it("oculta del feed a quien desactiva compartir actividad", async () => {
+    const currentUser = {
+      id: "github-1",
+      githubId: 1,
+      username: "faby",
+      displayName: "Faby",
+    };
+    const visibleFriend = {
+      id: "github-2",
+      githubId: 2,
+      username: "lucas",
+      displayName: "Lucas",
+    };
+    const hiddenFriend = {
+      id: "github-3",
+      githubId: 3,
+      username: "ines",
+      displayName: "Inés",
+    };
+
+    insertUser(currentUser);
+    insertUser(visibleFriend);
+    db.prepare(
+      "INSERT INTO users (id, github_id, username, display_name, state_json) VALUES (?, ?, ?, ?, ?)",
+    ).run(
+      hiddenFriend.id,
+      hiddenFriend.githubId,
+      hiddenFriend.username,
+      hiddenFriend.displayName,
+      JSON.stringify({
+        socialPrivacy: {
+          shareActivity: false,
+          showOnLeaderboard: false,
+        },
+      }),
+    );
+
+    db.prepare(
+      "INSERT INTO friendships (id, user_id, friend_id, status) VALUES (?, ?, ?, 'accepted')",
+    ).run("friendship-1", currentUser.id, visibleFriend.id);
+    db.prepare(
+      "INSERT INTO friendships (id, user_id, friend_id, status) VALUES (?, ?, ?, 'accepted')",
+    ).run("friendship-2", currentUser.id, hiddenFriend.id);
+
+    const now = Date.now();
+    insertPomodoroSession({
+      id: "feed-1",
+      clientSessionId: "feed-client-1",
+      userId: visibleFriend.id,
+      roomCode: "gran-lectorio",
+      roomKind: "public",
+      focusSeconds: 1500,
+      startedAt: new Date(now - 40 * 60 * 1000).toISOString(),
+      completedAt: new Date(now - 15 * 60 * 1000).toISOString(),
+    });
+    insertPomodoroSession({
+      id: "feed-2",
+      clientSessionId: "feed-client-2",
+      userId: hiddenFriend.id,
+      focusSeconds: 1500,
+      startedAt: new Date(now - 100 * 60 * 1000).toISOString(),
+      completedAt: new Date(now - 70 * 60 * 1000).toISOString(),
+    });
+
+    const response = await getSocialFeed(
+      createApiContext({
+        user: currentUser,
+        url: "https://lumina.test/api/social/feed",
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    const payload = await toJson<{
+      feed: Array<{ actor: { id: string } }>;
+    }>(response);
+
+    expect(
+      payload.feed.some((item) => item.actor.id === visibleFriend.id),
+    ).toBe(true);
+    expect(payload.feed.some((item) => item.actor.id === hiddenFriend.id)).toBe(
+      false,
+    );
   });
 
   it("enforcea foreign keys al escribir en SQLite", () => {

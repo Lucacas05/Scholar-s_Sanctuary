@@ -18,9 +18,14 @@ import {
   Users,
   X,
 } from "lucide-react";
+import { SafeImage } from "@/components/SafeImage";
 import { siteContent } from "@/data/site";
 import { useGsapReveal } from "@/islands/sanctuary/useGsapReveal";
-import { useSanctuaryStore } from "@/lib/sanctuary/store";
+import {
+  getFullState,
+  sanctuaryActions,
+  useSanctuaryStore,
+} from "@/lib/sanctuary/store";
 import * as realtime from "@/lib/sanctuary/realtime";
 import type { ServerMessage } from "@/lib/server/ws-types";
 
@@ -80,6 +85,32 @@ interface ActiveInvitation {
   invitee: { id: string; username: string; displayName: string };
 }
 
+interface FeedItem {
+  id: string;
+  type: "session" | "streak";
+  actor: {
+    id: string;
+    username: string;
+    displayName: string;
+    avatarUrl: string | null;
+  };
+  message: string;
+  happenedAt: string;
+}
+
+interface LeaderboardEntry {
+  rank: number;
+  user: {
+    id: string;
+    username: string;
+    displayName: string;
+    avatarUrl: string | null;
+  };
+  focusMinutes: number;
+  sessionsCount: number;
+  isCurrentUser: boolean;
+}
+
 /* ------------------------------------------------------------------ */
 /*  Static labels                                                      */
 /* ------------------------------------------------------------------ */
@@ -106,7 +137,14 @@ function AvatarBubble({
   return (
     <div className="relative flex h-12 w-12 shrink-0 items-center justify-center border-4 border-surface-container-highest bg-surface-container-low overflow-hidden">
       {url ? (
-        <img src={url} alt={fallback} className="h-full w-full object-cover" />
+        <SafeImage
+          src={url}
+          fallbackSrc="/site/placeholder-avatar.svg"
+          alt={fallback}
+          className="h-full w-full object-cover"
+          loading="lazy"
+          decoding="async"
+        />
       ) : (
         <span className="font-headline text-sm font-black text-primary">
           {fallback}
@@ -151,6 +189,18 @@ async function readActionError(response: Response, fallback: string) {
   return typeof payload?.error === "string" ? payload.error : fallback;
 }
 
+function formatFeedTime(value: string) {
+  const timestamp = Date.parse(value);
+  if (Number.isNaN(timestamp)) {
+    return "ahora";
+  }
+
+  return new Intl.RelativeTimeFormat("es", { numeric: "auto" }).format(
+    Math.round((timestamp - Date.now()) / (60 * 60 * 1000)),
+    "hour",
+  );
+}
+
 /* ------------------------------------------------------------------ */
 /*  Component                                                          */
 /* ------------------------------------------------------------------ */
@@ -184,6 +234,10 @@ export function ScribeGuild() {
   const [activeInvitesByRoom, setActiveInvitesByRoom] = useState<
     Record<string, ActiveInvitation[]>
   >({});
+  const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [leaderboardRange, setLeaderboardRange] = useState("");
+  const [isSocialMetricsLoading, setIsSocialMetricsLoading] = useState(false);
 
   /* ---- UI state ---- */
   const [activeTab, setActiveTab] = useState<"friends" | "requests">("friends");
@@ -272,6 +326,44 @@ export function ScribeGuild() {
     }
   }, []);
 
+  const fetchSocialMetrics = useCallback(async () => {
+    setIsSocialMetricsLoading(true);
+
+    try {
+      const [feedRes, leaderboardRes] = await Promise.all([
+        fetch("/api/social/feed"),
+        fetch("/api/social/leaderboard"),
+      ]);
+
+      if (feedRes.ok) {
+        const data = await feedRes.json();
+        setFeedItems(data.feed ?? []);
+      }
+
+      if (leaderboardRes.ok) {
+        const data = await leaderboardRes.json();
+        setLeaderboard(data.leaderboard ?? []);
+        setLeaderboardRange(data.rangeLabel ?? "");
+      }
+    } catch {
+      /* network error */
+    } finally {
+      setIsSocialMetricsLoading(false);
+    }
+  }, []);
+
+  const persistCurrentStateSnapshot = useCallback(async () => {
+    const snapshot = getFullState();
+    await fetch("/api/me", {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ state: snapshot }),
+    });
+  }, []);
+
   const fetchActiveInvitations = useCallback(async (roomCode: string) => {
     try {
       const res = await fetch(`/api/rooms/${roomCode}/invite`);
@@ -292,7 +384,15 @@ export function ScribeGuild() {
     fetchRequests();
     fetchRooms();
     fetchInvitations();
-  }, [isAnonymous, fetchFriends, fetchRequests, fetchRooms, fetchInvitations]);
+    void fetchSocialMetrics();
+  }, [
+    isAnonymous,
+    fetchFriends,
+    fetchInvitations,
+    fetchRequests,
+    fetchRooms,
+    fetchSocialMetrics,
+  ]);
 
   useEffect(() => {
     if (isAnonymous) return;
@@ -593,6 +693,20 @@ export function ScribeGuild() {
       }
     } catch {
       setFeedback("No se pudo revocar la invitación.");
+    }
+  };
+
+  const handleTogglePrivacy = async (
+    key: "shareActivity" | "showOnLeaderboard",
+  ) => {
+    const nextValue = !sanctuary.socialPrivacy[key];
+    sanctuaryActions.updateSocialPrivacy({ [key]: nextValue });
+
+    try {
+      await persistCurrentStateSnapshot();
+      await fetchSocialMetrics();
+    } catch {
+      setFeedback("No se pudo guardar la privacidad social.");
     }
   };
 
@@ -1342,6 +1456,201 @@ export function ScribeGuild() {
           </div>
         </aside>
       </div>
+
+      <section className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(22rem,0.85fr)]">
+        <div className="gsap-rise bg-surface-container pixel-border">
+          <div className="border-b-4 border-surface-container-highest p-5">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="flex h-8 w-8 items-center justify-center border-2 border-primary bg-surface-container-highest">
+                  <MessageSquare size={16} className="text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-headline font-black uppercase tracking-tighter text-on-surface">
+                    Feed del gremio
+                  </h3>
+                  <p className="font-headline text-[10px] font-bold uppercase tracking-[0.22em] text-outline">
+                    Actividad reciente entre amistades
+                  </p>
+                </div>
+              </div>
+              {isSocialMetricsLoading ? (
+                <span className="font-headline text-[10px] font-bold uppercase tracking-[0.2em] text-outline">
+                  Actualizando...
+                </span>
+              ) : null}
+            </div>
+          </div>
+
+          <div className="divide-y divide-surface-container-highest">
+            {feedItems.length === 0 ? (
+              <div className="p-6 text-center">
+                <Users
+                  size={24}
+                  className="mx-auto mb-2 text-outline-variant"
+                />
+                <p className="font-headline text-xs font-bold uppercase tracking-tight text-outline">
+                  El feed está tranquilo
+                </p>
+                <p className="mt-2 text-sm leading-relaxed text-on-surface-variant">
+                  Completa sesiones con tu círculo o mantén la racha para que el
+                  gremio empiece a moverse.
+                </p>
+              </div>
+            ) : (
+              feedItems.map((item) => (
+                <article key={item.id} className="flex items-start gap-4 p-5">
+                  <AvatarBubble
+                    url={item.actor.avatarUrl}
+                    fallback={initials(item.actor.displayName)}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-headline text-sm font-black uppercase tracking-tight text-on-surface">
+                        {item.actor.displayName}
+                      </p>
+                      <span
+                        className={`border px-2 py-1 font-headline text-[9px] font-bold uppercase tracking-[0.18em] ${
+                          item.type === "streak"
+                            ? "border-tertiary bg-tertiary/10 text-tertiary"
+                            : "border-primary bg-primary/10 text-primary"
+                        }`}
+                      >
+                        {item.type === "streak" ? "Racha" : "Sesión"}
+                      </span>
+                    </div>
+                    <p className="mt-2 text-sm leading-relaxed text-on-surface-variant">
+                      {item.message}
+                    </p>
+                    <p className="mt-2 font-headline text-[10px] font-bold uppercase tracking-[0.2em] text-outline">
+                      @{item.actor.username} · {formatFeedTime(item.happenedAt)}
+                    </p>
+                  </div>
+                </article>
+              ))
+            )}
+          </div>
+        </div>
+
+        <div className="space-y-6">
+          <div className="gsap-rise bg-surface-container pixel-border">
+            <div className="border-b-4 border-surface-container-highest p-5">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-8 w-8 items-center justify-center border-2 border-tertiary bg-surface-container-highest">
+                    <Crown size={16} className="text-tertiary" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-headline font-black uppercase tracking-tighter text-tertiary">
+                      Ranking semanal
+                    </h3>
+                    <p className="font-headline text-[10px] font-bold uppercase tracking-[0.22em] text-outline">
+                      {leaderboardRange || "Semana actual"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="divide-y divide-surface-container-highest">
+              {leaderboard.length === 0 ? (
+                <div className="p-6 text-center">
+                  <Crown
+                    size={24}
+                    className="mx-auto mb-2 text-outline-variant"
+                  />
+                  <p className="font-headline text-xs font-bold uppercase tracking-tight text-outline">
+                    Sin puntos esta semana
+                  </p>
+                  <p className="mt-2 text-sm leading-relaxed text-on-surface-variant">
+                    El ranking se llenará en cuanto vuelvan a caer sesiones de
+                    foco.
+                  </p>
+                </div>
+              ) : (
+                leaderboard.map((entry) => (
+                  <div
+                    key={entry.user.id}
+                    className={`flex items-center gap-4 p-4 ${
+                      entry.isCurrentUser ? "bg-primary/10" : ""
+                    }`}
+                  >
+                    <div className="flex h-10 w-10 items-center justify-center border-2 border-outline-variant bg-surface-container-highest font-headline text-sm font-black text-primary">
+                      {entry.rank}
+                    </div>
+                    <AvatarBubble
+                      url={entry.user.avatarUrl}
+                      fallback={initials(entry.user.displayName)}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-headline text-sm font-black uppercase tracking-tight text-on-surface">
+                        {entry.user.displayName}
+                      </p>
+                      <p className="font-headline text-[10px] font-bold uppercase tracking-widest text-outline">
+                        @{entry.user.username}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-headline text-sm font-black text-tertiary">
+                        {entry.focusMinutes} min
+                      </p>
+                      <p className="font-headline text-[10px] font-bold uppercase tracking-[0.18em] text-outline">
+                        {entry.sessionsCount} sesiones
+                      </p>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          <div className="gsap-rise bg-surface-container pixel-border p-6">
+            <div className="mb-4 flex items-center gap-3">
+              <Shield size={18} className="text-secondary" />
+              <h3 className="text-lg font-headline font-black uppercase tracking-tight text-secondary">
+                Privacidad social
+              </h3>
+            </div>
+            <div className="space-y-3">
+              <button
+                type="button"
+                onClick={() => void handleTogglePrivacy("shareActivity")}
+                className={`inline-flex w-full items-center justify-between border-2 px-4 py-3 font-headline text-[10px] font-bold uppercase tracking-[0.2em] ${
+                  sanctuary.socialPrivacy.shareActivity
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-outline-variant bg-surface-container-low text-on-surface"
+                }`}
+              >
+                <span>Compartir actividad</span>
+                <span>
+                  {sanctuary.socialPrivacy.shareActivity ? "Visible" : "Oculta"}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => void handleTogglePrivacy("showOnLeaderboard")}
+                className={`inline-flex w-full items-center justify-between border-2 px-4 py-3 font-headline text-[10px] font-bold uppercase tracking-[0.2em] ${
+                  sanctuary.socialPrivacy.showOnLeaderboard
+                    ? "border-tertiary bg-tertiary/10 text-tertiary"
+                    : "border-outline-variant bg-surface-container-low text-on-surface"
+                }`}
+              >
+                <span>Salir del ranking</span>
+                <span>
+                  {sanctuary.socialPrivacy.showOnLeaderboard
+                    ? "Mostrado"
+                    : "Oculto"}
+                </span>
+              </button>
+            </div>
+            <p className="mt-4 text-sm leading-relaxed text-on-surface-variant">
+              Estos controles se guardan en tu cuenta y afectan al feed y al
+              ranking semanal del gremio.
+            </p>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Pause, Play, RotateCcw, Sparkles } from "lucide-react";
+import { AmbientMixer } from "@/islands/sanctuary/AmbientMixer";
 import {
   getCurrentTimer,
   sanctuaryActions,
@@ -201,6 +202,8 @@ export function StudyTimer({
             <NotificationSettings />
           </div>
         )}
+
+        {!isAnonymousBlocked && <AmbientMixer />}
 
         <div className="mt-6 flex flex-wrap justify-center gap-4">
           <button

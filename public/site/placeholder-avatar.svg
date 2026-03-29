@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
+  <title id="title">Avatar de reserva</title>
+  <desc id="desc">Emblema circular de Lumina para usar cuando falle un avatar remoto.</desc>
+  <rect width="256" height="256" fill="#201a18" />
+  <rect x="20" y="20" width="216" height="216" fill="#251e1c" stroke="#434841" stroke-width="8" />
+  <circle cx="128" cy="96" r="44" fill="#ffb961" />
+  <path d="M64 202c8-38 34-58 64-58s56 20 64 58" fill="#add0a8" />
+  <path d="M86 96h84" stroke="#472a00" stroke-width="10" stroke-linecap="square" />
+  <text x="128" y="232" fill="#ffcf93" font-family="Space Grotesk, sans-serif" font-size="20" font-weight="700" text-anchor="middle" letter-spacing="4">LUMINA</text>
+</svg>

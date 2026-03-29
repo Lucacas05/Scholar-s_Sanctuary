@@ -213,6 +213,7 @@ export interface StudySession {
   breakSeconds?: number;
   startedAt?: number;
   completedAt: number;
+  plannedSessionId?: string | null;
   serverId?: string | null;
   persistedAt?: number | null;
 }
@@ -240,6 +241,47 @@ export interface NotificationPreferences {
   soundEnabled: boolean;
 }
 
+export type PlannedSessionStatus =
+  | "scheduled"
+  | "started"
+  | "completed"
+  | "cancelled";
+
+export interface PlannedSession {
+  id: string;
+  userId: string;
+  title: string;
+  notes: string;
+  scheduledFor: number;
+  focusMinutes: number;
+  breakMinutes: number;
+  roomCode: string;
+  roomKind: RoomKind;
+  status: PlannedSessionStatus;
+  reminderLeadMinutes: number;
+  remindedAt?: number | null;
+  startedAt?: number | null;
+  completedAt?: number | null;
+}
+
+export interface PlannerPreferences {
+  remindersEnabled: boolean;
+  defaultLeadMinutes: number;
+}
+
+export interface SocialPrivacySettings {
+  shareActivity: boolean;
+  showOnLeaderboard: boolean;
+}
+
+export type AmbientTrackId = "rain" | "fire" | "library" | "wind";
+
+export interface AmbientMixerPreset {
+  enabled: boolean;
+  masterVolume: number;
+  tracks: Record<AmbientTrackId, number>;
+}
+
 export interface SanctuaryState {
   version: number;
   sessionState: SessionState;
@@ -254,6 +296,11 @@ export interface SanctuaryState {
   timer: TimerState;
   notificationPreferences: NotificationPreferences;
   sessions: StudySession[];
+  plannedSessions: PlannedSession[];
+  plannerPreferences: PlannerPreferences;
+  socialPrivacy: SocialPrivacySettings;
+  ambientMixer: AmbientMixerPreset;
+  activePlannedSessionId: string | null;
   chronicleEntries: ChronicleEntry[];
   achievementUnlocks: AchievementUnlock[];
   friendIds: string[];
@@ -1019,6 +1066,12 @@ const STORAGE_KEY = "scholars-sanctuary-state-v3";
 const CHANNEL_NAME = "scholars-sanctuary-live";
 const DEFAULT_PRIVATE_DESCRIPTION =
   "Sala reservada para amistades invitadas y foco compartido.";
+const DEFAULT_AMBIENT_TRACKS: Record<AmbientTrackId, number> = {
+  rain: 40,
+  fire: 25,
+  library: 18,
+  wind: 22,
+};
 
 interface UserBootstrapPayload {
   user: RemoteAccountIdentity | null;
@@ -1133,7 +1186,7 @@ function createInitialState(): SanctuaryState {
   );
 
   return {
-    version: 8,
+    version: 9,
     sessionState: "anonymous",
     currentUserId: null,
     onboardingCompleted: false,
@@ -1202,6 +1255,21 @@ function createInitialState(): SanctuaryState {
       soundEnabled: true,
     },
     sessions: [],
+    plannedSessions: [],
+    plannerPreferences: {
+      remindersEnabled: false,
+      defaultLeadMinutes: 10,
+    },
+    socialPrivacy: {
+      shareActivity: true,
+      showOnLeaderboard: true,
+    },
+    ambientMixer: {
+      enabled: false,
+      masterVolume: 55,
+      tracks: { ...DEFAULT_AMBIENT_TRACKS },
+    },
+    activePlannedSessionId: null,
     chronicleEntries: [],
     achievementUnlocks: [],
     friendIds: demoProfiles.map((profile) => profile.id),
@@ -1247,6 +1315,95 @@ function isAuthenticated(state: SanctuaryState) {
   return state.sessionState === "authenticated" && Boolean(state.currentUserId);
 }
 
+function clampWholeNumber(
+  value: unknown,
+  fallback: number,
+  min: number,
+  max: number,
+) {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    return fallback;
+  }
+
+  return Math.min(max, Math.max(min, Math.round(value)));
+}
+
+function normalizePlannedSession(
+  session: unknown,
+  fallbackLeadMinutes: number,
+): PlannedSession | null {
+  if (!isRecord(session) || typeof session.id !== "string") {
+    return null;
+  }
+
+  if (
+    typeof session.userId !== "string" ||
+    session.userId === "guest-current"
+  ) {
+    return null;
+  }
+
+  const roomKind =
+    session.roomKind === "solo" ||
+    session.roomKind === "public" ||
+    session.roomKind === "private"
+      ? session.roomKind
+      : "solo";
+  const status: PlannedSessionStatus =
+    session.status === "started" ||
+    session.status === "completed" ||
+    session.status === "cancelled"
+      ? session.status
+      : "scheduled";
+
+  return {
+    id: session.id,
+    userId: session.userId,
+    title:
+      typeof session.title === "string" && session.title.trim()
+        ? session.title.trim().slice(0, 80)
+        : "Bloque de foco",
+    notes:
+      typeof session.notes === "string"
+        ? session.notes.trim().slice(0, 220)
+        : "",
+    scheduledFor:
+      typeof session.scheduledFor === "number" &&
+      Number.isFinite(session.scheduledFor)
+        ? session.scheduledFor
+        : Date.now(),
+    focusMinutes: clampWholeNumber(session.focusMinutes, 25, 5, 180),
+    breakMinutes: clampWholeNumber(session.breakMinutes, 5, 1, 60),
+    roomCode:
+      typeof session.roomCode === "string" && session.roomCode.trim()
+        ? session.roomCode
+        : SOLO_ROOM_CODE,
+    roomKind,
+    status,
+    reminderLeadMinutes: clampWholeNumber(
+      session.reminderLeadMinutes,
+      fallbackLeadMinutes,
+      5,
+      120,
+    ),
+    remindedAt:
+      typeof session.remindedAt === "number" &&
+      Number.isFinite(session.remindedAt)
+        ? session.remindedAt
+        : null,
+    startedAt:
+      typeof session.startedAt === "number" &&
+      Number.isFinite(session.startedAt)
+        ? session.startedAt
+        : null,
+    completedAt:
+      typeof session.completedAt === "number" &&
+      Number.isFinite(session.completedAt)
+        ? session.completedAt
+        : null,
+  };
+}
+
 function normalizeStoredState(value: unknown) {
   if (!isRecord(value)) {
     return null;
@@ -1263,12 +1420,13 @@ function normalizeStoredState(value: unknown) {
     parsed.version !== 5 &&
     parsed.version !== 6 &&
     parsed.version !== 7 &&
-    parsed.version !== 8
+    parsed.version !== 8 &&
+    parsed.version !== 9
   ) {
     return null;
   }
 
-  parsed.version = 8;
+  parsed.version = 9;
   parsed.sessionState =
     parsed.sessionState === "authenticated" || parsed.authMode === "account"
       ? "authenticated"
@@ -1343,6 +1501,10 @@ function normalizeStoredState(value: unknown) {
           : typeof session.completedAt === "number"
             ? session.completedAt - session.focusSeconds * 1000
             : Date.now() - session.focusSeconds * 1000,
+      plannedSessionId:
+        typeof session.plannedSessionId === "string"
+          ? session.plannedSessionId
+          : null,
       serverId: typeof session.serverId === "string" ? session.serverId : null,
       persistedAt:
         typeof session.persistedAt === "number" &&
@@ -1350,6 +1512,31 @@ function normalizeStoredState(value: unknown) {
           ? session.persistedAt
           : null,
     }));
+  parsed.plannerPreferences = {
+    ...fallback.plannerPreferences,
+    ...(isRecord(parsed.plannerPreferences) ? parsed.plannerPreferences : {}),
+  };
+  parsed.plannerPreferences.remindersEnabled =
+    typeof parsed.plannerPreferences.remindersEnabled === "boolean"
+      ? parsed.plannerPreferences.remindersEnabled
+      : fallback.plannerPreferences.remindersEnabled;
+  parsed.plannerPreferences.defaultLeadMinutes = clampWholeNumber(
+    parsed.plannerPreferences.defaultLeadMinutes,
+    fallback.plannerPreferences.defaultLeadMinutes,
+    5,
+    120,
+  );
+  parsed.plannedSessions = (
+    Array.isArray(parsed.plannedSessions) ? parsed.plannedSessions : []
+  )
+    .map((session) =>
+      normalizePlannedSession(
+        session,
+        parsed.plannerPreferences.defaultLeadMinutes,
+      ),
+    )
+    .filter((session): session is PlannedSession => Boolean(session))
+    .sort((left, right) => left.scheduledFor - right.scheduledFor);
   parsed.chronicleEntries = (
     Array.isArray(parsed.chronicleEntries) ? parsed.chronicleEntries : []
   ).filter(
@@ -1392,6 +1579,71 @@ function normalizeStoredState(value: unknown) {
     typeof parsed.notificationPreferences.soundEnabled === "boolean"
       ? parsed.notificationPreferences.soundEnabled
       : fallback.notificationPreferences.soundEnabled;
+  parsed.socialPrivacy = {
+    ...fallback.socialPrivacy,
+    ...(isRecord(parsed.socialPrivacy) ? parsed.socialPrivacy : {}),
+  };
+  parsed.socialPrivacy.shareActivity =
+    typeof parsed.socialPrivacy.shareActivity === "boolean"
+      ? parsed.socialPrivacy.shareActivity
+      : fallback.socialPrivacy.shareActivity;
+  parsed.socialPrivacy.showOnLeaderboard =
+    typeof parsed.socialPrivacy.showOnLeaderboard === "boolean"
+      ? parsed.socialPrivacy.showOnLeaderboard
+      : fallback.socialPrivacy.showOnLeaderboard;
+  parsed.ambientMixer = {
+    ...fallback.ambientMixer,
+    ...(isRecord(parsed.ambientMixer) ? parsed.ambientMixer : {}),
+    tracks: {
+      ...fallback.ambientMixer.tracks,
+      ...(isRecord(parsed.ambientMixer?.tracks)
+        ? parsed.ambientMixer.tracks
+        : {}),
+    },
+  };
+  parsed.ambientMixer.enabled =
+    typeof parsed.ambientMixer.enabled === "boolean"
+      ? parsed.ambientMixer.enabled
+      : fallback.ambientMixer.enabled;
+  parsed.ambientMixer.masterVolume = clampWholeNumber(
+    parsed.ambientMixer.masterVolume,
+    fallback.ambientMixer.masterVolume,
+    0,
+    100,
+  );
+  parsed.ambientMixer.tracks = {
+    rain: clampWholeNumber(
+      parsed.ambientMixer.tracks.rain,
+      fallback.ambientMixer.tracks.rain,
+      0,
+      100,
+    ),
+    fire: clampWholeNumber(
+      parsed.ambientMixer.tracks.fire,
+      fallback.ambientMixer.tracks.fire,
+      0,
+      100,
+    ),
+    library: clampWholeNumber(
+      parsed.ambientMixer.tracks.library,
+      fallback.ambientMixer.tracks.library,
+      0,
+      100,
+    ),
+    wind: clampWholeNumber(
+      parsed.ambientMixer.tracks.wind,
+      fallback.ambientMixer.tracks.wind,
+      0,
+      100,
+    ),
+  };
+  parsed.activePlannedSessionId =
+    typeof parsed.activePlannedSessionId === "string" &&
+    parsed.plannedSessions.some(
+      (session) => session.id === parsed.activePlannedSessionId,
+    )
+      ? parsed.activePlannedSessionId
+      : null;
   parsed.timer = {
     ...fallback.timer,
     ...parsed.timer,
@@ -1420,6 +1672,7 @@ function normalizeStoredState(value: unknown) {
     parsed.currentUserId = null;
     parsed.currentRoomCode = fallback.currentRoomCode;
     parsed.timer = { ...fallback.timer };
+    parsed.activePlannedSessionId = null;
   }
 
   return parsed;
@@ -1554,6 +1807,31 @@ function pushChronicle(
   });
 }
 
+function markPlannedSessionStatus(
+  state: SanctuaryState,
+  sessionId: string,
+  status: PlannedSessionStatus,
+  timestamp = Date.now(),
+) {
+  const plannedSession = state.plannedSessions.find(
+    (session) => session.id === sessionId,
+  );
+  if (!plannedSession) {
+    return;
+  }
+
+  plannedSession.status = status;
+  if (status === "started") {
+    plannedSession.startedAt = timestamp;
+  }
+  if (status === "completed") {
+    plannedSession.completedAt = timestamp;
+  }
+  if (status === "cancelled") {
+    plannedSession.completedAt = null;
+  }
+}
+
 function completeFocusSession(state: SanctuaryState) {
   const userId = state.currentUserId;
   if (!userId) {
@@ -1571,9 +1849,20 @@ function completeFocusSession(state: SanctuaryState) {
     breakSeconds: state.timer.breakDurationSeconds,
     startedAt: completedAt - state.timer.focusDurationSeconds * 1000,
     completedAt,
+    plannedSessionId: state.activePlannedSessionId,
     serverId: null,
     persistedAt: null,
   });
+
+  if (state.activePlannedSessionId) {
+    markPlannedSessionStatus(
+      state,
+      state.activePlannedSessionId,
+      "completed",
+      completedAt,
+    );
+    state.activePlannedSessionId = null;
+  }
 
   pushChronicle(
     state,
@@ -1680,6 +1969,9 @@ function remapUserReferences(
   }
 
   state.sessions = state.sessions.map((session) =>
+    session.userId === fromUserId ? { ...session, userId: toUserId } : session,
+  );
+  state.plannedSessions = state.plannedSessions.map((session) =>
     session.userId === fromUserId ? { ...session, userId: toUserId } : session,
   );
   state.chronicleEntries = state.chronicleEntries.map((entry) =>
@@ -2001,6 +2293,16 @@ export function getAchievementsForCurrentProfile(state: SanctuaryState) {
   }));
 }
 
+export function getPlannedSessionsForCurrentProfile(state: SanctuaryState) {
+  if (!state.currentUserId) {
+    return [];
+  }
+
+  return state.plannedSessions
+    .filter((session) => session.userId === state.currentUserId)
+    .sort((left, right) => left.scheduledFor - right.scheduledFor);
+}
+
 export function getCurrentRoom(state: SanctuaryState) {
   return state.rooms[state.currentRoomCode] ?? null;
 }
@@ -2316,6 +2618,9 @@ export const sanctuaryActions = {
       state.timer.status = "running";
       state.timer.endsAt = Date.now() + getTimeLeft(state) * 1000;
       state.timer.updatedAt = Date.now();
+      if (!wasPaused) {
+        state.activePlannedSessionId = null;
+      }
 
       setCurrentPresence(state, {
         roomCode,
@@ -2368,6 +2673,18 @@ export const sanctuaryActions = {
     commit((state) => {
       if (!isAuthenticated(state)) {
         return;
+      }
+
+      if (state.activePlannedSessionId) {
+        const plannedSession = state.plannedSessions.find(
+          (session) => session.id === state.activePlannedSessionId,
+        );
+        if (plannedSession) {
+          plannedSession.status = "scheduled";
+          plannedSession.startedAt = null;
+          plannedSession.completedAt = null;
+        }
+        state.activePlannedSessionId = null;
       }
 
       state.timer = {
@@ -2470,6 +2787,7 @@ export const sanctuaryActions = {
       );
 
       payload.sessions?.forEach((session) => {
+        const existing = byId.get(session.clientSessionId);
         byId.set(session.clientSessionId, {
           id: session.clientSessionId,
           userId,
@@ -2479,6 +2797,7 @@ export const sanctuaryActions = {
           breakSeconds: session.breakSeconds,
           startedAt: session.startedAt,
           completedAt: session.completedAt,
+          plannedSessionId: existing?.plannedSessionId ?? null,
           serverId: session.serverId,
           persistedAt: session.persistedAt,
         });
@@ -2529,6 +2848,212 @@ export const sanctuaryActions = {
         ...patch,
       };
     });
+  },
+
+  upsertPlannedSession(
+    payload: Omit<PlannedSession, "userId" | "status"> & {
+      status?: PlannedSessionStatus;
+    },
+  ) {
+    commit((state) => {
+      if (!state.currentUserId) {
+        return;
+      }
+
+      const existing = state.plannedSessions.find(
+        (session) => session.id === payload.id,
+      );
+      const roomKind =
+        payload.roomKind === "public" ||
+        payload.roomKind === "private" ||
+        payload.roomKind === "solo"
+          ? payload.roomKind
+          : "solo";
+      const roomCode =
+        roomKind === "solo"
+          ? SOLO_ROOM_CODE
+          : typeof payload.roomCode === "string" && payload.roomCode.trim()
+            ? payload.roomCode.trim()
+            : state.currentRoomCode;
+
+      const nextSession: PlannedSession = {
+        id: payload.id,
+        userId: state.currentUserId,
+        title: payload.title.trim().slice(0, 80) || "Bloque de foco",
+        notes: payload.notes.trim().slice(0, 220),
+        scheduledFor: payload.scheduledFor,
+        focusMinutes: Math.min(
+          180,
+          Math.max(5, Math.round(payload.focusMinutes)),
+        ),
+        breakMinutes: Math.min(
+          60,
+          Math.max(1, Math.round(payload.breakMinutes)),
+        ),
+        roomCode,
+        roomKind,
+        status:
+          existing?.status === "completed" || existing?.status === "cancelled"
+            ? existing.status
+            : (payload.status ?? "scheduled"),
+        reminderLeadMinutes: Math.min(
+          120,
+          Math.max(5, Math.round(payload.reminderLeadMinutes)),
+        ),
+        remindedAt: existing?.remindedAt ?? payload.remindedAt ?? null,
+        startedAt: existing?.startedAt ?? payload.startedAt ?? null,
+        completedAt: existing?.completedAt ?? payload.completedAt ?? null,
+      };
+
+      state.plannedSessions = [
+        ...state.plannedSessions.filter((session) => session.id !== payload.id),
+        nextSession,
+      ].sort((left, right) => left.scheduledFor - right.scheduledFor);
+    });
+  },
+
+  deletePlannedSession(sessionId: string) {
+    commit((state) => {
+      state.plannedSessions = state.plannedSessions.filter(
+        (session) => session.id !== sessionId,
+      );
+      if (state.activePlannedSessionId === sessionId) {
+        state.activePlannedSessionId = null;
+      }
+    });
+  },
+
+  markPlannedSessionReminder(sessionId: string, remindedAt = Date.now()) {
+    commit((state) => {
+      const plannedSession = state.plannedSessions.find(
+        (session) => session.id === sessionId,
+      );
+      if (!plannedSession) {
+        return;
+      }
+
+      plannedSession.remindedAt = remindedAt;
+    });
+  },
+
+  updatePlannerPreferences(patch: Partial<PlannerPreferences>) {
+    commit((state) => {
+      state.plannerPreferences = {
+        ...state.plannerPreferences,
+        ...patch,
+      };
+      state.plannerPreferences.defaultLeadMinutes = Math.min(
+        120,
+        Math.max(5, Math.round(state.plannerPreferences.defaultLeadMinutes)),
+      );
+    });
+  },
+
+  updateSocialPrivacy(patch: Partial<SocialPrivacySettings>) {
+    commit((state) => {
+      state.socialPrivacy = {
+        ...state.socialPrivacy,
+        ...patch,
+      };
+    });
+  },
+
+  updateAmbientMixer(patch: {
+    enabled?: boolean;
+    masterVolume?: number;
+    tracks?: Partial<Record<AmbientTrackId, number>>;
+  }) {
+    commit((state) => {
+      state.ambientMixer = {
+        ...state.ambientMixer,
+        ...patch,
+        tracks: {
+          ...state.ambientMixer.tracks,
+          ...(patch.tracks ?? {}),
+        },
+      };
+      state.ambientMixer.masterVolume = Math.min(
+        100,
+        Math.max(0, Math.round(state.ambientMixer.masterVolume)),
+      );
+      state.ambientMixer.tracks = {
+        rain: Math.min(
+          100,
+          Math.max(0, Math.round(state.ambientMixer.tracks.rain)),
+        ),
+        fire: Math.min(
+          100,
+          Math.max(0, Math.round(state.ambientMixer.tracks.fire)),
+        ),
+        library: Math.min(
+          100,
+          Math.max(0, Math.round(state.ambientMixer.tracks.library)),
+        ),
+        wind: Math.min(
+          100,
+          Math.max(0, Math.round(state.ambientMixer.tracks.wind)),
+        ),
+      };
+    });
+  },
+
+  startPlannedSession(sessionId: string) {
+    let emitFocusStart = false;
+    commit((state) => {
+      if (!isAuthenticated(state) || !state.currentUserId) {
+        return;
+      }
+
+      const plannedSession = state.plannedSessions.find(
+        (session) =>
+          session.id === sessionId && session.userId === state.currentUserId,
+      );
+      if (!plannedSession || plannedSession.status === "completed") {
+        return;
+      }
+
+      const roomKind =
+        plannedSession.roomKind !== "solo" &&
+        !state.rooms[plannedSession.roomCode]
+          ? "solo"
+          : plannedSession.roomKind;
+      const roomCode =
+        roomKind === "solo" ? SOLO_ROOM_CODE : plannedSession.roomCode;
+      const focusDurationSeconds = plannedSession.focusMinutes * 60;
+      const breakDurationSeconds = plannedSession.breakMinutes * 60;
+      const now = Date.now();
+
+      state.currentRoomCode =
+        roomKind === "solo" ? state.currentRoomCode : roomCode;
+      state.activePlannedSessionId = plannedSession.id;
+      state.timer = {
+        roomKind,
+        roomCode,
+        phase: "focus",
+        status: "running",
+        focusDurationSeconds,
+        breakDurationSeconds,
+        durationSeconds: focusDurationSeconds,
+        remainingSeconds: focusDurationSeconds,
+        endsAt: now + focusDurationSeconds * 1000,
+        updatedAt: now,
+      };
+
+      markPlannedSessionStatus(state, plannedSession.id, "started", now);
+      emitFocusStart = true;
+
+      setCurrentPresence(state, {
+        roomCode,
+        roomKind,
+        state: "studying",
+        space: roomKind === "solo" ? "solo" : "library",
+        message: "Estudiando",
+      });
+    });
+
+    if (emitFocusStart) {
+      emitTimerEvent({ kind: "focus-start" });
+    }
   },
 
   setRemotePresences(members: RoomMemberPresence[]) {

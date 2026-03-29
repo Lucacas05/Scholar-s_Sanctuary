@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { LogIn, LogOut, UserCircle } from "lucide-react";
+import { SafeImage } from "@/components/SafeImage";
 import {
   getAchievementsForCurrentProfile,
   getFullState,
@@ -404,10 +405,13 @@ export function IdentityBadge({
 
         <div className="hidden h-10 w-10 items-center justify-center overflow-hidden border-2 border-outline-variant bg-surface-container-highest lg:flex">
           {sessionUser?.avatarUrl ? (
-            <img
+            <SafeImage
               src={sessionUser.avatarUrl}
+              fallbackSrc="/site/placeholder-avatar.svg"
               alt={sessionUser.displayName}
               className="h-full w-full object-cover"
+              loading="lazy"
+              decoding="async"
             />
           ) : (
             <UserCircle className="text-primary" size={22} />

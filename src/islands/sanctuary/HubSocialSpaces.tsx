@@ -1,4 +1,5 @@
 import { LockKeyhole, Sparkles } from "lucide-react";
+import { SafeImage } from "@/components/SafeImage";
 import { images, siteContent } from "@/data/site";
 import { useSanctuaryStore } from "@/lib/sanctuary/store";
 
@@ -8,16 +9,17 @@ export function HubSocialSpaces() {
   const isAnonymous = sanctuary.sessionState === "anonymous";
   const sharedCard = (
     <>
-      <div
+      <SafeImage
+        src={images.silentWing}
+        fallbackSrc="/site/placeholder-landscape.svg"
+        alt={sharedLibrary.title}
         className={[
-          "absolute inset-0 bg-cover bg-no-repeat transition-transform duration-500",
+          "absolute inset-0 h-full w-full object-cover transition-transform duration-500",
           !isAnonymous ? "group-hover:scale-[1.03]" : "blur-[3px] scale-[1.02]",
         ].join(" ")}
-        style={{
-          backgroundImage: `url(${images.silentWing})`,
-          backgroundPosition: "center 46%",
-        }}
-        aria-hidden="true"
+        style={{ objectPosition: "center 46%" }}
+        loading="lazy"
+        decoding="async"
       />
       <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(24,18,16,0.92)_0%,rgba(24,18,16,0.86)_28%,rgba(24,18,16,0.38)_56%,rgba(24,18,16,0.18)_100%)]" />
       <div className="absolute inset-0 bg-gradient-to-t from-black/72 via-transparent to-black/10" />
@@ -48,8 +50,9 @@ export function HubSocialSpaces() {
   );
   const gardenCard = (
     <>
-      <img
+      <SafeImage
         src={images.gardenTerrace}
+        fallbackSrc="/site/placeholder-landscape.svg"
         className={[
           "h-full w-full object-cover transition-transform duration-500",
           isAnonymous ? "scale-[1.02] blur-[3px]" : "group-hover:scale-105",

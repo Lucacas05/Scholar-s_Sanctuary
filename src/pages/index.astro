@@ -1,6 +1,7 @@
 ---
 import PixelButton from "@/components/PixelButton.astro";
 import PixelCard from "@/components/PixelCard.astro";
+import FallbackImage from "@/components/FallbackImage.astro";
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import { siteContent, images } from "@/data/site";
 import { ICONS } from "@/lib/icons";
@@ -15,11 +16,14 @@ const { dashboard } = siteContent;
     <section
       class="relative h-[450px] overflow-hidden bg-surface-container-lowest pixel-border"
     >
-      <div
-        class="absolute inset-0 bg-cover bg-center opacity-60"
-        style={`background-image: url(${images.libraryHero});`}
-      >
-      </div>
+      <FallbackImage
+        src={images.libraryHero}
+        fallbackSrc="/site/placeholder-landscape.svg"
+        alt={dashboard.hero.titleStart + " " + dashboard.hero.titleAccent}
+        class="absolute inset-0 h-full w-full object-cover opacity-60"
+        loading="eager"
+        decoding="async"
+      />
       <div
         class="absolute inset-0 bg-gradient-to-t from-surface via-transparent to-transparent"
       >
@@ -156,10 +160,11 @@ const { dashboard } = siteContent;
                 <div
                   class="h-20 w-20 shrink-0 bg-surface-container-highest border-4 border-outline-variant flex items-center justify-center p-2 xl:h-24 xl:w-24"
                 >
-                  <img
+                  <FallbackImage
                     src={images.questBadge}
+                    fallbackSrc="/site/placeholder-avatar.svg"
                     alt={dashboard.progressPanel.alt}
-                    class="w-full h-full"
+                    class="h-full w-full object-cover"
                     loading="lazy"
                     decoding="async"
                   />

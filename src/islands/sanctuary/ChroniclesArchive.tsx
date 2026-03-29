@@ -10,6 +10,7 @@ import {
 import { siteContent } from "@/data/site";
 import { useGsapReveal } from "@/islands/sanctuary/useGsapReveal";
 import { PomodoroAnalytics } from "@/islands/sanctuary/PomodoroAnalytics";
+import { PlannerBoard } from "@/islands/sanctuary/PlannerBoard";
 import {
   SOLO_ROOM_CODE,
   type ChronicleTone,
@@ -349,6 +350,8 @@ export function ChroniclesArchive() {
           <PomodoroAnalytics />
         </section>
       )}
+
+      {!isAnonymous && <PlannerBoard />}
 
       <section>
         <div className="mb-6 flex items-center justify-between gap-4">
