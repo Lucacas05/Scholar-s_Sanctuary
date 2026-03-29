@@ -232,6 +232,12 @@ export interface AchievementUnlock {
   persistedAt?: number | null;
 }
 
+export interface NotificationPreferences {
+  inAppEnabled: boolean;
+  browserEnabled: boolean;
+  soundEnabled: boolean;
+}
+
 export interface SanctuaryState {
   version: number;
   sessionState: SessionState;
@@ -241,6 +247,7 @@ export interface SanctuaryState {
   rooms: Record<string, Room>;
   presences: Record<string, Presence>;
   timer: TimerState;
+  notificationPreferences: NotificationPreferences;
   sessions: StudySession[];
   chronicleEntries: ChronicleEntry[];
   achievementUnlocks: AchievementUnlock[];
@@ -703,6 +710,11 @@ function createInitialState(): SanctuaryState {
       endsAt: null,
       updatedAt: createdAt,
     },
+    notificationPreferences: {
+      inAppEnabled: true,
+      browserEnabled: false,
+      soundEnabled: true,
+    },
     sessions: [],
     chronicleEntries: [],
     achievementUnlocks: [],
@@ -828,6 +840,22 @@ function normalizeStoredState(value: unknown) {
           : null,
     }));
   parsed.friendIds = Array.isArray(parsed.friendIds) ? parsed.friendIds : fallback.friendIds;
+  parsed.notificationPreferences = {
+    ...fallback.notificationPreferences,
+    ...(isRecord(parsed.notificationPreferences) ? parsed.notificationPreferences : {}),
+  };
+  parsed.notificationPreferences.inAppEnabled =
+    typeof parsed.notificationPreferences.inAppEnabled === "boolean"
+      ? parsed.notificationPreferences.inAppEnabled
+      : fallback.notificationPreferences.inAppEnabled;
+  parsed.notificationPreferences.browserEnabled =
+    typeof parsed.notificationPreferences.browserEnabled === "boolean"
+      ? parsed.notificationPreferences.browserEnabled
+      : fallback.notificationPreferences.browserEnabled;
+  parsed.notificationPreferences.soundEnabled =
+    typeof parsed.notificationPreferences.soundEnabled === "boolean"
+      ? parsed.notificationPreferences.soundEnabled
+      : fallback.notificationPreferences.soundEnabled;
   parsed.timer = {
     ...fallback.timer,
     ...parsed.timer,
@@ -1028,6 +1056,9 @@ function transitionToBreak(state: SanctuaryState) {
     space: state.timer.roomKind === "solo" ? "solo" : "garden",
     message: state.timer.roomKind === "solo" ? "" : "Descansando",
   });
+
+  emitTimerEvent({ kind: "focus-end" });
+  emitTimerEvent({ kind: "break-start" });
 }
 
 function resetFocusState(state: SanctuaryState) {
@@ -1048,6 +1079,8 @@ function resetFocusState(state: SanctuaryState) {
     space: state.timer.roomKind === "solo" ? "solo" : "library",
     message: "",
   });
+
+  emitTimerEvent({ kind: "break-end" });
 }
 
 function syncExpiredTimer(state: SanctuaryState, now = Date.now()) {
@@ -1115,6 +1148,24 @@ function remapUserReferences(state: SanctuaryState, fromUserId: string | null, t
       userId: toUserId,
     };
   }
+}
+
+export type TimerEvent =
+  | { kind: "focus-start" }
+  | { kind: "focus-end" }
+  | { kind: "break-start" }
+  | { kind: "break-end" };
+
+type TimerEventListener = (event: TimerEvent) => void;
+const timerEventListeners = new Set<TimerEventListener>();
+
+function emitTimerEvent(event: TimerEvent) {
+  timerEventListeners.forEach((listener) => listener(event));
+}
+
+export function subscribeTimerEvents(listener: TimerEventListener) {
+  timerEventListeners.add(listener);
+  return () => { timerEventListeners.delete(listener); };
 }
 
 let currentState = createInitialState();
@@ -1564,10 +1615,14 @@ export const sanctuaryActions = {
   },
 
   startTimer(roomKind: RoomKind, roomCode: string) {
+    let emitFocusStart = false;
     commit((state) => {
       if (!isAuthenticated(state) || !state.currentUserId) {
         return;
       }
+
+      const wasPaused = state.timer.status === "paused";
+      const isFocusPhase = state.timer.phase === "focus";
 
       state.timer.roomKind = roomKind;
       state.timer.roomCode = roomCode;
@@ -1582,7 +1637,14 @@ export const sanctuaryActions = {
         space: roomKind === "solo" ? "solo" : state.timer.phase === "break" ? "garden" : "library",
         message: state.timer.phase === "break" ? state.presences[state.currentUserId]?.message || "Descansando" : "Estudiando",
       });
+
+      if (isFocusPhase && !wasPaused) {
+        emitFocusStart = true;
+      }
     });
+    if (emitFocusStart) {
+      emitTimerEvent({ kind: "focus-start" });
+    }
   },
 
   pauseTimer() {
@@ -1744,6 +1806,15 @@ export const sanctuaryActions = {
       if (state.timer.status === "running") {
         state.timer.remainingSeconds = getTimeLeft(state);
       }
+    });
+  },
+
+  updateNotificationPreferences(patch: Partial<NotificationPreferences>) {
+    commit((state) => {
+      state.notificationPreferences = {
+        ...state.notificationPreferences,
+        ...patch,
+      };
     });
   },
 

@@ -6,6 +6,9 @@ import {
   type RoomKind,
   useSanctuaryStore,
 } from "@/lib/sanctuary/store";
+import { useTimerNotifications } from "./useTimerNotifications";
+import { TimerToastStack } from "./TimerToast";
+import { NotificationSettings } from "./NotificationSettings";
 
 interface StudyTimerProps {
   roomKind: RoomKind;
@@ -25,6 +28,7 @@ export function StudyTimer({ roomKind, roomCode, roomName, showGardenHint = fals
   const [now, setNow] = useState(Date.now());
   const [focusMinutes, setFocusMinutes] = useState("25");
   const [breakMinutes, setBreakMinutes] = useState("5");
+  const { toasts, dismissToast } = useTimerNotifications();
 
   useEffect(() => {
     sanctuaryActions.syncTimer();
@@ -161,6 +165,15 @@ export function StudyTimer({ roomKind, roomCode, roomName, showGardenHint = fals
           </p>
         )}
 
+        {!isAnonymousBlocked && (
+          <div className="mt-6">
+            <p className="mb-2 font-headline text-[10px] font-bold uppercase tracking-[0.22em] text-outline">
+              Notificaciones
+            </p>
+            <NotificationSettings />
+          </div>
+        )}
+
         <div className="mt-6 flex flex-wrap justify-center gap-4">
           <button
             type="button"
@@ -202,6 +215,7 @@ export function StudyTimer({ roomKind, roomCode, roomName, showGardenHint = fals
           </a>
         )}
       </div>
+      <TimerToastStack toasts={toasts} onDismiss={dismissToast} />
     </div>
   );
 }
