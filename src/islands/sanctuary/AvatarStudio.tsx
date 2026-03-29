@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { LockKeyhole, Shirt, Sparkles } from "lucide-react";
+import { LockKeyhole } from "lucide-react";
 import {
   avatarOptions,
   getRenderableCurrentProfile,
@@ -264,162 +264,281 @@ export function AvatarStudio() {
           </div>
         ) : null}
 
-        <div className="gsap-rise grid gap-6 xl:grid-cols-[minmax(0,1.14fr)_minmax(18rem,0.7fr)]">
-          <div className="relative overflow-hidden border border-outline-variant bg-[radial-gradient(circle_at_50%_16%,rgba(255,193,112,0.18),transparent_34%),linear-gradient(180deg,#221915_0%,#17100e_58%,#120c0a_100%)] px-6 py-8 sm:px-8">
-            <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.018) 1px,transparent 1px),linear-gradient(180deg,rgba(255,255,255,0.018) 1px,transparent 1px)] bg-[size:28px_28px] opacity-35" />
-            <div className="absolute left-1/2 top-14 h-40 w-40 -translate-x-1/2 rounded-full bg-primary/14 blur-3xl" />
-            <div className="absolute inset-x-[13%] bottom-7 h-24 rounded-[2rem] border border-primary/16 bg-[linear-gradient(180deg,rgba(255,190,110,0.08),rgba(20,15,13,0.12))]" />
+        <div className="gsap-rise grid gap-6 xl:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)]">
+          <div className="relative overflow-hidden border border-outline-variant bg-[radial-gradient(circle_at_50%_18%,rgba(255,192,108,0.14),transparent_36%),linear-gradient(180deg,#1f1713_0%,#15100d_100%)] px-6 py-8 sm:px-8">
+            <div className="absolute left-1/2 top-16 h-44 w-44 -translate-x-1/2 rounded-full bg-primary/10 blur-3xl" />
 
             <div className="relative flex min-h-[35rem] flex-col">
               <div>
-                <div>
-                  <p className="font-headline text-[10px] font-bold uppercase tracking-[0.26em] text-outline">
-                    Vista previa
-                  </p>
-                  <h1 className="mt-2 font-headline text-3xl font-black uppercase tracking-tight text-on-surface">
-                    Refinar avatar
-                  </h1>
-                  <p className="mt-3 max-w-md text-sm leading-relaxed text-on-surface-variant">
-                    La vista grande refleja al momento cualquier cambio que
-                    hagas en tu avatar.
-                  </p>
-                </div>
+                <p className="font-headline text-[10px] font-bold uppercase tracking-[0.26em] text-outline">
+                  Vista previa
+                </p>
+                <h1 className="mt-2 font-headline text-3xl font-black uppercase tracking-tight text-on-surface">
+                  Refinar avatar
+                </h1>
+                <p className="mt-3 max-w-sm text-sm leading-relaxed text-on-surface-variant">
+                  La vista grande refleja al momento cualquier cambio que hagas
+                  en tu avatar.
+                </p>
               </div>
 
               <div className="mt-6 flex flex-1 items-center justify-center">
-                <div className="scale-[1.3] sm:scale-[1.42]">
-                  <PixelAvatar
-                    avatar={avatar}
-                    size="xxl"
-                    highlighted={true}
-                    showStatusBadge={false}
-                    stage="panel"
-                    anchor="bottom"
-                  />
+                <div className="relative flex items-center justify-center">
+                  <div className="absolute bottom-6 h-16 w-28 rounded-full bg-black/18 blur-2xl" />
+                  <div className="scale-[1.34] sm:scale-[1.5]">
+                    <PixelAvatar
+                      avatar={avatar}
+                      size="xxl"
+                      highlighted={false}
+                      showStatusBadge={false}
+                      stage="plain"
+                      anchor="center"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
           <div className="space-y-4">
-            {activeColorField ? (
-              <div className="gsap-rise border border-outline-variant bg-surface-container p-4">
-                <p className="font-headline text-[10px] font-bold uppercase tracking-[0.24em] text-outline">
-                  Colores rápidos
-                </p>
-                <p className="mt-2 text-sm leading-relaxed text-on-surface-variant">
-                  Cuando la prenda está abierta, el color se cambia desde aquí o
-                  desde los puntos de color del catálogo.
-                </p>
+            <div className="gsap-rise border border-outline-variant bg-surface-container p-4 sm:p-5">
+              <div className="flex flex-wrap items-start justify-between gap-3 border-b border-outline-variant pb-4">
+                <div>
+                  <p className="font-headline text-[10px] font-bold uppercase tracking-[0.24em] text-outline">
+                    Catálogo activo
+                  </p>
+                  <h2 className="mt-2 font-headline text-2xl font-black uppercase tracking-tight text-primary">
+                    {fieldLabels[activeField]}
+                  </h2>
+                </div>
+                <div className="text-left sm:text-right">
+                  <p className="font-headline text-[10px] font-bold uppercase tracking-[0.22em] text-outline">
+                    {loadingWardrobe && wardrobeManaged
+                      ? "Sincronizando..."
+                      : `${currentOptions.length} opciones`}
+                  </p>
+                  {wardrobeManaged ? (
+                    <p className="mt-2 text-xs leading-relaxed text-on-surface-variant">
+                      {formatWardrobeDuration(totalFocusSeconds)} de estudio
+                      real
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+
+              {wardrobeManaged ? (
                 <div className="mt-4 flex flex-wrap gap-2">
-                  {colorOptions.map((colorOption) => {
-                    const selectedColor =
-                      avatar[activeColorField] === colorOption.value;
-                    const disabled = isAnonymous || !activeUnlocked;
+                  <span className="border border-outline-variant bg-surface-container-low px-3 py-2 font-headline text-[10px] font-bold uppercase tracking-[0.18em] text-outline">
+                    Armario global activo
+                  </span>
+                  <a
+                    href="/editor-armario"
+                    className="border border-outline-variant bg-surface-container-low px-3 py-2 font-headline text-[10px] font-bold uppercase tracking-[0.18em] text-on-surface hover:border-secondary hover:text-secondary"
+                  >
+                    Editar armario global
+                  </a>
+                </div>
+              ) : null}
+
+              {activeColorField ? (
+                <div className="mt-5 border-t border-outline-variant pt-4">
+                  <p className="font-headline text-[10px] font-bold uppercase tracking-[0.24em] text-outline">
+                    Colores rápidos
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {colorOptions.map((colorOption) => {
+                      const selectedColor =
+                        avatar[activeColorField] === colorOption.value;
+                      const disabled = isAnonymous || !activeUnlocked;
+
+                      return (
+                        <button
+                          key={colorOption.value}
+                          type="button"
+                          title={colorOption.label}
+                          aria-label={colorOption.label}
+                          onClick={() =>
+                            sanctuaryActions.updateAvatar(
+                              activeColorField,
+                              colorOption.value as AvatarConfig[typeof activeColorField],
+                            )
+                          }
+                          disabled={disabled}
+                          className={`flex items-center gap-2 border px-2 py-2 text-left ${
+                            selectedColor
+                              ? "border-primary bg-primary/10"
+                              : "border-outline-variant bg-surface-container-low hover:border-secondary"
+                          } ${disabled ? "cursor-not-allowed opacity-60" : ""}`}
+                        >
+                          <span
+                            className="h-4 w-4 rounded-full border border-outline-variant"
+                            style={{
+                              backgroundColor:
+                                garmentColorMeta[colorOption.value].swatch,
+                            }}
+                          />
+                          <span className="font-headline text-[10px] font-bold uppercase tracking-[0.16em] text-on-surface">
+                            {colorOption.label}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {wardrobeManaged && !activeUnlocked ? (
+                    <p className="mt-3 text-xs leading-relaxed text-on-surface-variant">
+                      El color no se puede cambiar hasta desbloquear esta prenda
+                      en el nivel {activeRequirementLevel}.
+                    </p>
+                  ) : null}
+                </div>
+              ) : null}
+
+              {currentOptions.length === 0 ? (
+                <div className="mt-5 border border-outline-variant bg-surface-container-low px-4 py-5 text-sm leading-relaxed text-on-surface-variant">
+                  No hay elementos visibles en esta categoría. Revísalo en el
+                  editor del armario si quieres volver a activarlos.
+                </div>
+              ) : (
+                <div className="mt-5 grid max-h-[42rem] gap-3 overflow-y-auto pr-1 sm:grid-cols-2">
+                  {currentOptions.map((option) => {
+                    const active = avatar[activeField] === option.value;
+                    const unlocked = wardrobeManaged
+                      ? isWardrobeItemUnlocked(
+                          activeField,
+                          option.value as AvatarConfig[typeof activeField],
+                          totalFocusSeconds,
+                          wardrobeConfig,
+                        )
+                      : true;
+                    const requiredLevel = wardrobeManaged
+                      ? getWardrobeRequirementLevel(
+                          activeField,
+                          option.value as AvatarConfig[typeof activeField],
+                          wardrobeConfig,
+                        )
+                      : 1;
+                    const disabled =
+                      isAnonymous || (wardrobeManaged && !unlocked);
 
                     return (
-                      <button
-                        key={colorOption.value}
-                        type="button"
-                        title={colorOption.label}
-                        aria-label={colorOption.label}
-                        onClick={() =>
+                      <div
+                        key={option.value}
+                        onClick={() => {
+                          if (disabled) {
+                            return;
+                          }
                           sanctuaryActions.updateAvatar(
-                            activeColorField,
-                            colorOption.value as AvatarConfig[typeof activeColorField],
-                          )
-                        }
-                        disabled={disabled}
-                        className={`flex items-center gap-2 border px-2 py-2 text-left ${
-                          selectedColor
+                            activeField,
+                            option.value as AvatarConfig[typeof activeField],
+                          );
+                        }}
+                        onKeyDown={(event) => {
+                          if (disabled) {
+                            return;
+                          }
+                          if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+                            sanctuaryActions.updateAvatar(
+                              activeField,
+                              option.value as AvatarConfig[typeof activeField],
+                            );
+                          }
+                        }}
+                        role="button"
+                        tabIndex={disabled ? -1 : 0}
+                        className={`relative overflow-hidden border p-3 text-left transition ${
+                          active && unlocked
                             ? "border-primary bg-primary/10"
-                            : "border-outline-variant bg-surface-container-low hover:border-secondary"
-                        } ${disabled ? "cursor-not-allowed opacity-60" : ""}`}
+                            : unlocked
+                              ? "border-outline-variant bg-surface-container-low hover:border-secondary"
+                              : "border-outline-variant/60 bg-surface-container-low/60 opacity-85"
+                        } ${disabled ? "cursor-not-allowed" : ""}`}
                       >
-                        <span
-                          className="h-4 w-4 rounded-full border border-outline-variant"
-                          style={{
-                            backgroundColor:
-                              garmentColorMeta[colorOption.value].swatch,
-                          }}
-                        />
-                        <span className="font-headline text-[10px] font-bold uppercase tracking-[0.16em] text-on-surface">
-                          {colorOption.label}
-                        </span>
-                      </button>
+                        {wardrobeManaged && !unlocked ? (
+                          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 bg-[linear-gradient(180deg,rgba(16,12,11,0.14),rgba(16,12,11,0.8))] px-4 text-center">
+                            <LockKeyhole size={18} className="text-primary" />
+                            <p className="font-headline text-[10px] font-black uppercase tracking-[0.22em] text-primary">
+                              Bloqueada
+                            </p>
+                            <p className="text-xs leading-relaxed text-on-surface">
+                              Se abre en el nivel {requiredLevel}.
+                            </p>
+                          </div>
+                        ) : null}
+
+                        <div
+                          className={
+                            wardrobeManaged && !unlocked ? "blur-[1px]" : ""
+                          }
+                        >
+                          <div className="flex justify-center">
+                            <ItemModelPreview
+                              field={activeField}
+                              value={option.value}
+                              avatar={avatar}
+                            />
+                          </div>
+                          {activeColorField ? (
+                            <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+                              {colorOptions.map((colorOption) => {
+                                const selectedColor =
+                                  avatar[activeColorField] ===
+                                  colorOption.value;
+
+                                return (
+                                  <button
+                                    key={colorOption.value}
+                                    type="button"
+                                    title={colorOption.label}
+                                    aria-label={colorOption.label}
+                                    onClick={(event) => {
+                                      if (disabled) {
+                                        return;
+                                      }
+                                      event.stopPropagation();
+                                      sanctuaryActions.updateAvatar(
+                                        activeField,
+                                        option.value as AvatarConfig[typeof activeField],
+                                      );
+                                      sanctuaryActions.updateAvatar(
+                                        activeColorField,
+                                        colorOption.value as AvatarConfig[typeof activeColorField],
+                                      );
+                                    }}
+                                    disabled={disabled}
+                                    className={`h-4 w-4 rounded-full border transition ${
+                                      selectedColor && active
+                                        ? "scale-110 border-primary ring-2 ring-primary/40"
+                                        : "border-outline-variant hover:scale-105 hover:border-secondary"
+                                    }`}
+                                    style={{
+                                      backgroundColor:
+                                        garmentColorMeta[colorOption.value]
+                                          .swatch,
+                                    }}
+                                  />
+                                );
+                              })}
+                            </div>
+                          ) : null}
+
+                          <p className="mt-3 font-headline text-[11px] font-black uppercase tracking-[0.16em] text-on-surface">
+                            {option.label}
+                          </p>
+                          {wardrobeManaged ? (
+                            <p className="mt-2 text-xs leading-relaxed text-on-surface-variant">
+                              {unlocked
+                                ? `Disponible desde el nivel ${requiredLevel}.`
+                                : `Se desbloquea al nivel ${requiredLevel}.`}
+                            </p>
+                          ) : null}
+                        </div>
+                      </div>
                     );
                   })}
                 </div>
-                {wardrobeManaged && !activeUnlocked ? (
-                  <p className="mt-3 text-xs leading-relaxed text-on-surface-variant">
-                    El color no se puede cambiar hasta desbloquear esta prenda
-                    en el nivel {activeRequirementLevel}.
-                  </p>
-                ) : null}
-              </div>
-            ) : null}
-
-            {wardrobeManaged ? (
-              <>
-                <div className="gsap-rise grid gap-4 sm:grid-cols-2">
-                  <article className="border border-outline-variant bg-surface-container p-4">
-                    <div className="flex items-center gap-2 text-primary">
-                      <Shirt size={16} />
-                      <p className="font-headline text-[10px] font-bold uppercase tracking-[0.22em]">
-                        Catálogo visible
-                      </p>
-                    </div>
-                    <p className="mt-3 font-headline text-2xl font-black uppercase tracking-tight text-on-surface">
-                      {currentOptions.length}
-                    </p>
-                    <p className="mt-2 text-xs leading-relaxed text-on-surface-variant">
-                      Esta vista respeta lo publicado en el armario global de la
-                      VPS.
-                    </p>
-                  </article>
-
-                  <article className="border border-outline-variant bg-surface-container p-4">
-                    <div className="flex items-center gap-2 text-tertiary">
-                      <Sparkles size={16} />
-                      <p className="font-headline text-[10px] font-bold uppercase tracking-[0.22em]">
-                        Progreso
-                      </p>
-                    </div>
-                    <p className="mt-3 font-headline text-2xl font-black uppercase tracking-tight text-on-surface">
-                      {formatWardrobeDuration(totalFocusSeconds)}
-                    </p>
-                    <p className="mt-2 text-xs leading-relaxed text-on-surface-variant">
-                      El bloqueo se calcula con tu estudio real acumulado.
-                    </p>
-                  </article>
-                </div>
-
-                <div className="gsap-rise border border-outline-variant bg-surface-container p-4">
-                  <div className="flex items-start gap-3">
-                    <LockKeyhole
-                      size={18}
-                      className="mt-0.5 shrink-0 text-tertiary"
-                    />
-                    <div>
-                      <p className="font-headline text-[10px] font-bold uppercase tracking-[0.24em] text-outline">
-                        Modo coherente con armario
-                      </p>
-                      <p className="mt-2 text-sm leading-relaxed text-on-surface-variant">
-                        Si ocultas una prenda en el editor del armario, ya no
-                        vuelve a salir aquí. Si sigue visible, verás el candado
-                        hasta alcanzar el nivel requerido.
-                      </p>
-                      <a
-                        href="/editor-armario"
-                        className="mt-3 inline-flex items-center gap-2 border border-outline-variant bg-surface-container-low px-3 py-2 font-headline text-[10px] font-bold uppercase tracking-[0.18em] text-on-surface hover:border-secondary hover:text-secondary"
-                      >
-                        Editar armario global
-                      </a>
-                    </div>
-                  </div>
-                </div>
-              </>
-            ) : null}
+              )}
+            </div>
 
             {wardrobeError ? (
               <ErrorBlock
@@ -428,162 +547,6 @@ export function AvatarStudio() {
               />
             ) : null}
           </div>
-        </div>
-
-        <div className="gsap-rise border border-outline-variant bg-surface-container p-4 sm:p-5">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-outline-variant pb-4">
-            <h2 className="font-headline text-2xl font-black uppercase tracking-tight text-primary">
-              {fieldLabels[activeField]}
-            </h2>
-            <p className="font-headline text-[10px] font-bold uppercase tracking-[0.22em] text-outline">
-              {loadingWardrobe && wardrobeManaged
-                ? "Sincronizando..."
-                : `${currentOptions.length} opciones`}
-            </p>
-          </div>
-
-          {currentOptions.length === 0 ? (
-            <div className="border border-outline-variant bg-surface-container-low px-4 py-5 text-sm leading-relaxed text-on-surface-variant">
-              No hay elementos visibles en esta categoría. Revísalo en el editor
-              del armario si quieres volver a activarlos.
-            </div>
-          ) : (
-            <div className="grid max-h-[40rem] gap-3 overflow-y-auto pr-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
-              {currentOptions.map((option) => {
-                const active = avatar[activeField] === option.value;
-                const unlocked = wardrobeManaged
-                  ? isWardrobeItemUnlocked(
-                      activeField,
-                      option.value as AvatarConfig[typeof activeField],
-                      totalFocusSeconds,
-                      wardrobeConfig,
-                    )
-                  : true;
-                const requiredLevel = wardrobeManaged
-                  ? getWardrobeRequirementLevel(
-                      activeField,
-                      option.value as AvatarConfig[typeof activeField],
-                      wardrobeConfig,
-                    )
-                  : 1;
-                const disabled = isAnonymous || (wardrobeManaged && !unlocked);
-
-                return (
-                  <div
-                    key={option.value}
-                    onClick={() => {
-                      if (disabled) {
-                        return;
-                      }
-                      sanctuaryActions.updateAvatar(
-                        activeField,
-                        option.value as AvatarConfig[typeof activeField],
-                      );
-                    }}
-                    onKeyDown={(event) => {
-                      if (disabled) {
-                        return;
-                      }
-                      if (event.key === "Enter" || event.key === " ") {
-                        event.preventDefault();
-                        sanctuaryActions.updateAvatar(
-                          activeField,
-                          option.value as AvatarConfig[typeof activeField],
-                        );
-                      }
-                    }}
-                    role="button"
-                    tabIndex={disabled ? -1 : 0}
-                    className={`relative overflow-hidden border p-3 text-left transition ${
-                      active && unlocked
-                        ? "border-primary bg-primary/10"
-                        : unlocked
-                          ? "border-outline-variant bg-surface-container-low hover:border-secondary"
-                          : "border-outline-variant/60 bg-surface-container-low/60 opacity-85"
-                    } ${disabled ? "cursor-not-allowed" : ""}`}
-                  >
-                    {wardrobeManaged && !unlocked ? (
-                      <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 bg-[linear-gradient(180deg,rgba(16,12,11,0.14),rgba(16,12,11,0.8))] px-4 text-center">
-                        <LockKeyhole size={18} className="text-primary" />
-                        <p className="font-headline text-[10px] font-black uppercase tracking-[0.22em] text-primary">
-                          Bloqueada
-                        </p>
-                        <p className="text-xs leading-relaxed text-on-surface">
-                          Se abre en el nivel {requiredLevel}.
-                        </p>
-                      </div>
-                    ) : null}
-
-                    <div
-                      className={
-                        wardrobeManaged && !unlocked ? "blur-[1px]" : ""
-                      }
-                    >
-                      <div className="flex justify-center">
-                        <ItemModelPreview
-                          field={activeField}
-                          value={option.value}
-                          avatar={avatar}
-                        />
-                      </div>
-                      {activeColorField ? (
-                        <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
-                          {colorOptions.map((colorOption) => {
-                            const selectedColor =
-                              avatar[activeColorField] === colorOption.value;
-
-                            return (
-                              <button
-                                key={colorOption.value}
-                                type="button"
-                                title={colorOption.label}
-                                aria-label={colorOption.label}
-                                onClick={(event) => {
-                                  if (disabled) {
-                                    return;
-                                  }
-                                  event.stopPropagation();
-                                  sanctuaryActions.updateAvatar(
-                                    activeField,
-                                    option.value as AvatarConfig[typeof activeField],
-                                  );
-                                  sanctuaryActions.updateAvatar(
-                                    activeColorField,
-                                    colorOption.value as AvatarConfig[typeof activeColorField],
-                                  );
-                                }}
-                                disabled={disabled}
-                                className={`h-4 w-4 rounded-full border transition ${
-                                  selectedColor && active
-                                    ? "scale-110 border-primary ring-2 ring-primary/40"
-                                    : "border-outline-variant hover:scale-105 hover:border-secondary"
-                                }`}
-                                style={{
-                                  backgroundColor:
-                                    garmentColorMeta[colorOption.value].swatch,
-                                }}
-                              />
-                            );
-                          })}
-                        </div>
-                      ) : null}
-
-                      <p className="mt-3 font-headline text-[11px] font-black uppercase tracking-[0.16em] text-on-surface">
-                        {option.label}
-                      </p>
-                      {wardrobeManaged ? (
-                        <p className="mt-2 text-xs leading-relaxed text-on-surface-variant">
-                          {unlocked
-                            ? `Disponible desde el nivel ${requiredLevel}.`
-                            : `Se desbloquea al nivel ${requiredLevel}.`}
-                        </p>
-                      ) : null}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
         </div>
       </section>
     </div>
