@@ -201,9 +201,9 @@ describe("vistas principales del santuario", () => {
     fireEvent.click(screen.getByText("Parte superior"));
 
     await waitFor(() => {
-      expect(screen.getByText("Camisa larga 01")).toBeTruthy();
+      expect(screen.getAllByText("Camisa larga 01").length).toBeGreaterThan(0);
     });
-    expect(screen.queryByText("Camiseta 01")).toBeNull();
+    expect(screen.queryAllByText("Camiseta 01")).toHaveLength(0);
   });
 
   it("renderiza crónicas", async () => {

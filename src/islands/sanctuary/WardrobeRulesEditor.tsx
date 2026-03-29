@@ -375,6 +375,44 @@ export function WardrobeRulesEditor() {
               </div>
             </div>
           </div>
+
+          <div className="gsap-rise border border-outline-variant bg-surface-container p-5">
+            <p className="font-headline text-[10px] font-bold uppercase tracking-[0.22em] text-outline">
+              Cómo añadir ropa desde la web
+            </p>
+            <div className="mt-4 grid gap-3 md:grid-cols-3">
+              <div className="border border-outline-variant bg-surface-container-low p-4">
+                <p className="font-headline text-[10px] font-bold uppercase tracking-[0.18em] text-primary">
+                  1. Añadir al circuito
+                </p>
+                <p className="mt-2 text-sm leading-relaxed text-on-surface-variant">
+                  En cada categoría, usa `Catálogo completo` y pulsa `Añadir` o
+                  `Reactivar`. Eso publica una prenda ya existente en el sprite
+                  actual.
+                </p>
+              </div>
+              <div className="border border-outline-variant bg-surface-container-low p-4">
+                <p className="font-headline text-[10px] font-bold uppercase tracking-[0.18em] text-secondary">
+                  2. Fijar nivel
+                </p>
+                <p className="mt-2 text-sm leading-relaxed text-on-surface-variant">
+                  En `Circuito activo` decides el nivel exacto. Luego `Refinar`
+                  enseña el candado y el texto de desbloqueo a cada usuario.
+                </p>
+              </div>
+              <div className="border border-outline-variant bg-surface-container-low p-4">
+                <p className="font-headline text-[10px] font-bold uppercase tracking-[0.18em] text-tertiary">
+                  3. Colores
+                </p>
+                <p className="mt-2 text-sm leading-relaxed text-on-surface-variant">
+                  Los colores de parte superior, inferior y calcetines se eligen
+                  en `Refinar` cuando la prenda ya está desbloqueada. Si quieres
+                  un color nuevo real, hay que darlo de alta en el catálogo del
+                  avatar.
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 

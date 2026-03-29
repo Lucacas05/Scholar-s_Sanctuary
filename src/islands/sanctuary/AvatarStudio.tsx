@@ -124,6 +124,29 @@ export function AvatarStudio() {
     ? garmentColorFieldByField[activeField]
     : null;
   const colorOptions = activeColorField ? avatarOptions[activeColorField] : [];
+  const activeOption =
+    avatarOptions[activeField].find(
+      (option) => option.value === avatar[activeField],
+    ) ?? null;
+  const activeRequirementLevel = wardrobeManaged
+    ? getWardrobeRequirementLevel(
+        activeField,
+        avatar[activeField] as AvatarConfig[typeof activeField],
+        wardrobeConfig,
+      )
+    : null;
+  const activeUnlocked = wardrobeManaged
+    ? isWardrobeItemUnlocked(
+        activeField,
+        avatar[activeField] as AvatarConfig[typeof activeField],
+        totalFocusSeconds,
+        wardrobeConfig,
+      )
+    : true;
+  const activeColorValue = activeColorField ? avatar[activeColorField] : null;
+  const activeColorMeta = activeColorValue
+    ? garmentColorMeta[activeColorValue]
+    : null;
 
   useGsapReveal(rootRef);
 
@@ -255,42 +278,168 @@ export function AvatarStudio() {
           </div>
         ) : null}
 
-        <div className="gsap-rise grid gap-6 xl:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)]">
-          <div className="border border-outline-variant bg-[radial-gradient(circle_at_50%_16%,rgba(255,193,112,0.12),transparent_38%),linear-gradient(180deg,#201714_0%,#17110f_100%)] px-6 py-8 sm:px-8">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="font-headline text-[10px] font-bold uppercase tracking-[0.26em] text-outline">
-                  Vista activa
-                </p>
-                <h1 className="mt-2 font-headline text-3xl font-black uppercase tracking-tight text-on-surface">
-                  {fieldLabels[activeField]}
-                </h1>
-              </div>
-              {wardrobeManaged ? (
-                <div className="border border-primary/35 bg-primary/10 px-3 py-2">
-                  <p className="font-headline text-[10px] font-bold uppercase tracking-[0.2em] text-outline">
-                    Nivel actual
+        <div className="gsap-rise grid gap-6 xl:grid-cols-[minmax(0,0.98fr)_minmax(18rem,0.82fr)]">
+          <div className="relative overflow-hidden border border-outline-variant bg-[radial-gradient(circle_at_50%_16%,rgba(255,193,112,0.18),transparent_34%),linear-gradient(180deg,#221915_0%,#17100e_58%,#120c0a_100%)] px-6 py-8 sm:px-8">
+            <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.018) 1px,transparent 1px),linear-gradient(180deg,rgba(255,255,255,0.018) 1px,transparent 1px)] bg-[size:28px_28px] opacity-35" />
+            <div className="absolute left-1/2 top-14 h-40 w-40 -translate-x-1/2 rounded-full bg-primary/14 blur-3xl" />
+            <div className="absolute inset-x-[13%] bottom-7 h-24 rounded-[2rem] border border-primary/16 bg-[linear-gradient(180deg,rgba(255,190,110,0.08),rgba(20,15,13,0.12))]" />
+
+            <div className="relative flex min-h-[31rem] flex-col">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="font-headline text-[10px] font-bold uppercase tracking-[0.26em] text-outline">
+                    Vista activa
                   </p>
-                  <p className="font-headline text-xl font-black uppercase tracking-tight text-primary">
-                    {currentLevel}
+                  <h1 className="mt-2 font-headline text-3xl font-black uppercase tracking-tight text-on-surface">
+                    {fieldLabels[activeField]}
+                  </h1>
+                  <p className="mt-3 max-w-md text-sm leading-relaxed text-on-surface-variant">
+                    {activeOption?.description ??
+                      "La vista previa grande refleja al momento cualquier cambio que hagas en tu avatar."}
                   </p>
                 </div>
-              ) : null}
-            </div>
+                {wardrobeManaged ? (
+                  <div className="border border-primary/35 bg-primary/10 px-3 py-2">
+                    <p className="font-headline text-[10px] font-bold uppercase tracking-[0.2em] text-outline">
+                      Nivel actual
+                    </p>
+                    <p className="font-headline text-xl font-black uppercase tracking-tight text-primary">
+                      {currentLevel}
+                    </p>
+                  </div>
+                ) : null}
+              </div>
 
-            <div className="mt-6 flex min-h-[27rem] items-center justify-center overflow-hidden sm:min-h-[33rem]">
-              <PixelAvatar
-                avatar={avatar}
-                size="xxl"
-                highlighted={false}
-                showStatusBadge={false}
-                stage="plain"
-                anchor="center"
-              />
+              <div className="mt-4 flex flex-1 items-center justify-center">
+                <div className="scale-[1.16] sm:scale-[1.24]">
+                  <PixelAvatar
+                    avatar={avatar}
+                    size="xxl"
+                    highlighted={true}
+                    showStatusBadge={false}
+                    stage="panel"
+                    anchor="bottom"
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-3">
+                <div className="border-l-4 border-primary bg-surface-container px-4 py-3">
+                  <p className="font-headline text-[10px] font-bold uppercase tracking-[0.24em] text-outline">
+                    Pieza activa
+                  </p>
+                  <p className="mt-2 font-headline text-sm font-black uppercase tracking-tight text-primary">
+                    {activeOption?.label ?? avatar[activeField]}
+                  </p>
+                </div>
+                <div className="border-l-4 border-secondary bg-surface-container px-4 py-3">
+                  <p className="font-headline text-[10px] font-bold uppercase tracking-[0.24em] text-outline">
+                    Estado
+                  </p>
+                  <p className="mt-2 font-headline text-sm font-black uppercase tracking-tight text-secondary">
+                    {wardrobeManaged
+                      ? activeUnlocked
+                        ? `Abierta en nivel ${activeRequirementLevel}`
+                        : `Bloqueada hasta nivel ${activeRequirementLevel}`
+                      : "Edición libre"}
+                  </p>
+                </div>
+                <div className="border-l-4 border-tertiary bg-surface-container px-4 py-3">
+                  <p className="font-headline text-[10px] font-bold uppercase tracking-[0.24em] text-outline">
+                    Color activo
+                  </p>
+                  <p className="mt-2 font-headline text-sm font-black uppercase tracking-tight text-tertiary">
+                    {activeColorMeta?.label ?? "Sin color editable"}
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
 
           <div className="space-y-4">
+            <div className="gsap-rise border border-outline-variant bg-surface-container p-4">
+              <p className="font-headline text-[10px] font-bold uppercase tracking-[0.24em] text-outline">
+                Pieza elegida
+              </p>
+              <div className="mt-4 flex items-center gap-4">
+                <div className="flex h-24 w-24 items-center justify-center overflow-hidden border border-outline-variant bg-surface-container-low">
+                  {activeOption ? (
+                    <ItemModelPreview
+                      field={activeField}
+                      value={activeOption.value}
+                      avatar={avatar}
+                    />
+                  ) : null}
+                </div>
+                <div>
+                  <p className="font-headline text-lg font-black uppercase tracking-tight text-on-surface">
+                    {activeOption?.label ?? fieldLabels[activeField]}
+                  </p>
+                  <p className="mt-2 text-sm leading-relaxed text-on-surface-variant">
+                    {activeOption?.description ??
+                      "Selecciona una opción del catálogo para ver su vista previa aquí."}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {activeColorField ? (
+              <div className="gsap-rise border border-outline-variant bg-surface-container p-4">
+                <p className="font-headline text-[10px] font-bold uppercase tracking-[0.24em] text-outline">
+                  Colores rápidos
+                </p>
+                <p className="mt-2 text-sm leading-relaxed text-on-surface-variant">
+                  Cuando la prenda está abierta, el color se cambia desde aquí o
+                  desde los puntos de color del catálogo.
+                </p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {colorOptions.map((colorOption) => {
+                    const selectedColor =
+                      avatar[activeColorField] === colorOption.value;
+                    const disabled = isAnonymous || !activeUnlocked;
+
+                    return (
+                      <button
+                        key={colorOption.value}
+                        type="button"
+                        title={colorOption.label}
+                        aria-label={colorOption.label}
+                        onClick={() =>
+                          sanctuaryActions.updateAvatar(
+                            activeColorField,
+                            colorOption.value as AvatarConfig[typeof activeColorField],
+                          )
+                        }
+                        disabled={disabled}
+                        className={`flex items-center gap-2 border px-2 py-2 text-left ${
+                          selectedColor
+                            ? "border-primary bg-primary/10"
+                            : "border-outline-variant bg-surface-container-low hover:border-secondary"
+                        } ${disabled ? "cursor-not-allowed opacity-60" : ""}`}
+                      >
+                        <span
+                          className="h-4 w-4 rounded-full border border-outline-variant"
+                          style={{
+                            backgroundColor:
+                              garmentColorMeta[colorOption.value].swatch,
+                          }}
+                        />
+                        <span className="font-headline text-[10px] font-bold uppercase tracking-[0.16em] text-on-surface">
+                          {colorOption.label}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+                {wardrobeManaged && !activeUnlocked ? (
+                  <p className="mt-3 text-xs leading-relaxed text-on-surface-variant">
+                    El color no se puede cambiar hasta desbloquear esta prenda
+                    en el nivel {activeRequirementLevel}.
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
+
             {wardrobeManaged ? (
               <>
                 <div className="gsap-rise grid gap-4 sm:grid-cols-2">
