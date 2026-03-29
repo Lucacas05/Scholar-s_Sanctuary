@@ -2,7 +2,7 @@
 import "@/index.css";
 import PixelButton from "@/components/PixelButton.astro";
 import Sidebar from "@/components/Sidebar.astro";
-import { siteContent } from "@/data/site";
+import { images, siteContent } from "@/data/site";
 import { IdentityBadge } from "@/islands/sanctuary/IdentityBadge";
 
 interface Props {
@@ -17,7 +17,7 @@ const { title, currentPath, showFab = false, description, image } = Astro.props 
 const pageTitle = `${title} | ${siteContent.brand}`;
 const pageDescription = description ?? siteContent.meta.description;
 const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin);
-const pageImageURL = new URL(image ?? siteContent.images.libraryHero, Astro.site ?? Astro.url.origin);
+const pageImageURL = new URL(image ?? images.libraryHero, Astro.site ?? Astro.url.origin);
 const topItems = siteContent.navigation.topItems;
 const isActive = (href: string) => (href === "/" ? currentPath === "/" : currentPath.startsWith(href));
 const oauthAvailable = Boolean(import.meta.env.GITHUB_CLIENT_ID && import.meta.env.GITHUB_CLIENT_SECRET && import.meta.env.SITE_URL);
