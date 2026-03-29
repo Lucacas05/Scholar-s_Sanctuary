@@ -1,5 +1,17 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/lib/server/db";
+import {
+  GET as getEditorMissions,
+  POST as saveEditorMissions,
+} from "./editor/missions";
+import {
+  GET as getEditorScenes,
+  POST as saveEditorScenes,
+} from "./editor/scenes";
+import {
+  GET as getEditorWardrobe,
+  POST as saveEditorWardrobe,
+} from "./editor/wardrobe";
 import { GET as getFriends } from "./friends/index";
 import { DELETE as deleteFriend } from "./friends/[friendId]";
 import { POST as inviteToRoom } from "./rooms/[code]/invite";
@@ -112,6 +124,7 @@ describe("contratos API del santuario", () => {
       DELETE FROM sessions;
       DELETE FROM achievement_unlocks;
       DELETE FROM pomodoro_sessions;
+      DELETE FROM app_config;
       DELETE FROM users;
     `);
   });
@@ -301,6 +314,225 @@ describe("contratos API del santuario", () => {
     expect(response.status).toBe(403);
     await expect(toJson<{ error: string }>(response)).resolves.toEqual({
       error: "Only owner can invite to this room",
+    });
+  });
+
+  it("guarda el armario global en la VPS y lo devuelve por API", async () => {
+    const currentUser = {
+      id: "github-1",
+      githubId: 1,
+      username: "faby",
+      displayName: "Faby",
+    };
+
+    insertUser(currentUser);
+
+    const saveResponse = await saveEditorWardrobe(
+      createApiContext({
+        user: currentUser,
+        method: "POST",
+        url: "https://lumina.test/api/editor/wardrobe",
+        body: {
+          config: {
+            levelStepFocusSeconds: 5400,
+            rules: [
+              {
+                id: "upper:shirt-04-tee",
+                field: "upper",
+                value: "shirt-04-tee",
+                label: "Camiseta base",
+                unlockLevel: 4,
+                enabled: false,
+              },
+            ],
+            milestones: [
+              {
+                id: "milestone-custom",
+                label: "Arsenal ligero",
+                description: "Primer tramo del armario.",
+                unlockLevel: 4,
+                enabled: true,
+              },
+            ],
+          },
+        },
+      }),
+    );
+
+    expect(saveResponse.status).toBe(200);
+
+    const getResponse = await getEditorWardrobe(
+      createApiContext({
+        user: currentUser,
+        url: "https://lumina.test/api/editor/wardrobe",
+      }),
+    );
+
+    const payload = await toJson<{
+      config: {
+        levelStepFocusSeconds: number;
+        rules: Array<{ id: string; enabled: boolean; unlockLevel: number }>;
+        milestones: Array<{ id: string; label: string; unlockLevel: number }>;
+      };
+    }>(getResponse);
+
+    expect(payload.config.levelStepFocusSeconds).toBe(5400);
+    expect(payload.config.rules).toContainEqual(
+      expect.objectContaining({
+        id: "upper:shirt-04-tee",
+        enabled: false,
+        unlockLevel: 4,
+      }),
+    );
+    expect(payload.config.milestones).toContainEqual(
+      expect.objectContaining({
+        id: "milestone-custom",
+        label: "Arsenal ligero",
+        unlockLevel: 4,
+      }),
+    );
+  });
+
+  it("guarda las misiones globales en la VPS y respeta su estado", async () => {
+    const currentUser = {
+      id: "github-1",
+      githubId: 1,
+      username: "faby",
+      displayName: "Faby",
+    };
+
+    insertUser(currentUser);
+
+    const saveResponse = await saveEditorMissions(
+      createApiContext({
+        user: currentUser,
+        method: "POST",
+        url: "https://lumina.test/api/editor/missions",
+        body: {
+          missions: [
+            {
+              id: "mision-prueba",
+              title: "Misión prueba",
+              description: "Valida la persistencia global.",
+              requiredFocusSeconds: 7200,
+              requiredSessions: 3,
+              roomKind: "public",
+              reward: {
+                type: "wardrobe",
+                field: "upper",
+                value: "shirt-05-vneck-tee",
+              },
+              enabled: false,
+            },
+          ],
+        },
+      }),
+    );
+
+    expect(saveResponse.status).toBe(200);
+
+    const getResponse = await getEditorMissions(
+      createApiContext({
+        user: currentUser,
+        url: "https://lumina.test/api/editor/missions",
+      }),
+    );
+
+    await expect(
+      toJson<{
+        missions: Array<{
+          id: string;
+          title: string;
+          description: string;
+          requiredFocusSeconds: number;
+          requiredSessions: number;
+          roomKind: string;
+          reward: { type: string; field?: string; value?: string };
+          enabled: boolean;
+        }>;
+        updatedAt: string | null;
+      }>(getResponse),
+    ).resolves.toMatchObject({
+      missions: [
+        {
+          id: "mision-prueba",
+          title: "Misión prueba",
+          description: "Valida la persistencia global.",
+          requiredFocusSeconds: 7200,
+          requiredSessions: 3,
+          roomKind: "public",
+          reward: {
+            type: "wardrobe",
+            field: "upper",
+            value: "shirt-05-vneck-tee",
+          },
+          enabled: false,
+        },
+      ],
+      updatedAt: expect.any(String),
+    });
+  });
+
+  it("guarda las escenas publicadas en la VPS", async () => {
+    const currentUser = {
+      id: "github-1",
+      githubId: 1,
+      username: "faby",
+      displayName: "Faby",
+    };
+
+    insertUser(currentUser);
+
+    const saveResponse = await saveEditorScenes(
+      createApiContext({
+        user: currentUser,
+        method: "POST",
+        url: "https://lumina.test/api/editor/scenes",
+        body: {
+          scenes: {
+            "solo-library": {
+              name: "solo-library",
+              width: 20,
+              height: 12,
+              tileSize: 16,
+              spawnLocal: { x: 3.5, y: 7.5 },
+              wanderNodes: [],
+              remoteSlots: [],
+              props: [],
+              theme: {
+                skyTop: "#000000",
+                skyBottom: "#111111",
+                floorA: "#222222",
+                floorB: "#333333",
+                border: "#444444",
+              },
+            },
+          },
+        },
+      }),
+    );
+
+    expect(saveResponse.status).toBe(200);
+
+    const getResponse = await getEditorScenes(
+      createApiContext({
+        user: currentUser,
+        url: "https://lumina.test/api/editor/scenes",
+      }),
+    );
+
+    await expect(
+      toJson<{
+        scenes: {
+          "solo-library": { spawnLocal: { x: number; y: number } };
+        };
+      }>(getResponse),
+    ).resolves.toMatchObject({
+      scenes: {
+        "solo-library": {
+          spawnLocal: { x: 3.5, y: 7.5 },
+        },
+      },
     });
   });
 

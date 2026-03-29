@@ -23,9 +23,11 @@ export interface MissionDefinition {
   requiredSessions: number;
   roomKind: MissionRoomKind;
   reward: MissionReward;
+  enabled: boolean;
 }
 
 const MISSION_STORAGE_KEY = "lumina:mission-definitions";
+const MISSION_DEFINITIONS_ENDPOINT = "/api/editor/missions";
 export const MISSION_DEFINITIONS_EVENT = "lumina:mission-definitions-changed";
 
 const wardrobeValueSets = {
@@ -64,6 +66,7 @@ export const defaultMissionDefinitions: MissionDefinition[] = [
       field: "accessory",
       value: "bigote",
     },
+    enabled: true,
   },
   {
     id: "vigilia-publica",
@@ -78,6 +81,7 @@ export const defaultMissionDefinitions: MissionDefinition[] = [
       field: "upper",
       value: "shirt-02-vneck-longsleeve",
     },
+    enabled: true,
   },
   {
     id: "guardian-del-archivo",
@@ -92,6 +96,7 @@ export const defaultMissionDefinitions: MissionDefinition[] = [
       field: "accessory",
       value: "barbarian-viking",
     },
+    enabled: true,
   },
 ];
 
@@ -206,6 +211,7 @@ function normalizeMission(value: unknown, fallback?: MissionDefinition) {
       requiredSessions: 1,
       roomKind: "any",
       reward: { type: "none" },
+      enabled: true,
     } satisfies MissionDefinition);
 
   if (!value || typeof value !== "object") {
@@ -236,7 +242,19 @@ function normalizeMission(value: unknown, fallback?: MissionDefinition) {
       ? record.roomKind
       : base.roomKind,
     reward: normalizeReward(record.reward),
+    enabled:
+      typeof record.enabled === "boolean" ? record.enabled : base.enabled,
   };
+}
+
+export function normalizeMissionDefinitions(value: unknown) {
+  if (!Array.isArray(value)) {
+    return getDefaultMissionDefinitions();
+  }
+
+  return value.map((entry, index) =>
+    normalizeMission(entry, defaultMissionDefinitions[index]),
+  );
 }
 
 export function loadMissionDefinitions() {
@@ -250,14 +268,7 @@ export function loadMissionDefinitions() {
   }
 
   try {
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) {
-      return getDefaultMissionDefinitions();
-    }
-
-    return parsed.map((entry, index) =>
-      normalizeMission(entry, defaultMissionDefinitions[index]),
-    );
+    return normalizeMissionDefinitions(JSON.parse(raw));
   } catch {
     return getDefaultMissionDefinitions();
   }
@@ -270,7 +281,7 @@ export function saveMissionDefinitions(missions: MissionDefinition[]) {
 
   window.localStorage.setItem(
     MISSION_STORAGE_KEY,
-    JSON.stringify(missions.map((mission) => normalizeMission(mission))),
+    JSON.stringify(normalizeMissionDefinitions(missions)),
   );
   dispatchMissionDefinitionsEvent();
 }
@@ -282,6 +293,60 @@ export function resetMissionDefinitions() {
 
   window.localStorage.removeItem(MISSION_STORAGE_KEY);
   dispatchMissionDefinitionsEvent();
+}
+
+async function parseMissionDefinitionsResponse(response: Response) {
+  if (!response.ok) {
+    throw new Error("No se pudieron sincronizar las misiones.");
+  }
+
+  const payload = (await response.json()) as { missions?: unknown };
+  const normalized = normalizeMissionDefinitions(payload.missions);
+  saveMissionDefinitions(normalized);
+  return normalized;
+}
+
+export async function syncMissionDefinitionsFromServer() {
+  if (typeof window === "undefined") {
+    return getDefaultMissionDefinitions();
+  }
+
+  const response = await fetch(MISSION_DEFINITIONS_ENDPOINT, {
+    credentials: "same-origin",
+  });
+  return parseMissionDefinitionsResponse(response);
+}
+
+export async function saveMissionDefinitionsToServer(
+  missions: MissionDefinition[],
+) {
+  if (typeof window === "undefined") {
+    return normalizeMissionDefinitions(missions);
+  }
+
+  const response = await fetch(MISSION_DEFINITIONS_ENDPOINT, {
+    method: "POST",
+    credentials: "same-origin",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      missions,
+    }),
+  });
+  return parseMissionDefinitionsResponse(response);
+}
+
+export async function resetMissionDefinitionsOnServer() {
+  if (typeof window === "undefined") {
+    return getDefaultMissionDefinitions();
+  }
+
+  const response = await fetch(MISSION_DEFINITIONS_ENDPOINT, {
+    method: "DELETE",
+    credentials: "same-origin",
+  });
+  return parseMissionDefinitionsResponse(response);
 }
 
 export function getMissionRewardLabel(reward: MissionReward) {

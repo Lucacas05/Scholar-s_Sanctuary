@@ -48,6 +48,12 @@ function ensureColumn(
 
 function runMigrations(database: Database.Database) {
   database.exec(`
+    CREATE TABLE IF NOT EXISTS app_config (
+      key TEXT PRIMARY KEY,
+      value_json TEXT NOT NULL,
+      updated_at TEXT DEFAULT (datetime('now'))
+    );
+
     CREATE TABLE IF NOT EXISTS pomodoro_sessions (
       id TEXT PRIMARY KEY,
       client_session_id TEXT NOT NULL,

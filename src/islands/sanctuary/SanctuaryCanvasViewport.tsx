@@ -9,6 +9,7 @@ import {
   PUBLISHED_SCENE_EVENT,
   PUBLISHED_SCENE_STORAGE_KEY,
   refreshPublishedSceneMaps,
+  syncPublishedSceneMapsFromServer,
 } from "@/lib/sanctuary/canvas/sceneMaps";
 import type { AvatarConfig } from "@/lib/sanctuary/store";
 import { SanctuaryCanvasEngine } from "@/lib/sanctuary/canvas/engine";
@@ -98,6 +99,15 @@ export const SanctuaryCanvasViewport = forwardRef<
       engineRef.current?.setScene(sceneKind);
     }
 
+    async function syncPublishedSceneFromServer() {
+      try {
+        await syncPublishedSceneMapsFromServer();
+        engineRef.current?.setScene(sceneKind);
+      } catch {
+        syncPublishedScene();
+      }
+    }
+
     function handleStorage(event: StorageEvent) {
       if (event.key !== PUBLISHED_SCENE_STORAGE_KEY) {
         return;
@@ -106,12 +116,15 @@ export const SanctuaryCanvasViewport = forwardRef<
       syncPublishedScene();
     }
 
+    void syncPublishedSceneFromServer();
     window.addEventListener(PUBLISHED_SCENE_EVENT, syncPublishedScene);
     window.addEventListener("storage", handleStorage);
+    window.addEventListener("focus", syncPublishedSceneFromServer);
 
     return () => {
       window.removeEventListener(PUBLISHED_SCENE_EVENT, syncPublishedScene);
       window.removeEventListener("storage", handleStorage);
+      window.removeEventListener("focus", syncPublishedSceneFromServer);
     };
   }, [sceneKind]);
 

@@ -1,5 +1,13 @@
-import { useMemo, useRef, useState } from "react";
-import { Plus, RotateCcw, Save, Sparkles, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  Eye,
+  EyeOff,
+  Plus,
+  RotateCcw,
+  Save,
+  Sparkles,
+  Trash2,
+} from "lucide-react";
 import { ItemModelPreview } from "@/islands/sanctuary/ItemModelPreview";
 import { useGsapReveal } from "@/islands/sanctuary/useGsapReveal";
 import {
@@ -13,8 +21,9 @@ import {
   getDefaultMissionDefinitions,
   getMissionRewardLabel,
   loadMissionDefinitions,
-  resetMissionDefinitions,
-  saveMissionDefinitions,
+  resetMissionDefinitionsOnServer,
+  saveMissionDefinitionsToServer,
+  syncMissionDefinitionsFromServer,
   type MissionDefinition,
   type MissionReward,
   type MissionRoomKind,
@@ -24,7 +33,7 @@ import type { WardrobeField } from "@/lib/sanctuary/wardrobe";
 const roomKindLabels: Record<MissionRoomKind, string> = {
   any: "Cualquier sala",
   solo: "Sala privada personal",
-  public: "Biblioteca publica",
+  public: "Biblioteca pública",
   private: "Sala compartida privada",
 };
 
@@ -38,7 +47,7 @@ const wardrobeFieldLabels: Record<WardrobeField, string> = {
 function createBlankMission(): MissionDefinition {
   return {
     id: createMissionId(),
-    title: "Nueva mision",
+    title: "Nueva misión",
     description: "",
     requiredFocusSeconds: 60 * 60,
     requiredSessions: 1,
@@ -46,6 +55,7 @@ function createBlankMission(): MissionDefinition {
     reward: {
       type: "none",
     },
+    enabled: true,
   };
 }
 
@@ -68,14 +78,48 @@ export function MissionEditor() {
     loadMissionDefinitions(),
   );
   const [savedMessage, setSavedMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const rootRef = useRef<HTMLDivElement | null>(null);
 
   useGsapReveal(rootRef);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadServerMissions() {
+      setLoading(true);
+      try {
+        const nextMissions = await syncMissionDefinitionsFromServer();
+        if (!cancelled) {
+          setMissions(nextMissions);
+        }
+      } catch {
+        if (!cancelled) {
+          setMissions(loadMissionDefinitions());
+          setSavedMessage("No se pudo leer la VPS, muestro la caché local.");
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    void loadServerMissions();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const totalRequiredFocus = useMemo(
     () =>
       missions.reduce(
-        (sum, mission) => sum + Math.max(0, mission.requiredFocusSeconds),
+        (sum, mission) =>
+          mission.enabled
+            ? sum + Math.max(0, mission.requiredFocusSeconds)
+            : sum,
         0,
       ),
     [missions],
@@ -95,25 +139,41 @@ export function MissionEditor() {
 
   function addMission() {
     setMissions((current) => [...current, createBlankMission()]);
-    setSavedMessage("");
+    setSavedMessage("Nueva misión en borrador.");
   }
 
   function removeMission(missionId: string) {
     setMissions((current) =>
       current.filter((mission) => mission.id !== missionId),
     );
-    setSavedMessage("");
+    setSavedMessage("Misión eliminada del borrador.");
   }
 
-  function handleSave() {
-    saveMissionDefinitions(missions);
-    setSavedMessage("Misiones guardadas.");
+  async function handleSave() {
+    setSaving(true);
+    try {
+      const nextMissions = await saveMissionDefinitionsToServer(missions);
+      setMissions(nextMissions);
+      setSavedMessage("Misiones guardadas en la VPS.");
+    } catch {
+      setSavedMessage("No se pudieron guardar las misiones en la VPS.");
+    } finally {
+      setSaving(false);
+    }
   }
 
-  function handleReset() {
-    resetMissionDefinitions();
-    setMissions(getDefaultMissionDefinitions());
-    setSavedMessage("Misiones restauradas.");
+  async function handleReset() {
+    setSaving(true);
+    try {
+      const nextMissions = await resetMissionDefinitionsOnServer();
+      setMissions(nextMissions);
+      setSavedMessage("Misiones restauradas.");
+    } catch {
+      setMissions(getDefaultMissionDefinitions());
+      setSavedMessage("No se pudo restaurar desde la VPS.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -124,34 +184,37 @@ export function MissionEditor() {
             Editor de misiones
           </p>
           <h1 className="mt-2 font-headline text-3xl font-black uppercase tracking-tight text-on-surface">
-            Recompensas y requisitos
+            Recompensas y requisitos globales
           </h1>
           <p className="mt-4 max-w-2xl text-sm leading-relaxed text-on-surface-variant">
-            Desde aqui defines las misiones del santuario, cuanto tiempo piden,
-            cuantas sesiones obligan y que prenda desbloquean al completarlas.
+            Desde aquí defines las misiones del santuario, cuánto tiempo piden,
+            cuántas sesiones exigen, qué prenda entregan y si deben estar
+            activas en la VPS.
           </p>
 
-          <div className="mt-6 grid gap-4 sm:grid-cols-2">
+          <div className="mt-6 grid gap-4 sm:grid-cols-3">
             <article className="border border-outline-variant bg-surface-container/70 p-4">
               <p className="font-headline text-[10px] font-bold uppercase tracking-[0.22em] text-outline">
-                Misiones activas
+                Misiones totales
               </p>
               <p className="mt-3 font-headline text-2xl font-black uppercase tracking-tight text-primary">
                 {missions.length}
               </p>
-              <p className="mt-2 text-xs leading-relaxed text-on-surface-variant">
-                Puedes crear, borrar o rehacer todo el circuito de progreso.
+            </article>
+            <article className="border border-outline-variant bg-surface-container/70 p-4">
+              <p className="font-headline text-[10px] font-bold uppercase tracking-[0.22em] text-outline">
+                Activas
+              </p>
+              <p className="mt-3 font-headline text-2xl font-black uppercase tracking-tight text-secondary">
+                {missions.filter((mission) => mission.enabled).length}
               </p>
             </article>
             <article className="border border-outline-variant bg-surface-container/70 p-4">
               <p className="font-headline text-[10px] font-bold uppercase tracking-[0.22em] text-outline">
-                Tiempo total exigido
+                Foco total exigido
               </p>
-              <p className="mt-3 font-headline text-2xl font-black uppercase tracking-tight text-secondary">
+              <p className="mt-3 font-headline text-2xl font-black uppercase tracking-tight text-tertiary">
                 {formatMissionDuration(totalRequiredFocus)}
-              </p>
-              <p className="mt-2 text-xs leading-relaxed text-on-surface-variant">
-                Suma del foco pedido por todas las misiones definidas.
               </p>
             </article>
           </div>
@@ -170,11 +233,13 @@ export function MissionEditor() {
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <p className="font-headline text-[10px] font-bold uppercase tracking-[0.22em] text-outline">
-                  Gestion
+                  Guardado global
                 </p>
                 <p className="mt-2 text-sm leading-relaxed text-on-surface-variant">
                   {savedMessage ||
-                    "Guarda cuando termines para dejar la configuracion persistida en local."}
+                    (loading
+                      ? "Leyendo misiones publicadas desde la VPS..."
+                      : "Puedes crear, ocultar o borrar misiones. Nada se aplica hasta guardar en la VPS.")}
                 </p>
               </div>
               <div className="flex flex-wrap gap-3">
@@ -184,12 +249,13 @@ export function MissionEditor() {
                   className="inline-flex items-center gap-2 border border-outline-variant bg-surface-container-low px-4 py-3 font-headline text-xs font-bold uppercase tracking-widest text-on-surface hover:border-secondary"
                 >
                   <Plus size={14} />
-                  Nueva mision
+                  Nueva misión
                 </button>
                 <button
                   type="button"
                   onClick={handleReset}
-                  className="inline-flex items-center gap-2 border border-outline-variant bg-surface-container-low px-4 py-3 font-headline text-xs font-bold uppercase tracking-widest text-on-surface hover:border-secondary"
+                  disabled={saving}
+                  className="inline-flex items-center gap-2 border border-outline-variant bg-surface-container-low px-4 py-3 font-headline text-xs font-bold uppercase tracking-widest text-on-surface hover:border-secondary disabled:opacity-50"
                 >
                   <RotateCcw size={14} />
                   Restaurar
@@ -197,10 +263,11 @@ export function MissionEditor() {
                 <button
                   type="button"
                   onClick={handleSave}
-                  className="inline-flex items-center gap-2 border-b-[3px] border-on-primary-fixed-variant bg-primary px-4 py-3 font-headline text-xs font-bold uppercase tracking-widest text-on-primary"
+                  disabled={saving}
+                  className="inline-flex items-center gap-2 border-b-[3px] border-on-primary-fixed-variant bg-primary px-4 py-3 font-headline text-xs font-bold uppercase tracking-widest text-on-primary disabled:opacity-50"
                 >
                   <Save size={14} />
-                  Guardar
+                  {saving ? "Guardando..." : "Guardar en la VPS"}
                 </button>
               </div>
             </div>
@@ -211,12 +278,12 @@ export function MissionEditor() {
               <Sparkles size={18} className="mt-0.5 shrink-0 text-tertiary" />
               <div>
                 <p className="font-headline text-[10px] font-bold uppercase tracking-[0.24em] text-outline">
-                  Consejos de equilibrio
+                  Consejo
                 </p>
                 <p className="mt-2 text-sm leading-relaxed text-on-surface-variant">
-                  Si una mision desbloquea una pieza rara, conviene que el foco
-                  exigido no rompa la progresion del armario. Aqui puedes
-                  alinear ambos sistemas sin tocar codigo.
+                  Si una misión entrega una pieza rara, compensa su tiempo con
+                  el ritmo del armario. Ahora puedes dejarla oculta sin perderla
+                  y activarla después cuando encaje mejor.
                 </p>
               </div>
             </div>
@@ -238,27 +305,46 @@ export function MissionEditor() {
               <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-outline-variant pb-4">
                 <div>
                   <p className="font-headline text-[10px] font-bold uppercase tracking-[0.22em] text-outline">
-                    Mision {index + 1}
+                    Misión {index + 1}
                   </p>
                   <p className="mt-2 text-sm leading-relaxed text-on-surface-variant">
                     {getMissionRewardLabel(mission.reward)}
                   </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => removeMission(mission.id)}
-                  className="inline-flex items-center gap-2 border border-error/40 bg-error/10 px-4 py-3 font-headline text-xs font-bold uppercase tracking-widest text-error hover:border-error"
-                >
-                  <Trash2 size={14} />
-                  Eliminar
-                </button>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      updateMission(mission.id, (current) => ({
+                        ...current,
+                        enabled: !current.enabled,
+                      }))
+                    }
+                    className={`inline-flex items-center gap-2 border px-4 py-3 font-headline text-xs font-bold uppercase tracking-widest ${
+                      mission.enabled
+                        ? "border-primary bg-primary/12 text-primary"
+                        : "border-outline-variant bg-surface text-outline"
+                    }`}
+                  >
+                    {mission.enabled ? <Eye size={14} /> : <EyeOff size={14} />}
+                    {mission.enabled ? "Activa" : "Oculta"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => removeMission(mission.id)}
+                    className="inline-flex items-center gap-2 border border-error/40 bg-error/10 px-4 py-3 font-headline text-xs font-bold uppercase tracking-widest text-error hover:border-error"
+                  >
+                    <Trash2 size={14} />
+                    Eliminar
+                  </button>
+                </div>
               </div>
 
-              <div className="grid gap-5 xl:grid-cols-[minmax(0,1.25fr)_minmax(18rem,0.75fr)]">
+              <div className="grid gap-5 xl:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)]">
                 <div className="grid gap-4 sm:grid-cols-2">
                   <label className="block">
                     <span className="text-xs uppercase tracking-[0.18em] text-outline">
-                      Titulo
+                      Título
                     </span>
                     <input
                       type="text"
@@ -297,7 +383,7 @@ export function MissionEditor() {
 
                   <label className="block sm:col-span-2">
                     <span className="text-xs uppercase tracking-[0.18em] text-outline">
-                      Descripcion
+                      Descripción
                     </span>
                     <textarea
                       value={mission.description}
@@ -355,127 +441,131 @@ export function MissionEditor() {
                   </label>
                 </div>
 
-                <div className="space-y-4 border border-outline-variant bg-surface-container-low p-4">
-                  <p className="font-headline text-[10px] font-bold uppercase tracking-[0.22em] text-outline">
-                    Recompensa
-                  </p>
-
-                  <label className="block">
-                    <span className="text-xs uppercase tracking-[0.18em] text-outline">
-                      Tipo
-                    </span>
-                    <select
-                      value={mission.reward.type}
-                      onChange={(event) =>
-                        updateMission(mission.id, (current) => ({
-                          ...current,
-                          reward:
-                            event.target.value === "wardrobe"
-                              ? {
-                                  type: "wardrobe",
-                                  field: "upper",
-                                  value:
-                                    avatarOptions.upper[0]?.value ??
-                                    "shirt-01-longsleeve",
-                                }
-                              : { type: "none" },
-                        }))
-                      }
-                      className="mt-2 w-full border border-outline-variant bg-surface-container px-3 py-3 text-sm text-on-surface"
-                    >
-                      <option value="none">Sin recompensa</option>
-                      <option value="wardrobe">Prenda del armario</option>
-                    </select>
-                  </label>
-
-                  {mission.reward.type === "wardrobe" ? (
-                    <>
+                <div className="space-y-4">
+                  <div className="border border-outline-variant bg-surface-container-low p-4">
+                    <p className="font-headline text-[10px] font-bold uppercase tracking-[0.22em] text-outline">
+                      Recompensa
+                    </p>
+                    <div className="mt-4 grid gap-3">
                       <label className="block">
                         <span className="text-xs uppercase tracking-[0.18em] text-outline">
-                          Categoria
+                          Tipo
                         </span>
                         <select
-                          value={rewardField}
-                          onChange={(event) => {
-                            const nextField = event.target
-                              .value as WardrobeField;
-                            const firstOption = avatarOptions[nextField][0];
-                            updateMission(mission.id, (current) => ({
-                              ...current,
-                              reward: {
-                                type: "wardrobe",
-                                field: nextField,
-                                value: firstOption?.value ?? "ninguno",
-                              },
-                            }));
-                          }}
-                          className="mt-2 w-full border border-outline-variant bg-surface-container px-3 py-3 text-sm text-on-surface"
-                        >
-                          {Object.entries(wardrobeFieldLabels).map(
-                            ([value, label]) => (
-                              <option key={value} value={value}>
-                                {label}
-                              </option>
-                            ),
-                          )}
-                        </select>
-                      </label>
-
-                      <label className="block">
-                        <span className="text-xs uppercase tracking-[0.18em] text-outline">
-                          Item
-                        </span>
-                        <select
-                          value={rewardValue}
+                          value={mission.reward.type}
                           onChange={(event) =>
                             updateMission(mission.id, (current) => ({
                               ...current,
-                              reward: {
-                                type: "wardrobe",
-                                field: rewardField,
-                                value: event.target.value,
-                              },
+                              reward:
+                                event.target.value === "wardrobe"
+                                  ? {
+                                      type: "wardrobe",
+                                      field: "upper",
+                                      value:
+                                        avatarOptions.upper[0]?.value ??
+                                        "shirt-01-longsleeve",
+                                    }
+                                  : { type: "none" },
                             }))
                           }
                           className="mt-2 w-full border border-outline-variant bg-surface-container px-3 py-3 text-sm text-on-surface"
                         >
-                          {rewardOptions.map((option) => (
-                            <option key={option.value} value={option.value}>
-                              {option.label}
-                            </option>
-                          ))}
+                          <option value="none">Sin recompensa</option>
+                          <option value="wardrobe">Prenda del armario</option>
                         </select>
                       </label>
 
+                      {mission.reward.type === "wardrobe" ? (
+                        <>
+                          <label className="block">
+                            <span className="text-xs uppercase tracking-[0.18em] text-outline">
+                              Categoría
+                            </span>
+                            <select
+                              value={rewardField}
+                              onChange={(event) =>
+                                updateMission(mission.id, (current) => ({
+                                  ...current,
+                                  reward: {
+                                    type: "wardrobe",
+                                    field: event.target.value as WardrobeField,
+                                    value:
+                                      avatarOptions[
+                                        event.target.value as WardrobeField
+                                      ][0]?.value ?? "shirt-01-longsleeve",
+                                  },
+                                }))
+                              }
+                              className="mt-2 w-full border border-outline-variant bg-surface-container px-3 py-3 text-sm text-on-surface"
+                            >
+                              {Object.entries(wardrobeFieldLabels).map(
+                                ([value, label]) => (
+                                  <option key={value} value={value}>
+                                    {label}
+                                  </option>
+                                ),
+                              )}
+                            </select>
+                          </label>
+
+                          <label className="block">
+                            <span className="text-xs uppercase tracking-[0.18em] text-outline">
+                              Item
+                            </span>
+                            <select
+                              value={rewardValue}
+                              onChange={(event) =>
+                                updateMission(mission.id, (current) => ({
+                                  ...current,
+                                  reward: {
+                                    type: "wardrobe",
+                                    field: rewardField,
+                                    value: event.target.value,
+                                  },
+                                }))
+                              }
+                              className="mt-2 w-full border border-outline-variant bg-surface-container px-3 py-3 text-sm text-on-surface"
+                            >
+                              {rewardOptions.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                  {option.label}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+
+                          <div className="border border-outline-variant bg-surface-container p-3">
+                            <div className="flex justify-center">
+                              <ItemModelPreview
+                                field={rewardField}
+                                value={rewardValue}
+                                avatar={avatar}
+                              />
+                            </div>
+                            <p className="mt-3 text-xs leading-relaxed text-on-surface-variant">
+                              La misión entrega{" "}
+                              {getMissionRewardLabel(mission.reward)}.
+                            </p>
+                          </div>
+                        </>
+                      ) : (
+                        <p className="text-sm leading-relaxed text-on-surface-variant">
+                          Esta misión no desbloquea ropa por ahora.
+                        </p>
+                      )}
+
                       <div className="border border-outline-variant bg-surface-container p-3">
-                        <div className="flex justify-center">
-                          <ItemModelPreview
-                            field={rewardField}
-                            value={rewardValue}
-                            avatar={avatar}
-                          />
-                        </div>
-                        <p className="mt-3 text-xs leading-relaxed text-on-surface-variant">
-                          La mision entrega{" "}
-                          {getMissionRewardLabel(mission.reward)}.
+                        <p className="font-headline text-[10px] font-bold uppercase tracking-[0.22em] text-outline">
+                          Resumen
+                        </p>
+                        <p className="mt-2 text-sm leading-relaxed text-on-surface-variant">
+                          {formatMissionDuration(mission.requiredFocusSeconds)}{" "}
+                          · {mission.requiredSessions} sesiones ·{" "}
+                          {roomKindLabels[mission.roomKind]} ·{" "}
+                          {mission.enabled ? "activa" : "oculta"}.
                         </p>
                       </div>
-                    </>
-                  ) : (
-                    <p className="text-sm leading-relaxed text-on-surface-variant">
-                      Esta mision no desbloquea ropa todavia.
-                    </p>
-                  )}
-
-                  <div className="border border-outline-variant bg-surface-container p-3">
-                    <p className="font-headline text-[10px] font-bold uppercase tracking-[0.22em] text-outline">
-                      Resumen
-                    </p>
-                    <p className="mt-2 text-sm leading-relaxed text-on-surface-variant">
-                      {formatMissionDuration(mission.requiredFocusSeconds)} ·{" "}
-                      {mission.requiredSessions} sesiones ·{" "}
-                      {roomKindLabels[mission.roomKind]}.
-                    </p>
+                    </div>
                   </div>
                 </div>
               </div>

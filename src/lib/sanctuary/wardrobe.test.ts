@@ -4,6 +4,7 @@ import {
   getDefaultWardrobeConfig,
   getWardrobeUnlockSummary,
   isWardrobeItemUnlocked,
+  normalizeWardrobeConfig,
 } from "@/lib/sanctuary/wardrobe";
 
 describe("wardrobe unlocks", () => {
@@ -49,6 +50,29 @@ describe("wardrobe unlocks", () => {
     expect(getWardrobeUnlockSummary(20 * 3600, config).totalItems).toBe(
       config.rules.length - 1,
     );
+  });
+
+  it("normaliza hitos personalizados dentro de la configuración", () => {
+    const config = normalizeWardrobeConfig({
+      levelStepFocusSeconds: 5400,
+      rules: [],
+      milestones: [
+        {
+          id: "milestone-custom",
+          label: "Arsenal ligero",
+          description: "Primer tramo.",
+          unlockLevel: 4,
+          enabled: true,
+        },
+      ],
+    });
+
+    expect(
+      config.milestones.some(
+        (milestone) => milestone.id === "milestone-custom",
+      ),
+    ).toBe(true);
+    expect(config.levelStepFocusSeconds).toBe(5400);
   });
 
   it("formatea duraciones largas de forma legible", () => {

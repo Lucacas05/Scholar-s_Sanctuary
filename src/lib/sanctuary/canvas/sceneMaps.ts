@@ -792,13 +792,7 @@ export const sceneMaps: Record<SceneKind, SceneMap> = {
 export const PUBLISHED_SCENE_STORAGE_KEY =
   "scholars-sanctuary-scene-published-v1";
 export const PUBLISHED_SCENE_EVENT = "scholars-sanctuary-scene-published";
-
-const sceneKinds: SceneKind[] = [
-  "solo-library",
-  "shared-library",
-  "public-library",
-  "garden",
-];
+const PUBLISHED_SCENE_ENDPOINT = "/api/editor/scenes";
 
 let publishedSceneMapsCache: Partial<Record<SceneKind, SceneMap>> | null = null;
 
@@ -1032,6 +1026,28 @@ export function normalizeSceneMap(
   };
 }
 
+export function normalizePublishedSceneMaps(value: unknown) {
+  const parsed =
+    value && typeof value === "object"
+      ? (value as Partial<Record<SceneKind, unknown>>)
+      : {};
+
+  return {
+    "solo-library": parsed["solo-library"]
+      ? normalizeSceneMap(parsed["solo-library"], "solo-library")
+      : undefined,
+    "shared-library": parsed["shared-library"]
+      ? normalizeSceneMap(parsed["shared-library"], "shared-library")
+      : undefined,
+    "public-library": parsed["public-library"]
+      ? normalizeSceneMap(parsed["public-library"], "public-library")
+      : undefined,
+    garden: parsed.garden
+      ? normalizeSceneMap(parsed.garden, "garden")
+      : undefined,
+  } satisfies Partial<Record<SceneKind, SceneMap>>;
+}
+
 function loadPublishedSceneMapsFromStorage() {
   if (typeof window === "undefined") {
     return {} as Partial<Record<SceneKind, SceneMap>>;
@@ -1043,21 +1059,7 @@ function loadPublishedSceneMapsFromStorage() {
   }
 
   try {
-    const parsed = JSON.parse(raw) as Partial<Record<SceneKind, unknown>>;
-    return {
-      "solo-library": parsed["solo-library"]
-        ? normalizeSceneMap(parsed["solo-library"], "solo-library")
-        : undefined,
-      "shared-library": parsed["shared-library"]
-        ? normalizeSceneMap(parsed["shared-library"], "shared-library")
-        : undefined,
-      "public-library": parsed["public-library"]
-        ? normalizeSceneMap(parsed["public-library"], "public-library")
-        : undefined,
-      garden: parsed.garden
-        ? normalizeSceneMap(parsed.garden, "garden")
-        : undefined,
-    };
+    return normalizePublishedSceneMaps(JSON.parse(raw));
   } catch {
     return {} as Partial<Record<SceneKind, SceneMap>>;
   }
@@ -1079,13 +1081,7 @@ export function refreshPublishedSceneMaps() {
 export function publishSceneMaps(
   nextMaps: Partial<Record<SceneKind, SceneMap>>,
 ) {
-  const normalized: Partial<Record<SceneKind, SceneMap>> = {};
-
-  sceneKinds.forEach((sceneKind) => {
-    if (nextMaps[sceneKind]) {
-      normalized[sceneKind] = normalizeSceneMap(nextMaps[sceneKind], sceneKind);
-    }
-  });
+  const normalized = normalizePublishedSceneMaps(nextMaps);
 
   publishedSceneMapsCache = normalized;
 
@@ -1098,6 +1094,60 @@ export function publishSceneMaps(
   }
 
   return normalized;
+}
+
+async function parsePublishedSceneMapsResponse(response: Response) {
+  if (!response.ok) {
+    throw new Error("No se pudieron sincronizar las escenas.");
+  }
+
+  const payload = (await response.json()) as { scenes?: unknown };
+  return publishSceneMaps(normalizePublishedSceneMaps(payload.scenes));
+}
+
+export async function syncPublishedSceneMapsFromServer() {
+  if (typeof window === "undefined") {
+    return {} as Partial<Record<SceneKind, SceneMap>>;
+  }
+
+  const response = await fetch(PUBLISHED_SCENE_ENDPOINT, {
+    credentials: "same-origin",
+  });
+  return parsePublishedSceneMapsResponse(response);
+}
+
+export async function publishSceneMapsToServer(
+  nextMaps: Partial<Record<SceneKind, SceneMap>>,
+) {
+  if (typeof window === "undefined") {
+    return normalizePublishedSceneMaps(nextMaps);
+  }
+
+  const response = await fetch(PUBLISHED_SCENE_ENDPOINT, {
+    method: "POST",
+    credentials: "same-origin",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      scenes: nextMaps,
+    }),
+  });
+
+  return parsePublishedSceneMapsResponse(response);
+}
+
+export async function resetPublishedSceneMapsOnServer() {
+  if (typeof window === "undefined") {
+    return {} as Partial<Record<SceneKind, SceneMap>>;
+  }
+
+  const response = await fetch(PUBLISHED_SCENE_ENDPOINT, {
+    method: "DELETE",
+    credentials: "same-origin",
+  });
+
+  return parsePublishedSceneMapsResponse(response);
 }
 
 export function clearPublishedSceneMaps() {

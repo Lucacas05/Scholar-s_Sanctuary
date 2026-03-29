@@ -3,6 +3,7 @@ import {
   defaultMissionDefinitions,
   formatMissionDuration,
   getMissionRewardLabel,
+  normalizeMissionDefinitions,
 } from "@/lib/sanctuary/missions";
 
 describe("mission definitions", () => {
@@ -23,5 +24,24 @@ describe("mission definitions", () => {
         value: "shirt-02-vneck-longsleeve",
       }),
     ).toContain("Camisa larga 02");
+  });
+
+  it("mantiene el estado enabled al normalizar misiones guardadas", () => {
+    const missions = normalizeMissionDefinitions([
+      {
+        id: "mision-prueba",
+        title: "Misión prueba",
+        description: "",
+        requiredFocusSeconds: 7200,
+        requiredSessions: 2,
+        roomKind: "public",
+        reward: {
+          type: "none",
+        },
+        enabled: false,
+      },
+    ]);
+
+    expect(missions[0]?.enabled).toBe(false);
   });
 });

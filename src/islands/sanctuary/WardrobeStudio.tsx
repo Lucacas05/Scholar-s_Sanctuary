@@ -15,12 +15,15 @@ import {
 import {
   WARDROBE_CONFIG_EVENT,
   formatWardrobeDuration,
+  getFocusSecondsForLevel,
   getWardrobeRequirement,
   getWardrobeRequirementLevel,
   getWardrobeUnlockSummary,
   isWardrobeItemUnlocked,
+  listEnabledWardrobeMilestones,
   listVisibleWardrobeRulesByField,
   loadWardrobeConfig,
+  syncWardrobeConfigFromServer,
   type WardrobeConfig,
   type WardrobeField,
 } from "@/lib/sanctuary/wardrobe";
@@ -84,18 +87,35 @@ export function WardrobeStudio() {
   useGsapReveal(rootRef);
 
   useEffect(() => {
-    const syncConfig = () => {
+    let cancelled = false;
+
+    const syncConfigFromCache = () => {
       setWardrobeConfig(loadWardrobeConfig());
     };
 
-    window.addEventListener("storage", syncConfig);
-    window.addEventListener("focus", syncConfig);
-    window.addEventListener(WARDROBE_CONFIG_EVENT, syncConfig);
+    async function syncConfigFromServer() {
+      try {
+        const config = await syncWardrobeConfigFromServer();
+        if (!cancelled) {
+          setWardrobeConfig(config);
+        }
+      } catch {
+        if (!cancelled) {
+          setWardrobeConfig(loadWardrobeConfig());
+        }
+      }
+    }
+
+    void syncConfigFromServer();
+    window.addEventListener("storage", syncConfigFromCache);
+    window.addEventListener("focus", syncConfigFromServer);
+    window.addEventListener(WARDROBE_CONFIG_EVENT, syncConfigFromCache);
 
     return () => {
-      window.removeEventListener("storage", syncConfig);
-      window.removeEventListener("focus", syncConfig);
-      window.removeEventListener(WARDROBE_CONFIG_EVENT, syncConfig);
+      cancelled = true;
+      window.removeEventListener("storage", syncConfigFromCache);
+      window.removeEventListener("focus", syncConfigFromServer);
+      window.removeEventListener(WARDROBE_CONFIG_EVENT, syncConfigFromCache);
     };
   }, []);
 
@@ -153,6 +173,10 @@ export function WardrobeStudio() {
     ? garmentColorFieldByField[activeField]
     : null;
   const colorOptions = activeColorField ? avatarOptions[activeColorField] : [];
+  const milestones = useMemo(
+    () => listEnabledWardrobeMilestones(wardrobeConfig),
+    [wardrobeConfig],
+  );
 
   return (
     <div
@@ -271,7 +295,7 @@ export function WardrobeStudio() {
           </div>
 
           <div className="space-y-4">
-            <div className="gsap-rise grid gap-4 sm:grid-cols-3">
+            <div className="gsap-rise grid gap-4 sm:grid-cols-3 xl:grid-cols-4">
               <article className="border border-outline-variant bg-surface-container p-4">
                 <div className="flex items-center gap-2 text-primary">
                   <Flame size={16} />
@@ -306,7 +330,7 @@ export function WardrobeStudio() {
                 <div className="flex items-center gap-2 text-secondary">
                   <Crown size={16} />
                   <p className="font-headline text-[10px] font-bold uppercase tracking-[0.22em]">
-                    Siguiente hito
+                    Siguiente prenda
                   </p>
                 </div>
                 <p className="mt-3 font-headline text-base font-black uppercase tracking-tight text-on-surface">
@@ -318,6 +342,25 @@ export function WardrobeStudio() {
                         unlockSummary.nextUnlock.remainingFocusSeconds,
                       )}.`
                     : "Ya no queda ninguna prenda bloqueada."}
+                </p>
+              </article>
+
+              <article className="border border-outline-variant bg-surface-container p-4">
+                <div className="flex items-center gap-2 text-tertiary">
+                  <Sparkles size={16} />
+                  <p className="font-headline text-[10px] font-bold uppercase tracking-[0.22em]">
+                    Siguiente hito
+                  </p>
+                </div>
+                <p className="mt-3 font-headline text-base font-black uppercase tracking-tight text-on-surface">
+                  {unlockSummary.nextMilestone?.label ?? "Ruta completa"}
+                </p>
+                <p className="mt-2 text-xs leading-relaxed text-on-surface-variant">
+                  {unlockSummary.nextMilestone
+                    ? `Nivel ${unlockSummary.nextMilestone.unlockLevel} · faltan ${formatWardrobeDuration(
+                        unlockSummary.nextMilestone.remainingFocusSeconds,
+                      )}.`
+                    : "Ya no queda ningún hito pendiente en el circuito."}
                 </p>
               </article>
             </div>
@@ -335,6 +378,49 @@ export function WardrobeStudio() {
                     y cambia el nivel de desbloqueo de cada pieza.
                   </p>
                 </div>
+              </div>
+            </div>
+
+            <div className="gsap-rise border border-outline-variant bg-surface-container p-5">
+              <p className="font-headline text-[10px] font-bold uppercase tracking-[0.24em] text-outline">
+                Hitos del armario
+              </p>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                {milestones.length > 0 ? (
+                  milestones.map((milestone) => {
+                    const requiredFocusSeconds = getFocusSecondsForLevel(
+                      milestone.unlockLevel,
+                      wardrobeConfig.levelStepFocusSeconds,
+                    );
+                    const unlocked = totalFocusSeconds >= requiredFocusSeconds;
+
+                    return (
+                      <article
+                        key={milestone.id}
+                        className={`border px-4 py-3 ${
+                          unlocked
+                            ? "border-primary/40 bg-primary/10"
+                            : "border-outline-variant bg-surface-container-low"
+                        }`}
+                      >
+                        <p className="font-headline text-sm font-black uppercase tracking-[0.16em] text-on-surface">
+                          {milestone.label}
+                        </p>
+                        <p className="mt-1 text-xs uppercase tracking-[0.18em] text-outline">
+                          Nivel {milestone.unlockLevel}
+                        </p>
+                        <p className="mt-2 text-xs leading-relaxed text-on-surface-variant">
+                          {milestone.description || "Hito sin descripción."}
+                        </p>
+                      </article>
+                    );
+                  })
+                ) : (
+                  <div className="border border-outline-variant bg-surface-container-low px-4 py-5 text-sm leading-relaxed text-on-surface-variant sm:col-span-2">
+                    No hay hitos activos. Puedes crearlos desde el editor del
+                    armario.
+                  </div>
+                )}
               </div>
             </div>
 

@@ -18,12 +18,22 @@ export interface WardrobeUnlockRule<T extends WardrobeField = WardrobeField> {
   enabled: boolean;
 }
 
+export interface WardrobeMilestone {
+  id: string;
+  label: string;
+  description: string;
+  unlockLevel: number;
+  enabled: boolean;
+}
+
 export interface WardrobeConfig {
   levelStepFocusSeconds: number;
   rules: WardrobeUnlockRule[];
+  milestones: WardrobeMilestone[];
 }
 
 const WARDROBE_CONFIG_STORAGE_KEY = "lumina:wardrobe-config";
+const WARDROBE_CONFIG_ENDPOINT = "/api/editor/wardrobe";
 export const WARDROBE_CONFIG_EVENT = "lumina:wardrobe-config-changed";
 const DEFAULT_LEVEL_STEP_FOCUS_SECONDS = 60 * 60;
 
@@ -56,6 +66,12 @@ export function createWardrobeRuleId<T extends WardrobeField>(
   return `${field}:${value}`;
 }
 
+export function createWardrobeMilestoneId() {
+  return `hito-${Date.now().toString(36)}-${Math.random()
+    .toString(36)
+    .slice(2, 8)}`;
+}
+
 function createRule<T extends WardrobeField>(
   field: T,
   value: WardrobeValueMap[T],
@@ -68,6 +84,22 @@ function createRule<T extends WardrobeField>(
     field,
     value,
     label,
+    unlockLevel,
+    enabled,
+  };
+}
+
+function createMilestone(
+  label: string,
+  unlockLevel: number,
+  description: string,
+  enabled = true,
+  id = createWardrobeMilestoneId(),
+): WardrobeMilestone {
+  return {
+    id,
+    label,
+    description,
     unlockLevel,
     enabled,
   };
@@ -91,18 +123,18 @@ function buildDefaultWardrobeUnlockRules(): WardrobeUnlockRule[] {
     createRule("upper", "shirt-03-scoop-longsleeve", "Camisa larga 03", 6),
     createRule("upper", "shirt-05-vneck-tee", "Camiseta 02", 10),
     createRule("upper", "shirt-06-scoop-tee", "Camiseta 03", 15),
-    createRule("lower", "pants-03-pants", "Pantalon 03", 1),
-    createRule("lower", "pants-01-hose", "Pantalon 01", 2),
-    createRule("lower", "pants-02-leggings", "Pantalon 02", 4),
-    createRule("lower", "pants-04-cuffed", "Pantalon 04", 8),
-    createRule("lower", "pants-05-overalls", "Pantalon 05", 13),
+    createRule("lower", "pants-03-pants", "Pantalón 03", 1),
+    createRule("lower", "pants-01-hose", "Pantalón 01", 2),
+    createRule("lower", "pants-02-leggings", "Pantalón 02", 4),
+    createRule("lower", "pants-04-cuffed", "Pantalón 04", 8),
+    createRule("lower", "pants-05-overalls", "Pantalón 05", 13),
     createRule("socks", "socks-01-ankle", "Calcetines bajos", 1),
     createRule("socks", "socks-02-high", "Calcetines altos", 3),
     createRule("accessory", "ninguno", "Sin accesorio", 1),
     createRule("accessory", "bigote", "Bigote", 2),
     createRule("accessory", "barba-corta", "Barba corta", 3),
-    createRule("accessory", "barbarian", "Casco barbaro", 5),
-    createRule("accessory", "barbarian-nasal", "Casco barbaro nasal", 7),
+    createRule("accessory", "barbarian", "Casco bárbaro", 5),
+    createRule("accessory", "barbarian-nasal", "Casco bárbaro nasal", 7),
     createRule("accessory", "barbarian-viking", "Casco vikingo", 9),
     createRule("accessory", "barbuta", "Barbuta", 11),
     createRule("accessory", "barbuta-simple", "Barbuta simple", 13),
@@ -117,13 +149,51 @@ function buildDefaultWardrobeUnlockRules(): WardrobeUnlockRule[] {
   ];
 }
 
+function buildDefaultWardrobeMilestones(): WardrobeMilestone[] {
+  return [
+    createMilestone(
+      "Nivel 1",
+      1,
+      "Despiertas el armario base y las primeras prendas del santuario.",
+      true,
+      "milestone-1",
+    ),
+    createMilestone(
+      "Nivel 5",
+      5,
+      "Empiezan a aparecer piezas intermedias y accesorios más marcados.",
+      true,
+      "milestone-5",
+    ),
+    createMilestone(
+      "Nivel 10",
+      10,
+      "Abres combinaciones avanzadas y el armario gana variedad real.",
+      true,
+      "milestone-10",
+    ),
+    createMilestone(
+      "Nivel 20",
+      20,
+      "El santuario entra en su tramo raro con cascos y prendas tardías.",
+      true,
+      "milestone-20",
+    ),
+  ];
+}
+
 const defaultWardrobeConfig: WardrobeConfig = {
   levelStepFocusSeconds: DEFAULT_LEVEL_STEP_FOCUS_SECONDS,
   rules: buildDefaultWardrobeUnlockRules(),
+  milestones: buildDefaultWardrobeMilestones(),
 };
 
 function cloneRule(rule: WardrobeUnlockRule): WardrobeUnlockRule {
   return { ...rule };
+}
+
+function cloneMilestone(milestone: WardrobeMilestone): WardrobeMilestone {
+  return { ...milestone };
 }
 
 function dispatchWardrobeConfigEvent() {
@@ -138,6 +208,7 @@ export function getDefaultWardrobeConfig(): WardrobeConfig {
   return {
     levelStepFocusSeconds: defaultWardrobeConfig.levelStepFocusSeconds,
     rules: defaultWardrobeConfig.rules.map(cloneRule),
+    milestones: defaultWardrobeConfig.milestones.map(cloneMilestone),
   };
 }
 
@@ -171,6 +242,10 @@ function buildFallbackRule<T extends WardrobeField>(
   value: WardrobeValueMap[T],
 ) {
   return createRule(field, value, getOptionLabel(field, value), 1);
+}
+
+function buildFallbackMilestone(id?: string) {
+  return createMilestone("Nuevo hito", 1, "", true, id);
 }
 
 function normalizeStoredRule(
@@ -209,7 +284,38 @@ function normalizeStoredRule(
   };
 }
 
-function normalizeStoredConfig(value: unknown): WardrobeConfig {
+function normalizeStoredMilestone(
+  value: unknown,
+  fallbackMilestone: WardrobeMilestone,
+) {
+  if (!value || typeof value !== "object") {
+    return cloneMilestone(fallbackMilestone);
+  }
+
+  const record = value as Record<string, unknown>;
+  return {
+    id:
+      typeof record.id === "string" && record.id.trim().length > 0
+        ? record.id.trim()
+        : fallbackMilestone.id,
+    label:
+      typeof record.label === "string" && record.label.trim().length > 0
+        ? record.label.trim()
+        : fallbackMilestone.label,
+    description:
+      typeof record.description === "string" ? record.description.trim() : "",
+    unlockLevel: normalizeLevel(
+      record.unlockLevel,
+      fallbackMilestone.unlockLevel,
+    ),
+    enabled:
+      typeof record.enabled === "boolean"
+        ? record.enabled
+        : fallbackMilestone.enabled,
+  };
+}
+
+export function normalizeWardrobeConfig(value: unknown): WardrobeConfig {
   const fallback = getDefaultWardrobeConfig();
 
   if (!value || typeof value !== "object") {
@@ -219,7 +325,7 @@ function normalizeStoredConfig(value: unknown): WardrobeConfig {
   const record = value as Record<string, unknown>;
   const storedRules = Array.isArray(record.rules) ? record.rules : [];
   const storedRuleMap = new Map<string, unknown>();
-  const fallbackIdSet = new Set(fallback.rules.map((rule) => rule.id));
+  const fallbackRuleIdSet = new Set(fallback.rules.map((rule) => rule.id));
 
   storedRules.forEach((rule) => {
     if (!rule || typeof rule !== "object") {
@@ -249,14 +355,14 @@ function normalizeStoredConfig(value: unknown): WardrobeConfig {
   );
 
   storedRuleMap.forEach((rawRule, ruleId) => {
-    if (fallbackIdSet.has(ruleId)) {
+    if (fallbackRuleIdSet.has(ruleId)) {
       return;
     }
 
-    const [fieldValue, value] = ruleId.split(":");
+    const [fieldValue, valueKey] = ruleId.split(":");
     if (
       !isValidWardrobeField(fieldValue) ||
-      !hasWardrobeValue(fieldValue, value)
+      !hasWardrobeValue(fieldValue, valueKey)
     ) {
       return;
     }
@@ -266,8 +372,46 @@ function normalizeStoredConfig(value: unknown): WardrobeConfig {
         rawRule,
         buildFallbackRule(
           fieldValue,
-          value as WardrobeValueMap[typeof fieldValue],
+          valueKey as WardrobeValueMap[typeof fieldValue],
         ),
+      ),
+    );
+  });
+
+  const storedMilestones = Array.isArray(record.milestones)
+    ? record.milestones
+    : [];
+  const storedMilestoneMap = new Map<string, unknown>();
+  const fallbackMilestoneIds = new Set(
+    fallback.milestones.map((milestone) => milestone.id),
+  );
+
+  storedMilestones.forEach((milestone) => {
+    if (!milestone || typeof milestone !== "object") {
+      return;
+    }
+
+    const entry = milestone as Record<string, unknown>;
+    if (typeof entry.id !== "string" || entry.id.trim().length === 0) {
+      return;
+    }
+
+    storedMilestoneMap.set(entry.id.trim(), milestone);
+  });
+
+  const normalizedMilestones = fallback.milestones.map((milestone) =>
+    normalizeStoredMilestone(storedMilestoneMap.get(milestone.id), milestone),
+  );
+
+  storedMilestoneMap.forEach((rawMilestone, milestoneId) => {
+    if (fallbackMilestoneIds.has(milestoneId)) {
+      return;
+    }
+
+    normalizedMilestones.push(
+      normalizeStoredMilestone(
+        rawMilestone,
+        buildFallbackMilestone(milestoneId),
       ),
     );
   });
@@ -277,6 +421,11 @@ function normalizeStoredConfig(value: unknown): WardrobeConfig {
       record.levelStepFocusSeconds,
     ),
     rules: normalizedRules,
+    milestones: normalizedMilestones.sort(
+      (left, right) =>
+        left.unlockLevel - right.unlockLevel ||
+        left.label.localeCompare(right.label, "es"),
+    ),
   };
 }
 
@@ -291,7 +440,7 @@ export function loadWardrobeConfig(): WardrobeConfig {
   }
 
   try {
-    return normalizeStoredConfig(JSON.parse(raw));
+    return normalizeWardrobeConfig(JSON.parse(raw));
   } catch {
     return getDefaultWardrobeConfig();
   }
@@ -302,7 +451,7 @@ export function saveWardrobeConfig(config: WardrobeConfig) {
     return;
   }
 
-  const normalized = normalizeStoredConfig(config);
+  const normalized = normalizeWardrobeConfig(config);
   window.localStorage.setItem(
     WARDROBE_CONFIG_STORAGE_KEY,
     JSON.stringify(normalized),
@@ -317,6 +466,60 @@ export function resetWardrobeConfig() {
 
   window.localStorage.removeItem(WARDROBE_CONFIG_STORAGE_KEY);
   dispatchWardrobeConfigEvent();
+}
+
+async function parseWardrobeConfigResponse(response: Response) {
+  if (!response.ok) {
+    throw new Error("No se pudo sincronizar el armario.");
+  }
+
+  const payload = (await response.json()) as { config?: unknown };
+  const normalized = normalizeWardrobeConfig(payload.config);
+  saveWardrobeConfig(normalized);
+  return normalized;
+}
+
+export async function syncWardrobeConfigFromServer() {
+  if (typeof window === "undefined") {
+    return getDefaultWardrobeConfig();
+  }
+
+  const response = await fetch(WARDROBE_CONFIG_ENDPOINT, {
+    credentials: "same-origin",
+  });
+  return parseWardrobeConfigResponse(response);
+}
+
+export async function saveWardrobeConfigToServer(config: WardrobeConfig) {
+  if (typeof window === "undefined") {
+    return normalizeWardrobeConfig(config);
+  }
+
+  const response = await fetch(WARDROBE_CONFIG_ENDPOINT, {
+    method: "POST",
+    credentials: "same-origin",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      config,
+    }),
+  });
+
+  return parseWardrobeConfigResponse(response);
+}
+
+export async function resetWardrobeConfigOnServer() {
+  if (typeof window === "undefined") {
+    return getDefaultWardrobeConfig();
+  }
+
+  const response = await fetch(WARDROBE_CONFIG_ENDPOINT, {
+    method: "DELETE",
+    credentials: "same-origin",
+  });
+
+  return parseWardrobeConfigResponse(response);
 }
 
 export function formatWardrobeDuration(totalFocusSeconds: number) {
@@ -407,7 +610,13 @@ export function listWardrobeRulesByField(
   field: WardrobeField,
   config: WardrobeConfig = defaultWardrobeConfig,
 ) {
-  return config.rules.filter((rule) => rule.field === field);
+  return config.rules
+    .filter((rule) => rule.field === field)
+    .sort(
+      (left, right) =>
+        left.unlockLevel - right.unlockLevel ||
+        left.label.localeCompare(right.label, "es"),
+    );
 }
 
 export function listVisibleWardrobeRulesByField(
@@ -422,7 +631,26 @@ export function listWardrobeCandidates(field: WardrobeField) {
     field,
     value: option.value,
     label: option.label,
+    description: option.description,
   }));
+}
+
+export function listWardrobeMilestones(
+  config: WardrobeConfig = defaultWardrobeConfig,
+) {
+  return [...config.milestones].sort(
+    (left, right) =>
+      left.unlockLevel - right.unlockLevel ||
+      left.label.localeCompare(right.label, "es"),
+  );
+}
+
+export function listEnabledWardrobeMilestones(
+  config: WardrobeConfig = defaultWardrobeConfig,
+) {
+  return listWardrobeMilestones(config).filter(
+    (milestone) => milestone.enabled,
+  );
 }
 
 export function getWardrobeUnlockSummary(
@@ -430,6 +658,20 @@ export function getWardrobeUnlockSummary(
   config: WardrobeConfig = defaultWardrobeConfig,
 ) {
   const enabledRules = config.rules.filter((rule) => rule.enabled);
+  const enabledMilestones = listEnabledWardrobeMilestones(config).map(
+    (milestone) => {
+      const requiredFocusSeconds = getFocusSecondsForLevel(
+        milestone.unlockLevel,
+        config.levelStepFocusSeconds,
+      );
+
+      return {
+        ...milestone,
+        requiredFocusSeconds,
+        unlocked: totalFocusSeconds >= requiredFocusSeconds,
+      };
+    },
+  );
   const enrichedRules = enabledRules.map((rule) => {
     const requiredFocusSeconds = getFocusSecondsForLevel(
       rule.unlockLevel,
@@ -448,25 +690,38 @@ export function getWardrobeUnlockSummary(
     enrichedRules
       .filter((rule) => !rule.unlocked)
       .sort((left, right) => left.unlockLevel - right.unlockLevel)[0] ?? null;
+  const nextMilestone =
+    enabledMilestones
+      .filter((milestone) => !milestone.unlocked)
+      .sort((left, right) => left.unlockLevel - right.unlockLevel)[0] ?? null;
   const currentLevel = getWardrobeLevel(
     totalFocusSeconds,
     config.levelStepFocusSeconds,
   );
-  const maxLevel =
-    enabledRules.length > 0
-      ? Math.max(...enabledRules.map((rule) => rule.unlockLevel))
-      : 1;
+  const maxLevel = Math.max(
+    1,
+    ...enabledRules.map((rule) => rule.unlockLevel),
+    ...enabledMilestones.map((milestone) => milestone.unlockLevel),
+  );
 
   return {
     unlockedCount,
     totalItems: enabledRules.length,
     currentLevel,
     maxLevel,
+    milestones: enabledMilestones,
     nextUnlock: nextUnlock
       ? {
           ...nextUnlock,
           remainingFocusSeconds:
             nextUnlock.requiredFocusSeconds - totalFocusSeconds,
+        }
+      : null,
+    nextMilestone: nextMilestone
+      ? {
+          ...nextMilestone,
+          remainingFocusSeconds:
+            nextMilestone.requiredFocusSeconds - totalFocusSeconds,
         }
       : null,
   };

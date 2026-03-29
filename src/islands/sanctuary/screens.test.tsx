@@ -13,6 +13,7 @@ import {
   __resetSanctuaryStoreForTests,
   sanctuaryActions,
 } from "@/lib/sanctuary/store";
+import { saveWardrobeConfig } from "@/lib/sanctuary/wardrobe";
 
 vi.mock("@/islands/sanctuary/useGsapReveal", () => ({
   useGsapReveal: () => {},
@@ -72,6 +73,7 @@ function authenticate() {
 describe("vistas principales del santuario", () => {
   beforeEach(() => {
     __resetSanctuaryStoreForTests();
+    window.localStorage.clear();
   });
 
   it("renderiza el hub social de la biblioteca", () => {
@@ -103,6 +105,105 @@ describe("vistas principales del santuario", () => {
     authenticate();
     render(<AvatarStudio />);
     expect(screen.getByText("Parte superior")).toBeTruthy();
+  });
+
+  it("oculta en refinar las prendas desactivadas en el armario global", async () => {
+    authenticate();
+    saveWardrobeConfig({
+      levelStepFocusSeconds: 3600,
+      rules: [
+        {
+          id: "upper:shirt-01-longsleeve",
+          field: "upper",
+          value: "shirt-01-longsleeve",
+          label: "Camisa larga 01",
+          unlockLevel: 1,
+          enabled: true,
+        },
+        {
+          id: "upper:shirt-04-tee",
+          field: "upper",
+          value: "shirt-04-tee",
+          label: "Camiseta 01",
+          unlockLevel: 1,
+          enabled: false,
+        },
+      ],
+      milestones: [],
+    });
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url =
+          typeof input === "string"
+            ? input
+            : input instanceof URL
+              ? input.toString()
+              : input.url;
+
+        if (url.includes("/api/editor/wardrobe")) {
+          return new Response(
+            JSON.stringify({
+              config: {
+                levelStepFocusSeconds: 3600,
+                rules: [
+                  {
+                    id: "upper:shirt-01-longsleeve",
+                    field: "upper",
+                    value: "shirt-01-longsleeve",
+                    label: "Camisa larga 01",
+                    unlockLevel: 1,
+                    enabled: true,
+                  },
+                  {
+                    id: "upper:shirt-04-tee",
+                    field: "upper",
+                    value: "shirt-04-tee",
+                    label: "Camiseta 01",
+                    unlockLevel: 1,
+                    enabled: false,
+                  },
+                ],
+                milestones: [],
+              },
+            }),
+            {
+              headers: {
+                "Content-Type": "application/json",
+              },
+            },
+          );
+        }
+
+        if (url.includes("/api/pomodoro/stats")) {
+          return new Response(
+            JSON.stringify({
+              totalFocusSeconds: 7200,
+            }),
+            {
+              headers: {
+                "Content-Type": "application/json",
+              },
+            },
+          );
+        }
+
+        return new Response(JSON.stringify({}), {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+      }),
+    );
+
+    render(<AvatarStudio />);
+    fireEvent.click(screen.getByText("Parte superior"));
+
+    await waitFor(() => {
+      expect(screen.getByText("Camisa larga 01")).toBeTruthy();
+    });
+    expect(screen.queryByText("Camiseta 01")).toBeNull();
   });
 
   it("renderiza crónicas", async () => {

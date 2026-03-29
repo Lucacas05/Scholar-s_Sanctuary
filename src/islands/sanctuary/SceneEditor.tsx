@@ -24,7 +24,12 @@ import {
   drawSceneBackground,
   drawSceneProp,
 } from "@/lib/sanctuary/canvas/renderer";
-import { publishSceneMaps, sceneMaps } from "@/lib/sanctuary/canvas/sceneMaps";
+import {
+  publishSceneMaps,
+  publishSceneMapsToServer,
+  sceneMaps,
+  syncPublishedSceneMapsFromServer,
+} from "@/lib/sanctuary/canvas/sceneMaps";
 import {
   sceneLayerOrder,
   type Facing,
@@ -1448,6 +1453,42 @@ export function SceneEditor() {
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
+
+    async function hydrateDraftsFromServer() {
+      try {
+        const published = await syncPublishedSceneMapsFromServer();
+        if (cancelled) {
+          return;
+        }
+
+        const nextDrafts = cloneDrafts(draftsRef.current);
+        (Object.keys(published) as SceneKind[]).forEach((kind) => {
+          const scene = published[kind];
+          if (scene) {
+            nextDrafts[kind] = cloneSceneMap(scene);
+          }
+        });
+
+        applyDrafts(
+          nextDrafts,
+          sanitizeSelection(nextDrafts[sceneKind], selection),
+        );
+      } catch {
+        if (!cancelled) {
+          setFlash("No se pudo cargar la escena publicada de la VPS");
+        }
+      }
+    }
+
+    void hydrateDraftsFromServer();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
     if (typeof window === "undefined") {
       return;
     }
@@ -2409,9 +2450,14 @@ export function SceneEditor() {
     setFlash("JSON descargado");
   }
 
-  function applyToWeb() {
-    publishSceneMaps(draftsRef.current);
-    setFlash("Cambios aplicados a la web");
+  async function applyToWeb() {
+    try {
+      await publishSceneMapsToServer(draftsRef.current);
+      setFlash("Cambios aplicados en la web");
+    } catch {
+      publishSceneMaps(draftsRef.current);
+      setFlash("No se pudo guardar la escena en la VPS");
+    }
   }
 
   function importJson() {
@@ -2455,7 +2501,8 @@ export function SceneEditor() {
             <p className="mt-3 max-w-2xl text-sm leading-relaxed text-on-surface-variant">
               Esta ruta no toca la navegación principal. Sirve para montar tus
               fondos, colocar props, definir spawn, asiento, nodos y exportar un
-              JSON listo para exportarlo o aplicarlo a la web sin tocar código.
+              JSON listo para exportarlo o aplicarlo en la web real sin tocar
+              código.
             </p>
           </div>
 
@@ -2481,7 +2528,7 @@ export function SceneEditor() {
               onClick={applyToWeb}
               className="inline-flex items-center gap-2 border-2 border-tertiary bg-tertiary/12 px-4 py-3 font-headline text-xs font-bold uppercase tracking-[0.18em] text-tertiary hover:border-tertiary"
             >
-              <Save size={14} /> Aplicar a la web
+              <Save size={14} /> Aplicar en la VPS
             </button>
             <button
               ref={copyButtonRef}
@@ -2811,7 +2858,7 @@ export function SceneEditor() {
                   `C` para colocar props. 3. Ajusta propiedades. 4. Haz doble
                   clic en el canvas para mandar la selección al ratón. 5. Usa
                   deshacer y rehacer si pruebas una variante. 6. Pulsa `Aplicar
-                  a la web` cuando quieras que el visor use esa versión.
+                  en la VPS` cuando quieras que el visor use esa versión.
                 </p>
               </div>
               {flash ? (
@@ -3423,8 +3470,8 @@ export function SceneEditor() {
                 El editor guarda cada escena en borrador local automáticamente.
               </li>
               <li>
-                `Aplicar a la web` publica esos cambios para que el visor 2D
-                cargue esta versión en el navegador.
+                `Aplicar en la VPS` publica esos cambios para que el visor 2D
+                use esta versión global del sitio.
               </li>
               <li>
                 Los props se exportan en el mismo formato que usa el visor

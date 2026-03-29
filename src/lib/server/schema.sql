@@ -76,3 +76,9 @@ CREATE TABLE IF NOT EXISTS achievement_unlocks (
   created_at TEXT DEFAULT (datetime('now')),
   UNIQUE(user_id, achievement_id)
 );
+
+CREATE TABLE IF NOT EXISTS app_config (
+  key TEXT PRIMARY KEY,
+  value_json TEXT NOT NULL,
+  updated_at TEXT DEFAULT (datetime('now'))
+);
