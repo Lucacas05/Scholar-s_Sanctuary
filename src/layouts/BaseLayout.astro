@@ -4,6 +4,7 @@ import PixelButton from "@/components/PixelButton.astro";
 import Sidebar from "@/components/Sidebar.astro";
 import { images, siteContent } from "@/data/site";
 import { IdentityBadge } from "@/islands/sanctuary/IdentityBadge";
+import { FeedbackFab } from "@/islands/FeedbackFab";
 
 interface Props {
   title: string;
@@ -145,5 +146,7 @@ const bootstrapPayload = Astro.locals.user
         </div>
       )
     }
+
+    <FeedbackFab client:only="react" />
   </body>
 </html>
