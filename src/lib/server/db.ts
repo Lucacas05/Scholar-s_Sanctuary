@@ -9,44 +9,6 @@ const globalForDb = globalThis as typeof globalThis & {
   __luminaDb?: Database.Database;
 };
 
-function ensureColumn(database: Database.Database, table: string, column: string, definition: string) {
-  const columns = database.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[];
-  const hasColumn = columns.some((entry) => entry.name === column);
-  if (!hasColumn) {
-    database.exec(`ALTER TABLE ${table} ADD COLUMN ${definition}`);
-  }
-}
-
-function runMigrations(database: Database.Database) {
-  ensureColumn(database, "rooms", "privacy", "privacy TEXT NOT NULL DEFAULT 'private'");
-  ensureColumn(database, "room_invitations", "invite_code", "invite_code TEXT");
-  ensureColumn(database, "room_invitations", "expires_at", "expires_at TEXT");
-  ensureColumn(database, "room_invitations", "revoked_at", "revoked_at TEXT");
-
-  database.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_room_invitations_invite_code ON room_invitations(invite_code)");
-
-  const rows = database
-    .prepare("SELECT id FROM room_invitations WHERE invite_code IS NULL OR invite_code = ''")
-    .all() as { id: string }[];
-
-  const fillCode = database.prepare("UPDATE room_invitations SET invite_code = ? WHERE id = ?");
-  for (const row of rows) {
-    fillCode.run(crypto.randomUUID().slice(0, 10).toUpperCase(), row.id);
-  }
-}
-
-function createDatabase() {
-  const dbPath = fileURLToPath(dbUrl);
-  mkdirSync(dirname(dbPath), { recursive: true });
-
-  const database = new Database(dbPath);
-  database.pragma("journal_mode = WAL");
-  database.exec(schema);
-  runMigrations(database);
-
-  return database;
-}
-
 function getColumnNames(database: Database.Database, tableName: string) {
   return new Set(
     (database.prepare(`PRAGMA table_info(${tableName})`).all() as Array<{ name: string }>).map(
@@ -99,6 +61,27 @@ function runMigrations(database: Database.Database) {
     CREATE INDEX IF NOT EXISTS idx_achievement_unlocks_user
       ON achievement_unlocks(user_id, unlocked_at DESC);
   `);
+
+  const rows = database
+    .prepare("SELECT id FROM room_invitations WHERE invite_code IS NULL OR invite_code = ''")
+    .all() as { id: string }[];
+
+  const fillCode = database.prepare("UPDATE room_invitations SET invite_code = ? WHERE id = ?");
+  for (const row of rows) {
+    fillCode.run(crypto.randomUUID().slice(0, 10).toUpperCase(), row.id);
+  }
+}
+
+function createDatabase() {
+  const dbPath = fileURLToPath(dbUrl);
+  mkdirSync(dirname(dbPath), { recursive: true });
+
+  const database = new Database(dbPath);
+  database.pragma("journal_mode = WAL");
+  database.exec(schema);
+  runMigrations(database);
+
+  return database;
 }
 
 export const db = globalForDb.__luminaDb ?? createDatabase();
