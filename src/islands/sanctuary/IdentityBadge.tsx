@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { LogIn, LogOut, UserCircle } from "lucide-react";
 import { SafeImage } from "@/components/SafeImage";
+import { syncAchievementDefinitionsFromServer } from "@/lib/sanctuary/achievements";
 import {
   getAchievementsForCurrentProfile,
   getFullState,
@@ -110,6 +111,7 @@ export function IdentityBadge({
           hydrateFromServer(payload.stateJson);
         }
 
+        await syncAchievementDefinitionsFromServer().catch(() => null);
         sanctuaryActions.connectGitHubAccount(payload.user);
         realtime.connect();
         await hydrateArchiveFromServer();

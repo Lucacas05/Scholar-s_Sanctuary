@@ -436,6 +436,13 @@ export class SanctuaryCanvasEngine {
 
   moverA(tileX: number, tileY: number) {
     const target = this.clampLocalPosition(tileX, tileY);
+    if (this.localActor.state === "studying") {
+      this.localActor.state = "idle";
+      this.localActor.autoBubble = "";
+      this.focusResolver?.();
+      this.focusResolver = null;
+      this.focusPromise = null;
+    }
     this.localActor.route = [target];
     this.localActor.pose = "walk";
     this.localActor.wanderPauseMs = 0;
@@ -748,6 +755,11 @@ export class SanctuaryCanvasEngine {
     const current = { x: this.localActor.x, y: this.localActor.y };
     const clamped = this.clampLocalPosition(nextX, nextY);
     const fullStep = { x: clamped.x, y: clamped.y };
+    const currentCollisionCount = this.getCollisionCount(
+      current.x,
+      current.y,
+      target,
+    );
 
     if (!this.collidesAt(fullStep.x, fullStep.y, target)) {
       return fullStep;
@@ -775,6 +787,14 @@ export class SanctuaryCanvasEngine {
       if (!this.collidesAt(candidate.x, candidate.y, target)) {
         return candidate;
       }
+
+      if (
+        currentCollisionCount > 0 &&
+        this.getCollisionCount(candidate.x, candidate.y, target) <
+          currentCollisionCount
+      ) {
+        return candidate;
+      }
     }
 
     return current;
@@ -792,16 +812,21 @@ export class SanctuaryCanvasEngine {
   }
 
   private collidesAt(tileX: number, tileY: number, target?: TilePoint) {
+    return this.getCollisionCount(tileX, tileY, target) > 0;
+  }
+
+  private getCollisionCount(tileX: number, tileY: number, target?: TilePoint) {
     const targetRadius = this.localActor.state === "studying" ? 1.65 : 0.24;
     if (
       target &&
       Math.hypot(target.x - tileX, target.y - tileY) <= targetRadius
     ) {
-      return false;
+      return 0;
     }
 
     const actorRect = this.getActorCollisionRect(tileX, tileY);
-    return this.collisionRects.some((rect) => rectsOverlap(actorRect, rect));
+    return this.collisionRects.filter((rect) => rectsOverlap(actorRect, rect))
+      .length;
   }
 
   private getActorCollisionRect(tileX: number, tileY: number): CollisionRect {

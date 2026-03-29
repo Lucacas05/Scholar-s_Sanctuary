@@ -1,8 +1,9 @@
 import { useSyncExternalStore } from "react";
 import type { RoomMemberPresence } from "@/lib/server/ws-types";
 import {
-  achievementDefinitions,
+  ACHIEVEMENT_DEFINITIONS_EVENT,
   computeAchievementUnlocks,
+  getAchievementDefinitions,
   getDistinctSessionDays,
   getStreakDays,
 } from "@/lib/sanctuary/achievements";
@@ -1763,23 +1764,25 @@ function recalculateAchievements(state: SanctuaryState, userId: string) {
   const sessions = state.sessions.filter(
     (session) => session.userId === userId,
   );
+  const achievementDefinitions = getAchievementDefinitions();
   const existingById = new Map(
     state.achievementUnlocks
       .filter((entry) => entry.userId === userId)
       .map((entry) => [entry.id, entry] as const),
   );
-  const nextUnlocks = computeAchievementUnlocks(sessions).map(
-    ({ id, unlockedAt }) => {
-      const existing = existingById.get(id);
+  const nextUnlocks = computeAchievementUnlocks(
+    sessions,
+    achievementDefinitions,
+  ).map(({ id, unlockedAt }) => {
+    const existing = existingById.get(id);
 
-      return {
-        id,
-        userId,
-        unlockedAt: existing?.unlockedAt ?? unlockedAt,
-        persistedAt: existing?.persistedAt ?? null,
-      };
-    },
-  );
+    return {
+      id,
+      userId,
+      unlockedAt: existing?.unlockedAt ?? unlockedAt,
+      persistedAt: existing?.persistedAt ?? null,
+    };
+  });
 
   state.achievementUnlocks = [
     ...state.achievementUnlocks.filter((entry) => entry.userId !== userId),
@@ -2163,6 +2166,10 @@ function ensureHydrated() {
     currentState = event.data as SanctuaryState;
     emitChange();
   });
+
+  window.addEventListener(ACHIEVEMENT_DEFINITIONS_EVENT, () => {
+    emitChange();
+  });
 }
 
 function commit(mutator: (draft: SanctuaryState) => void) {
@@ -2245,6 +2252,7 @@ export function getCurrentProfileSummary(state: SanctuaryState) {
   const sessions = state.sessions.filter(
     (session) => session.userId === profile.id,
   );
+  const achievementDefinitions = getAchievementDefinitions();
   const validAchievementIds = new Set(
     achievementDefinitions.map((achievement) => achievement.id),
   );
@@ -2281,6 +2289,8 @@ export function getChroniclesForCurrentProfile(state: SanctuaryState) {
 }
 
 export function getAchievementsForCurrentProfile(state: SanctuaryState) {
+  const achievementDefinitions = getAchievementDefinitions();
+
   if (!state.currentUserId) {
     return achievementDefinitions.map((achievement) => ({
       ...achievement,

@@ -3,7 +3,8 @@ import { db } from "@/lib/server/db";
 export type AppConfigKey =
   | "published-scene-maps"
   | "wardrobe-config"
-  | "mission-definitions";
+  | "mission-definitions"
+  | "achievement-definitions";
 
 const selectAppConfigStatement = db.prepare(
   "SELECT value_json AS valueJson, updated_at AS updatedAt FROM app_config WHERE key = ?",

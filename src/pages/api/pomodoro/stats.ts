@@ -6,7 +6,7 @@ export const prerender = false;
 const overallStatsStatement = db.prepare(`
   SELECT
     COUNT(*) AS totalSessions,
-    COALESCE(SUM(focus_seconds), 0) AS totalFocusSeconds
+    COALESCE(SUM(focus_duration_seconds), 0) AS totalFocusSeconds
   FROM pomodoro_sessions
   WHERE user_id = ?
 `);
@@ -15,7 +15,7 @@ const dailyStatsStatement = db.prepare(`
   SELECT
     DATE(completed_at) AS day,
     COUNT(*) AS sessions,
-    SUM(focus_seconds) AS focusSeconds
+    SUM(focus_duration_seconds) AS focusSeconds
   FROM pomodoro_sessions
   WHERE user_id = ? AND completed_at >= DATE('now', ?)
   GROUP BY DATE(completed_at)

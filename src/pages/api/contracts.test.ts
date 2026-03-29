@@ -1,6 +1,10 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/lib/server/db";
 import {
+  GET as getEditorAchievements,
+  POST as saveEditorAchievements,
+} from "./editor/achievements";
+import {
   GET as getEditorMissions,
   POST as saveEditorMissions,
 } from "./editor/missions";
@@ -14,6 +18,7 @@ import {
 } from "./editor/wardrobe";
 import { GET as getFriends } from "./friends/index";
 import { DELETE as deleteFriend } from "./friends/[friendId]";
+import { GET as getPomodoroStats } from "./pomodoro/stats";
 import { POST as inviteToRoom } from "./rooms/[code]/invite";
 import { GET as getSocialFeed } from "./social/feed";
 import { GET as getSocialLeaderboard } from "./social/leaderboard";
@@ -473,6 +478,133 @@ describe("contratos API del santuario", () => {
     });
   });
 
+  it("guarda los hitos globales en la VPS y respeta su regla visible", async () => {
+    const currentUser = {
+      id: "github-1",
+      githubId: 1,
+      username: "faby",
+      displayName: "Faby",
+    };
+
+    insertUser(currentUser);
+
+    const saveResponse = await saveEditorAchievements(
+      createApiContext({
+        user: currentUser,
+        method: "POST",
+        url: "https://lumina.test/api/editor/achievements",
+        body: {
+          achievements: [
+            {
+              id: "hito-prueba",
+              title: "Hito prueba",
+              description: "Valida la persistencia global.",
+              rule: {
+                type: "archive-days",
+                value: 5,
+              },
+              enabled: false,
+            },
+          ],
+        },
+      }),
+    );
+
+    expect(saveResponse.status).toBe(200);
+
+    const getResponse = await getEditorAchievements(
+      createApiContext({
+        user: currentUser,
+        url: "https://lumina.test/api/editor/achievements",
+      }),
+    );
+
+    await expect(
+      toJson<{
+        achievements: Array<{
+          id: string;
+          title: string;
+          description: string;
+          rule: { type: string; value: number };
+          enabled: boolean;
+        }>;
+        updatedAt: string | null;
+      }>(getResponse),
+    ).resolves.toMatchObject({
+      achievements: [
+        {
+          id: "hito-prueba",
+          title: "Hito prueba",
+          description: "Valida la persistencia global.",
+          rule: {
+            type: "archive-days",
+            value: 5,
+          },
+          enabled: false,
+        },
+      ],
+      updatedAt: expect.any(String),
+    });
+  });
+
+  it("calcula analíticas con focus_duration_seconds y devuelve la serie diaria", async () => {
+    const currentUser = {
+      id: "github-1",
+      githubId: 1,
+      username: "faby",
+      displayName: "Faby",
+    };
+
+    insertUser(currentUser);
+    insertPomodoroSession({
+      id: "session-1",
+      clientSessionId: "client-1",
+      userId: currentUser.id,
+      focusSeconds: 25 * 60,
+      startedAt: "2026-03-28T08:00:00.000Z",
+      completedAt: "2026-03-28T08:25:00.000Z",
+    });
+    insertPomodoroSession({
+      id: "session-2",
+      clientSessionId: "client-2",
+      userId: currentUser.id,
+      focusSeconds: 50 * 60,
+      startedAt: "2026-03-29T09:00:00.000Z",
+      completedAt: "2026-03-29T09:50:00.000Z",
+    });
+
+    const response = await getPomodoroStats(
+      createApiContext({
+        user: currentUser,
+        url: "https://lumina.test/api/pomodoro/stats?range=monthly",
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    await expect(
+      toJson<{
+        totalSessions: number;
+        totalFocusSeconds: number;
+        avgFocusSeconds: number;
+        daily: Array<{ sessions: number; focusSeconds: number }>;
+      }>(response),
+    ).resolves.toMatchObject({
+      totalSessions: 2,
+      totalFocusSeconds: 75 * 60,
+      avgFocusSeconds: Math.round((75 * 60) / 2),
+      daily: expect.arrayContaining([
+        expect.objectContaining({
+          sessions: 1,
+          focusSeconds: 25 * 60,
+        }),
+        expect.objectContaining({
+          sessions: 1,
+          focusSeconds: 50 * 60,
+        }),
+      ]),
+    });
+  });
+
   it("guarda las escenas publicadas en la VPS", async () => {
     const currentUser = {
       id: "github-1",
@@ -580,7 +712,9 @@ describe("contratos API del santuario", () => {
       "INSERT INTO friendships (id, user_id, friend_id, status) VALUES (?, ?, ?, 'accepted')",
     ).run("friendship-2", currentUser.id, hiddenFriend.id);
 
-    const now = Date.now();
+    const nowDate = new Date();
+    nowDate.setHours(12, 0, 0, 0);
+    const now = nowDate.getTime();
     insertPomodoroSession({
       id: "ps-1",
       clientSessionId: "client-1",

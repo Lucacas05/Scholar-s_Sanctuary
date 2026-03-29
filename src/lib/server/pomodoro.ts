@@ -1,9 +1,11 @@
 import {
-  achievementDefinitions,
   computeAchievementUnlocks,
+  getDefaultAchievementDefinitions,
   getDistinctSessionDays,
   getStreakDays,
+  normalizeAchievementDefinitions,
 } from "@/lib/sanctuary/achievements";
+import { readAppConfig } from "@/lib/server/app-config";
 import { db } from "@/lib/server/db";
 
 type RoomKind = "solo" | "public" | "private";
@@ -204,6 +206,10 @@ function buildChronicleEntry(row: PomodoroSessionRow) {
 }
 
 function refreshAchievementUnlocks(userId: string) {
+  const stored = readAppConfig("achievement-definitions");
+  const achievementDefinitions = stored
+    ? normalizeAchievementDefinitions(stored.value)
+    : getDefaultAchievementDefinitions();
   const sessions = selectPomodoroSessionsStatement.all(
     userId,
   ) as PomodoroSessionRow[];
@@ -213,6 +219,7 @@ function refreshAchievementUnlocks(userId: string) {
       focusSeconds: session.focusSeconds,
       completedAt: session.completedAt,
     })),
+    achievementDefinitions,
   );
 
   const transaction = db.transaction(() => {
@@ -255,6 +262,10 @@ export function persistPomodoroSession(input: PersistPomodoroSessionInput) {
 }
 
 export function getPomodoroArchive(userId: string): PomodoroArchivePayload {
+  const stored = readAppConfig("achievement-definitions");
+  const achievementDefinitions = stored
+    ? normalizeAchievementDefinitions(stored.value)
+    : getDefaultAchievementDefinitions();
   const sessions = selectPomodoroSessionsStatement.all(
     userId,
   ) as PomodoroSessionRow[];

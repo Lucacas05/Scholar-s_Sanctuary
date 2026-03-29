@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { computeAchievementUnlocks } from "./achievements";
+import {
+  computeAchievementUnlocks,
+  normalizeAchievementDefinitions,
+} from "./achievements";
 
 describe("logros del santuario", () => {
   it("desbloquea las ocho insignias previstas cuando se cumplen todos los hitos", () => {
@@ -100,5 +103,59 @@ describe("logros del santuario", () => {
     expect(computeAchievementUnlocks(shuffled)).toEqual(
       computeAchievementUnlocks(ordered),
     );
+  });
+
+  it("permite recalcular hitos con reglas personalizadas", () => {
+    const sessions = [
+      {
+        roomKind: "solo",
+        focusSeconds: 25 * 60,
+        completedAt: "2026-03-01T09:00:00.000Z",
+      },
+      {
+        roomKind: "public",
+        focusSeconds: 25 * 60,
+        completedAt: "2026-03-02T09:00:00.000Z",
+      },
+      {
+        roomKind: "public",
+        focusSeconds: 25 * 60,
+        completedAt: "2026-03-03T09:00:00.000Z",
+      },
+    ];
+
+    const definitions = normalizeAchievementDefinitions([
+      {
+        id: "social-2",
+        title: "Doble ronda social",
+        description: "",
+        rule: {
+          type: "social-sessions",
+          value: 2,
+        },
+        enabled: true,
+      },
+      {
+        id: "archivo-3",
+        title: "Tres días",
+        description: "",
+        rule: {
+          type: "archive-days",
+          value: 3,
+        },
+        enabled: true,
+      },
+    ]);
+
+    expect(computeAchievementUnlocks(sessions, definitions)).toEqual([
+      {
+        id: "social-2",
+        unlockedAt: Date.parse("2026-03-03T09:00:00.000Z"),
+      },
+      {
+        id: "archivo-3",
+        unlockedAt: Date.parse("2026-03-03T09:00:00.000Z"),
+      },
+    ]);
   });
 });
