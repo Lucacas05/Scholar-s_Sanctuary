@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" role="img" aria-label="Lumina analytics preview">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#14161d"/>
+      <stop offset="100%" stop-color="#0d0f14"/>
+    </linearGradient>
+  </defs>
+  <rect width="1280" height="720" fill="url(#bg)"/>
+  <text x="48" y="64" fill="#e7ecff" font-family="Inter, Arial" font-size="34" font-weight="800">Pomodoro Analytics — Preview</text>
+  <text x="48" y="92" fill="#9aa3c7" font-family="Inter, Arial" font-size="16">Issue #14 · Historial persistente + agregados + tendencia</text>
+
+  <g transform="translate(48,130)">
+    <rect x="0" y="0" width="284" height="130" fill="#1b1f2a" stroke="#3b4258"/>
+    <text x="18" y="30" fill="#9aa3c7" font-size="13" font-family="Inter">Tiempo total</text>
+    <text x="18" y="85" fill="#7cc4ff" font-size="42" font-weight="800" font-family="Inter">18.4 h</text>
+  </g>
+  <g transform="translate(356,130)">
+    <rect x="0" y="0" width="284" height="130" fill="#1b1f2a" stroke="#3b4258"/>
+    <text x="18" y="30" fill="#9aa3c7" font-size="13" font-family="Inter">Promedio / sesión</text>
+    <text x="18" y="85" fill="#ffd47c" font-size="42" font-weight="800" font-family="Inter">26 min</text>
+  </g>
+  <g transform="translate(664,130)">
+    <rect x="0" y="0" width="284" height="130" fill="#1b1f2a" stroke="#3b4258"/>
+    <text x="18" y="30" fill="#9aa3c7" font-size="13" font-family="Inter">Racha actual</text>
+    <text x="18" y="85" fill="#9cff9c" font-size="42" font-weight="800" font-family="Inter">6 días</text>
+  </g>
+  <g transform="translate(972,130)">
+    <rect x="0" y="0" width="260" height="130" fill="#1b1f2a" stroke="#3b4258"/>
+    <text x="18" y="30" fill="#9aa3c7" font-size="13" font-family="Inter">Sesiones totales</text>
+    <text x="18" y="85" fill="#c69cff" font-size="42" font-weight="800" font-family="Inter">43</text>
+  </g>
+
+  <g transform="translate(48,296)">
+    <rect x="0" y="0" width="1184" height="360" fill="#1b1f2a" stroke="#3b4258"/>
+    <text x="18" y="32" fill="#e7ecff" font-size="18" font-weight="700" font-family="Inter">Tendencia de foco (últimos 7 días)</text>
+    <text x="18" y="54" fill="#9aa3c7" font-size="13" font-family="Inter">Minutos por día</text>
+
+    <g transform="translate(36,90)">
+      <rect x="0" y="170" width="110" height="70" fill="#6ca8ff"/>
+      <rect x="150" y="120" width="110" height="120" fill="#6ca8ff"/>
+      <rect x="300" y="80" width="110" height="160" fill="#6ca8ff"/>
+      <rect x="450" y="145" width="110" height="95" fill="#6ca8ff"/>
+      <rect x="600" y="60" width="110" height="180" fill="#6ca8ff"/>
+      <rect x="750" y="30" width="110" height="210" fill="#6ca8ff"/>
+      <rect x="900" y="95" width="110" height="145" fill="#6ca8ff"/>
+      <line x1="0" y1="240" x2="1050" y2="240" stroke="#4a526c" stroke-width="2"/>
+
+      <text x="35" y="262" fill="#9aa3c7" font-size="12" font-family="Inter">Lun</text>
+      <text x="185" y="262" fill="#9aa3c7" font-size="12" font-family="Inter">Mar</text>
+      <text x="335" y="262" fill="#9aa3c7" font-size="12" font-family="Inter">Mié</text>
+      <text x="485" y="262" fill="#9aa3c7" font-size="12" font-family="Inter">Jue</text>
+      <text x="635" y="262" fill="#9aa3c7" font-size="12" font-family="Inter">Vie</text>
+      <text x="785" y="262" fill="#9aa3c7" font-size="12" font-family="Inter">Sáb</text>
+      <text x="935" y="262" fill="#9aa3c7" font-size="12" font-family="Inter">Dom</text>
+    </g>
+  </g>
+</svg>
