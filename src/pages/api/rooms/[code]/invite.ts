@@ -61,18 +61,23 @@ export async function GET({ locals, params }: APIContext) {
   }
 
   if (room.ownerId !== locals.user.id) {
-    return Response.json({ error: "Only owner can manage invitations" }, { status: 403 });
+    return Response.json(
+      { error: "Only owner can manage invitations" },
+      { status: 403 },
+    );
   }
 
-  const invitations = (selectActiveInvitationsStatement.all(params.code) as {
-    id: string;
-    inviteeId: string;
-    inviteCode: string;
-    createdAt: string;
-    expiresAt: string | null;
-    username: string;
-    displayName: string;
-  }[]).map((row) => ({
+  const invitations = (
+    selectActiveInvitationsStatement.all(params.code) as {
+      id: string;
+      inviteeId: string;
+      inviteCode: string;
+      createdAt: string;
+      expiresAt: string | null;
+      username: string;
+      displayName: string;
+    }[]
+  ).map((row) => ({
     id: row.id,
     inviteeId: row.inviteeId,
     inviteCode: row.inviteCode,
@@ -94,9 +99,10 @@ export async function POST({ locals, params, request }: APIContext) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = (await request.json().catch(() => null)) as
-    | { userId?: string; expiresInHours?: number }
-    | null;
+  const body = (await request.json().catch(() => null)) as {
+    userId?: string;
+    expiresInHours?: number;
+  } | null;
   if (!body?.userId) {
     return Response.json({ error: "userId is required" }, { status: 400 });
   }
@@ -109,39 +115,68 @@ export async function POST({ locals, params, request }: APIContext) {
   }
 
   if (room.ownerId !== locals.user.id) {
-    return Response.json({ error: "Only owner can invite to this room" }, { status: 403 });
+    return Response.json(
+      { error: "Only owner can invite to this room" },
+      { status: 403 },
+    );
   }
 
   const isMember = checkMembershipStatement.get(params.code, locals.user.id);
   if (!isMember) {
-    return Response.json({ error: "Not a member of this room" }, { status: 403 });
+    return Response.json(
+      { error: "Not a member of this room" },
+      { status: 403 },
+    );
   }
 
-  const targetUser = findUserStatement.get(body.userId) as { id: string } | undefined;
+  const targetUser = findUserStatement.get(body.userId) as
+    | { id: string }
+    | undefined;
   if (!targetUser) {
     return Response.json({ error: "User not found" }, { status: 404 });
   }
 
   const isTargetMember = checkMembershipStatement.get(params.code, body.userId);
   if (isTargetMember) {
-    return Response.json({ error: "User is already a member" }, { status: 409 });
+    return Response.json(
+      { error: "User is already a member" },
+      { status: 409 },
+    );
   }
 
-  const existingInvitation = findPendingInvitationStatement.get(params.code, body.userId) as
-    | { id: string }
-    | undefined;
+  const existingInvitation = findPendingInvitationStatement.get(
+    params.code,
+    body.userId,
+  ) as { id: string } | undefined;
   if (existingInvitation) {
-    return Response.json({ error: "Invitation already pending" }, { status: 409 });
+    return Response.json(
+      { error: "Invitation already pending" },
+      { status: 409 },
+    );
   }
 
-  const expiresInHours = Number.isFinite(body.expiresInHours) && (body.expiresInHours ?? 0) > 0
-    ? Math.min(168, Math.max(1, Math.round(body.expiresInHours!)))
-    : 72;
+  const expiresInHours =
+    Number.isFinite(body.expiresInHours) && (body.expiresInHours ?? 0) > 0
+      ? Math.min(168, Math.max(1, Math.round(body.expiresInHours!)))
+      : 72;
 
   const id = crypto.randomUUID();
-  const inviteCode = crypto.randomUUID().replace(/-/g, "").slice(0, 12).toUpperCase();
-  const expiresAt = new Date(Date.now() + expiresInHours * 3600 * 1000).toISOString();
-  insertInvitationStatement.run(id, params.code, locals.user.id, body.userId, inviteCode, expiresAt);
+  const inviteCode = crypto
+    .randomUUID()
+    .replace(/-/g, "")
+    .slice(0, 12)
+    .toUpperCase();
+  const expiresAt = new Date(
+    Date.now() + expiresInHours * 3600 * 1000,
+  ).toISOString();
+  insertInvitationStatement.run(
+    id,
+    params.code,
+    locals.user.id,
+    body.userId,
+    inviteCode,
+    expiresAt,
+  );
 
   return Response.json({
     invitation: {
@@ -171,12 +206,20 @@ export async function DELETE({ locals, params, request }: APIContext) {
   }
 
   if (room.ownerId !== locals.user.id) {
-    return Response.json({ error: "Only owner can revoke invitations" }, { status: 403 });
+    return Response.json(
+      { error: "Only owner can revoke invitations" },
+      { status: 403 },
+    );
   }
 
-  const body = (await request.json().catch(() => null)) as { invitationId?: string } | null;
+  const body = (await request.json().catch(() => null)) as {
+    invitationId?: string;
+  } | null;
   if (!body?.invitationId) {
-    return Response.json({ error: "invitationId is required" }, { status: 400 });
+    return Response.json(
+      { error: "invitationId is required" },
+      { status: 400 },
+    );
   }
 
   const result = revokeInvitationStatement.run(body.invitationId, params.code);

@@ -156,12 +156,19 @@ function toTimestamp(value: string) {
   return Date.parse(value);
 }
 
-function getRoomLabel(roomCode: string, roomKind: RoomKind, roomName: string | null) {
+function getRoomLabel(
+  roomCode: string,
+  roomKind: RoomKind,
+  roomName: string | null,
+) {
   if (roomKind === "solo" || roomCode === "santuario-silencioso") {
     return "Santuario silencioso";
   }
 
-  return roomName ?? (roomKind === "public" ? "Gran lectorio compartido" : "Sala privada");
+  return (
+    roomName ??
+    (roomKind === "public" ? "Gran lectorio compartido" : "Sala privada")
+  );
 }
 
 function toChronicleTone(roomKind: RoomKind) {
@@ -173,12 +180,19 @@ function toChronicleTone(roomKind: RoomKind) {
 }
 
 function buildChronicleEntry(row: PomodoroSessionRow) {
-  const label = getRoomLabel(row.roomCode, row.roomKind, row.roomName).toLowerCase();
+  const label = getRoomLabel(
+    row.roomCode,
+    row.roomKind,
+    row.roomName,
+  ).toLowerCase();
 
   return {
     id: row.clientSessionId,
     userId: row.userId,
-    title: row.roomKind === "solo" ? "Vigilia en el santuario silencioso" : "Vigilia compartida cerrada",
+    title:
+      row.roomKind === "solo"
+        ? "Vigilia en el santuario silencioso"
+        : "Vigilia compartida cerrada",
     description:
       row.roomKind === "solo"
         ? `Has completado una sesión de foco en ${label}.`
@@ -190,7 +204,9 @@ function buildChronicleEntry(row: PomodoroSessionRow) {
 }
 
 function refreshAchievementUnlocks(userId: string) {
-  const sessions = selectPomodoroSessionsStatement.all(userId) as PomodoroSessionRow[];
+  const sessions = selectPomodoroSessionsStatement.all(
+    userId,
+  ) as PomodoroSessionRow[];
   const unlocks = computeAchievementUnlocks(
     sessions.map((session) => ({
       roomKind: session.roomKind,
@@ -239,8 +255,12 @@ export function persistPomodoroSession(input: PersistPomodoroSessionInput) {
 }
 
 export function getPomodoroArchive(userId: string): PomodoroArchivePayload {
-  const sessions = selectPomodoroSessionsStatement.all(userId) as PomodoroSessionRow[];
-  const achievementUnlocks = selectAchievementUnlocksStatement.all(userId) as AchievementUnlockRow[];
+  const sessions = selectPomodoroSessionsStatement.all(
+    userId,
+  ) as PomodoroSessionRow[];
+  const achievementUnlocks = selectAchievementUnlocksStatement.all(
+    userId,
+  ) as AchievementUnlockRow[];
 
   return {
     sessions: sessions.map((session) => ({
@@ -263,7 +283,10 @@ export function getPomodoroArchive(userId: string): PomodoroArchivePayload {
     })),
     summary: {
       sessionsCount: sessions.length,
-      focusHours: (sessions.reduce((total, session) => total + session.focusSeconds, 0) / 3600).toFixed(1),
+      focusHours: (
+        sessions.reduce((total, session) => total + session.focusSeconds, 0) /
+        3600
+      ).toFixed(1),
       streakDays: getStreakDays(
         sessions.map((session) => ({
           roomKind: session.roomKind,
@@ -279,7 +302,9 @@ export function getPomodoroArchive(userId: string): PomodoroArchivePayload {
         })),
       ),
       achievementsCount: achievementUnlocks.filter((unlock) =>
-        achievementDefinitions.some((achievement) => achievement.id === unlock.achievementId),
+        achievementDefinitions.some(
+          (achievement) => achievement.id === unlock.achievementId,
+        ),
       ).length,
     },
   };

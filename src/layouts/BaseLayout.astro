@@ -13,14 +13,31 @@ interface Props {
   image?: string;
 }
 
-const { title, currentPath, showFab = false, description, image } = Astro.props as Props;
+const {
+  title,
+  currentPath,
+  showFab = false,
+  description,
+  image,
+} = Astro.props as Props;
 const pageTitle = `${title} | ${siteContent.brand}`;
 const pageDescription = description ?? siteContent.meta.description;
-const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin);
-const pageImageURL = new URL(image ?? images.libraryHero, Astro.site ?? Astro.url.origin);
+const canonicalURL = new URL(
+  Astro.url.pathname,
+  Astro.site ?? Astro.url.origin,
+);
+const pageImageURL = new URL(
+  image ?? images.libraryHero,
+  Astro.site ?? Astro.url.origin,
+);
 const topItems = siteContent.navigation.topItems;
-const isActive = (href: string) => (href === "/" ? currentPath === "/" : currentPath.startsWith(href));
-const oauthAvailable = Boolean(import.meta.env.GITHUB_CLIENT_ID && import.meta.env.GITHUB_CLIENT_SECRET && import.meta.env.SITE_URL);
+const isActive = (href: string) =>
+  href === "/" ? currentPath === "/" : currentPath.startsWith(href);
+const oauthAvailable = Boolean(
+  import.meta.env.GITHUB_CLIENT_ID &&
+  import.meta.env.GITHUB_CLIENT_SECRET &&
+  import.meta.env.SITE_URL,
+);
 const bootstrapPayload = Astro.locals.user
   ? {
       user: {
@@ -30,7 +47,8 @@ const bootstrapPayload = Astro.locals.user
       },
       onboardingCompleted: Astro.locals.onboardingCompleted,
       onboardingGoal: Astro.locals.userState?.onboardingGoal ?? "",
-      preferredStartPath: Astro.locals.userState?.preferredStartPath ?? "/biblioteca-compartida",
+      preferredStartPath:
+        Astro.locals.userState?.preferredStartPath ?? "/biblioteca-compartida",
     }
   : null;
 ---
@@ -60,39 +78,53 @@ const bootstrapPayload = Astro.locals.user
     <meta name="twitter:image" content={pageImageURL.href} />
 
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    {bootstrapPayload && (
-      <script is:inline define:vars={{ bootstrapPayload }}>
-        window.__luminaBootstrap = bootstrapPayload;
-      </script>
-    )}
+    {
+      bootstrapPayload && (
+        <script is:inline define:vars={{ bootstrapPayload }}>
+          window.__luminaBootstrap = bootstrapPayload;
+        </script>
+      )
+    }
   </head>
   <body class="min-h-screen bg-surface flex flex-col md:flex-row">
     <Sidebar currentPath={currentPath} />
 
     <div class="flex-1 flex flex-col md:ml-64">
-      <header class="bg-surface border-b-4 border-surface-container-highest flex justify-between items-center px-6 py-4 sticky top-0 z-40 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)]">
+      <header
+        class="bg-surface border-b-4 border-surface-container-highest flex justify-between items-center px-6 py-4 sticky top-0 z-40 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)]"
+      >
         <div class="flex items-center gap-4">
-          <span class="text-2xl font-bold text-tertiary-container px-2 border-2 border-tertiary-container font-headline uppercase tracking-tighter">
+          <span
+            class="text-2xl font-bold text-tertiary-container px-2 border-2 border-tertiary-container font-headline uppercase tracking-tighter"
+          >
             {siteContent.brand}
           </span>
         </div>
         <div class="flex items-center gap-6">
-          <nav class="hidden lg:flex items-center gap-8 font-headline uppercase tracking-tighter text-sm font-bold">
-            {topItems.map((item) => (
-              <a
-                href={item.href}
-                class:list={[
-                  "pb-1 transition-all",
-                  isActive(item.href)
-                    ? "text-primary border-b-4 border-primary"
-                    : "text-surface-container-highest hover:text-primary",
-                ]}
-              >
-                {item.label}
-              </a>
-            ))}
+          <nav
+            class="hidden lg:flex items-center gap-8 font-headline uppercase tracking-tighter text-sm font-bold"
+          >
+            {
+              topItems.map((item) => (
+                <a
+                  href={item.href}
+                  class:list={[
+                    "pb-1 transition-all",
+                    isActive(item.href)
+                      ? "text-primary border-b-4 border-primary"
+                      : "text-surface-container-highest hover:text-primary",
+                  ]}
+                >
+                  {item.label}
+                </a>
+              ))
+            }
           </nav>
-          <IdentityBadge client:only="react" initialUser={Astro.locals.user ?? null} oauthAvailable={oauthAvailable} />
+          <IdentityBadge
+            client:only="react"
+            initialUser={Astro.locals.user ?? null}
+            oauthAvailable={oauthAvailable}
+          />
         </div>
       </header>
 
@@ -101,15 +133,17 @@ const bootstrapPayload = Astro.locals.user
       </main>
     </div>
 
-    {showFab && (
-      <div class="fixed right-6 bottom-20 md:bottom-8 z-40">
-        <PixelButton
-          href="/refinar"
-          icon="Plus"
-          ariaLabel="Crear una nueva entrada"
-          class="w-16 h-16 rounded-none p-0 text-on-primary bezel-button shadow-2xl"
-        />
-      </div>
-    )}
+    {
+      showFab && (
+        <div class="fixed right-6 bottom-20 md:bottom-8 z-40">
+          <PixelButton
+            href="/refinar"
+            icon="Plus"
+            ariaLabel="Crear una nueva entrada"
+            class="w-16 h-16 rounded-none p-0 text-on-primary bezel-button shadow-2xl"
+          />
+        </div>
+      )
+    }
   </body>
 </html>

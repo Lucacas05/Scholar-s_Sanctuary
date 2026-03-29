@@ -15,17 +15,15 @@ export async function POST({ locals, request }: APIContext) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const payload = (await request.json().catch(() => null)) as
-    | {
-        clientSessionId?: string;
-        roomCode?: string;
-        roomKind?: string;
-        focusSeconds?: number;
-        breakSeconds?: number;
-        startedAt?: number;
-        completedAt?: number;
-      }
-    | null;
+  const payload = (await request.json().catch(() => null)) as {
+    clientSessionId?: string;
+    roomCode?: string;
+    roomKind?: string;
+    focusSeconds?: number;
+    breakSeconds?: number;
+    startedAt?: number;
+    completedAt?: number;
+  } | null;
 
   if (
     !payload?.clientSessionId ||
@@ -45,14 +43,22 @@ export async function POST({ locals, request }: APIContext) {
   }
 
   if (payload.roomKind !== "solo") {
-    const room = selectRoomStatement.get(payload.roomCode) as { code: string } | undefined;
+    const room = selectRoomStatement.get(payload.roomCode) as
+      | { code: string }
+      | undefined;
     if (!room) {
       return Response.json({ error: "Room not found" }, { status: 404 });
     }
 
-    const isMember = checkMembershipStatement.get(payload.roomCode, locals.user.id);
+    const isMember = checkMembershipStatement.get(
+      payload.roomCode,
+      locals.user.id,
+    );
     if (!isMember) {
-      return Response.json({ error: "Not a member of this room" }, { status: 403 });
+      return Response.json(
+        { error: "Not a member of this room" },
+        { status: 403 },
+      );
     }
   }
 
@@ -68,7 +74,10 @@ export async function POST({ locals, request }: APIContext) {
   });
 
   if (!session) {
-    return Response.json({ error: "Could not persist session" }, { status: 500 });
+    return Response.json(
+      { error: "Could not persist session" },
+      { status: 500 },
+    );
   }
 
   return Response.json({

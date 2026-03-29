@@ -28,7 +28,13 @@ export async function GET({ locals, params }: APIContext) {
   }
 
   const room = selectRoomStatement.get(params.code) as
-    | { code: string; name: string; ownerId: string; privacy: "public" | "private"; createdAt: string }
+    | {
+        code: string;
+        name: string;
+        ownerId: string;
+        privacy: "public" | "private";
+        createdAt: string;
+      }
     | undefined;
 
   if (!room) {
@@ -37,7 +43,10 @@ export async function GET({ locals, params }: APIContext) {
 
   const isMember = checkMembershipStatement.get(params.code, locals.user.id);
   if (!isMember) {
-    return Response.json({ error: "Not a member of this room" }, { status: 403 });
+    return Response.json(
+      { error: "Not a member of this room" },
+      { status: 403 },
+    );
   }
 
   const members = selectMembersStatement.all(params.code) as {

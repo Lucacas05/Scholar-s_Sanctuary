@@ -1,9 +1,6 @@
 import { useCallback } from "react";
 import { Bell, BellOff, Globe, Volume2, VolumeX } from "lucide-react";
-import {
-  sanctuaryActions,
-  useSanctuaryStore,
-} from "@/lib/sanctuary/store";
+import { sanctuaryActions, useSanctuaryStore } from "@/lib/sanctuary/store";
 
 function Toggle({
   enabled,
@@ -43,22 +40,34 @@ export function NotificationSettings() {
   const prefs = sanctuary.notificationPreferences;
 
   const toggleInApp = useCallback(() => {
-    sanctuaryActions.updateNotificationPreferences({ inAppEnabled: !prefs.inAppEnabled });
+    sanctuaryActions.updateNotificationPreferences({
+      inAppEnabled: !prefs.inAppEnabled,
+    });
   }, [prefs.inAppEnabled]);
 
   const toggleBrowser = useCallback(() => {
     if (!prefs.browserEnabled) {
-      if (typeof Notification !== "undefined" && Notification.permission === "default") {
+      if (
+        typeof Notification !== "undefined" &&
+        Notification.permission === "default"
+      ) {
         Notification.requestPermission().then((permission) => {
           if (permission === "granted") {
-            sanctuaryActions.updateNotificationPreferences({ browserEnabled: true });
+            sanctuaryActions.updateNotificationPreferences({
+              browserEnabled: true,
+            });
           }
         });
         return;
       }
 
-      if (typeof Notification !== "undefined" && Notification.permission === "granted") {
-        sanctuaryActions.updateNotificationPreferences({ browserEnabled: true });
+      if (
+        typeof Notification !== "undefined" &&
+        Notification.permission === "granted"
+      ) {
+        sanctuaryActions.updateNotificationPreferences({
+          browserEnabled: true,
+        });
         return;
       }
 
@@ -70,7 +79,9 @@ export function NotificationSettings() {
   }, [prefs.browserEnabled]);
 
   const toggleSound = useCallback(() => {
-    sanctuaryActions.updateNotificationPreferences({ soundEnabled: !prefs.soundEnabled });
+    sanctuaryActions.updateNotificationPreferences({
+      soundEnabled: !prefs.soundEnabled,
+    });
   }, [prefs.soundEnabled]);
 
   const browserBlocked =
@@ -97,7 +108,12 @@ export function NotificationSettings() {
         onToggle={toggleBrowser}
         label={browserBlocked ? "Bloqueado" : "Navegador"}
         iconOn={<Globe size={14} className="text-primary" />}
-        iconOff={<Globe size={14} className={browserBlocked ? "text-error" : "text-outline"} />}
+        iconOff={
+          <Globe
+            size={14}
+            className={browserBlocked ? "text-error" : "text-outline"}
+          />
+        }
       />
     </div>
   );

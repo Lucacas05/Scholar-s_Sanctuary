@@ -9,40 +9,53 @@ interface Props {
 
 const { currentPath } = Astro.props as Props;
 const navItems = siteContent.navigation.items;
-const isActive = (href: string) => (href === "/" ? currentPath === "/" : currentPath.startsWith(href));
+const isActive = (href: string) =>
+  href === "/" ? currentPath === "/" : currentPath.startsWith(href);
 ---
 
 <>
-  <aside class="hidden md:flex fixed left-0 top-0 h-full w-64 bg-surface-container-low border-r-4 border-surface-container-highest flex-col z-50">
+  <aside
+    class="hidden md:flex fixed left-0 top-0 h-full w-64 bg-surface-container-low border-r-4 border-surface-container-highest flex-col z-50"
+  >
     <div class="p-6 flex items-center gap-3">
-      <div class="w-10 h-10 bg-tertiary-container border-2 border-primary flex items-center justify-center">
+      <div
+        class="w-10 h-10 bg-tertiary-container border-2 border-primary flex items-center justify-center"
+      >
         <ICONS.Castle className="text-primary" />
       </div>
       <div>
-        <h2 class="text-tertiary font-black italic font-headline leading-tight">{siteContent.profile.libraryName}</h2>
-        <p class="text-[10px] uppercase tracking-widest text-outline">{siteContent.profile.role}</p>
+        <h2 class="text-tertiary font-black italic font-headline leading-tight">
+          {siteContent.profile.libraryName}
+        </h2>
+        <p class="text-[10px] uppercase tracking-widest text-outline">
+          {siteContent.profile.role}
+        </p>
       </div>
     </div>
 
     <nav class="flex-1 mt-4">
-      {navItems.map((item) => {
-        const Icon = ICONS[item.icon];
-        const active = isActive(item.href);
-        return (
-          <a
-            href={item.href}
-            class:list={[
-              "p-4 flex items-center gap-3 cursor-pointer group transition-all steps-bezel",
-              active
-                ? "bg-surface-container-highest text-primary border-l-4 border-primary"
-                : "text-surface-container-highest hover:bg-surface-dim hover:text-primary",
-            ]}
-          >
-            <Icon size={20} />
-            <span class="font-headline font-bold text-sm tracking-widest uppercase">{item.label}</span>
-          </a>
-        );
-      })}
+      {
+        navItems.map((item) => {
+          const Icon = ICONS[item.icon];
+          const active = isActive(item.href);
+          return (
+            <a
+              href={item.href}
+              class:list={[
+                "p-4 flex items-center gap-3 cursor-pointer group transition-all steps-bezel",
+                active
+                  ? "bg-surface-container-highest text-primary border-l-4 border-primary"
+                  : "text-surface-container-highest hover:bg-surface-dim hover:text-primary",
+              ]}
+            >
+              <Icon size={20} />
+              <span class="font-headline font-bold text-sm tracking-widest uppercase">
+                {item.label}
+              </span>
+            </a>
+          );
+        })
+      }
     </nav>
 
     <div class="p-4 mb-2">
@@ -54,29 +67,37 @@ const isActive = (href: string) => (href === "/" ? currentPath === "/" : current
       </a>
     </div>
 
-    <footer class="border-t-4 border-surface-container-highest p-2 bg-surface-container-low">
+    <footer
+      class="border-t-4 border-surface-container-highest p-2 bg-surface-container-low"
+    >
       <SidebarSessionFooter client:only="react" />
     </footer>
   </aside>
 
-  <nav class="md:hidden fixed bottom-0 left-0 w-full flex justify-around items-stretch h-16 bg-surface border-t-4 border-surface-container-highest z-50">
-    {navItems.map((item) => {
-      const Icon = ICONS[item.mobileIcon];
-      const active = isActive(item.href);
-      return (
-        <a
-          href={item.href}
-          class:list={[
-            "flex flex-col items-center justify-center pt-2 pb-1 px-4 cursor-pointer",
-            active
-              ? "bg-tertiary-container text-primary shadow-[0_-4px_0_0_#ffb961]"
-              : "text-surface-container-highest hover:text-primary",
-          ]}
-        >
-          <Icon size={20} />
-          <span class="font-headline text-[10px] font-bold uppercase mt-1">{item.shortLabel}</span>
-        </a>
-      );
-    })}
+  <nav
+    class="md:hidden fixed bottom-0 left-0 w-full flex justify-around items-stretch h-16 bg-surface border-t-4 border-surface-container-highest z-50"
+  >
+    {
+      navItems.map((item) => {
+        const Icon = ICONS[item.mobileIcon];
+        const active = isActive(item.href);
+        return (
+          <a
+            href={item.href}
+            class:list={[
+              "flex flex-col items-center justify-center pt-2 pb-1 px-4 cursor-pointer",
+              active
+                ? "bg-tertiary-container text-primary shadow-[0_-4px_0_0_#ffb961]"
+                : "text-surface-container-highest hover:text-primary",
+            ]}
+          >
+            <Icon size={20} />
+            <span class="font-headline text-[10px] font-bold uppercase mt-1">
+              {item.shortLabel}
+            </span>
+          </a>
+        );
+      })
+    }
   </nav>
 </>

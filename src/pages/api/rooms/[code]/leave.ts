@@ -52,13 +52,18 @@ export async function POST({ locals, params }: APIContext) {
 
   const isMember = checkMembershipStatement.get(params.code, locals.user.id);
   if (!isMember) {
-    return Response.json({ error: "Not a member of this room" }, { status: 403 });
+    return Response.json(
+      { error: "Not a member of this room" },
+      { status: 403 },
+    );
   }
 
   const leaveRoom = db.transaction(() => {
     deleteMemberStatement.run(params.code, locals.user!.id);
 
-    const { count } = countMembersStatement.get(params.code) as { count: number };
+    const { count } = countMembersStatement.get(params.code) as {
+      count: number;
+    };
 
     if (count === 0) {
       deleteRoomInvitationsStatement.run(params.code);
@@ -68,7 +73,9 @@ export async function POST({ locals, params }: APIContext) {
     }
 
     if (room.ownerId === locals.user!.id) {
-      const nextMember = selectNextMemberStatement.get(params.code) as { userId: string };
+      const nextMember = selectNextMemberStatement.get(params.code) as {
+        userId: string;
+      };
       transferOwnershipStatement.run(nextMember.userId, params.code);
     }
   });

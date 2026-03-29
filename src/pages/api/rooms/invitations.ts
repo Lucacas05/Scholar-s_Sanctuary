@@ -65,7 +65,9 @@ export async function GET({ locals }: APIContext) {
     roomCode: row.roomCode,
     roomName: row.roomName,
     inviteCode: row.inviteCode,
-    inviteLink: row.inviteCode ? inviteLink(row.roomCode, row.inviteCode) : null,
+    inviteLink: row.inviteCode
+      ? inviteLink(row.roomCode, row.inviteCode)
+      : null,
     expiresAt: row.expiresAt,
     inviter: {
       id: row.inviterId,
@@ -83,16 +85,23 @@ export async function POST({ locals, request }: APIContext) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = (await request.json().catch(() => null)) as
-    | { invitationId?: string; action?: string }
-    | null;
+  const body = (await request.json().catch(() => null)) as {
+    invitationId?: string;
+    action?: string;
+  } | null;
 
   if (!body?.invitationId || !body?.action) {
-    return Response.json({ error: "invitationId and action are required" }, { status: 400 });
+    return Response.json(
+      { error: "invitationId and action are required" },
+      { status: 400 },
+    );
   }
 
   if (body.action !== "accept" && body.action !== "decline") {
-    return Response.json({ error: "Action must be 'accept' or 'decline'" }, { status: 400 });
+    return Response.json(
+      { error: "Action must be 'accept' or 'decline'" },
+      { status: 400 },
+    );
   }
 
   const invitation = findInvitationStatement.get(body.invitationId) as
@@ -116,11 +125,17 @@ export async function POST({ locals, request }: APIContext) {
   }
 
   if (invitation.status !== "pending") {
-    return Response.json({ error: "Invitation is not pending" }, { status: 400 });
+    return Response.json(
+      { error: "Invitation is not pending" },
+      { status: 400 },
+    );
   }
 
   if (invitation.revokedAt) {
-    return Response.json({ error: "Invitation has been revoked" }, { status: 400 });
+    return Response.json(
+      { error: "Invitation has been revoked" },
+      { status: 400 },
+    );
   }
 
   if (invitation.expiresAt && Date.parse(invitation.expiresAt) <= Date.now()) {
@@ -131,7 +146,10 @@ export async function POST({ locals, request }: APIContext) {
   if (body.action === "accept") {
     const acceptInvitation = db.transaction(() => {
       updateInvitationStatusStatement.run("accepted", body.invitationId);
-      const alreadyMember = checkMembershipStatement.get(invitation.roomCode, locals.user!.id);
+      const alreadyMember = checkMembershipStatement.get(
+        invitation.roomCode,
+        locals.user!.id,
+      );
       if (!alreadyMember) {
         insertMemberStatement.run(invitation.roomCode, locals.user!.id);
       }

@@ -35,13 +35,20 @@ function buildChartData(daily: DailyEntry[], range: "weekly" | "monthly") {
   now.setHours(0, 0, 0, 0);
 
   const map = new Map(daily.map((d) => [d.day, d]));
-  const result: Array<{ label: string; focusMinutes: number; sessions: number }> = [];
+  const result: Array<{
+    label: string;
+    focusMinutes: number;
+    sessions: number;
+  }> = [];
 
   for (let i = days - 1; i >= 0; i--) {
     const date = new Date(now.getTime() - i * 86400000);
     const key = date.toISOString().slice(0, 10);
     const entry = map.get(key);
-    const dayLabel = date.toLocaleDateString("es-ES", { day: "2-digit", month: "short" });
+    const dayLabel = date.toLocaleDateString("es-ES", {
+      day: "2-digit",
+      month: "short",
+    });
 
     result.push({
       label: dayLabel,
@@ -59,7 +66,10 @@ function TrendChart({ data }: { data: ReturnType<typeof buildChartData> }) {
   const maxMinutes = Math.max(1, ...data.map((d) => d.focusMinutes));
   const chartHeight = 120;
   const barGap = 2;
-  const barWidth = Math.max(4, Math.floor((600 - barGap * data.length) / data.length));
+  const barWidth = Math.max(
+    4,
+    Math.floor((600 - barGap * data.length) / data.length),
+  );
   const chartWidth = data.length * (barWidth + barGap);
 
   const labelStep = data.length <= 7 ? 1 : data.length <= 14 ? 2 : 5;
@@ -73,7 +83,10 @@ function TrendChart({ data }: { data: ReturnType<typeof buildChartData> }) {
         aria-label="Gráfica de tendencias de foco"
       >
         {data.map((entry, i) => {
-          const barHeight = maxMinutes > 0 ? (entry.focusMinutes / maxMinutes) * chartHeight : 0;
+          const barHeight =
+            maxMinutes > 0
+              ? (entry.focusMinutes / maxMinutes) * chartHeight
+              : 0;
           const x = i * (barWidth + barGap);
           const y = chartHeight - barHeight;
 
@@ -183,7 +196,8 @@ export function PomodoroAnalytics() {
           </h3>
         </div>
         <p className="text-sm text-on-surface-variant">
-          Completa tu primera sesión Pomodoro para ver las analíticas persistentes aquí.
+          Completa tu primera sesión Pomodoro para ver las analíticas
+          persistentes aquí.
         </p>
       </div>
     );

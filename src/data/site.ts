@@ -1,20 +1,12 @@
 export const images = {
-  scholarPortrait:
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuBn1AuPAulFL5jm7y81Of9JdBywmynuAy1NJB58zfpzJKSh_l5VRoVqNH2wzQRfGgOoVefpYf55ilnoFwDkXaqEFgFZrgOE7w3UIdbFw2HdNub9L1BL22rleuIY5hipHkdoIyJkQrdP-Zz9kzW1jLMKLOxEHwwbexx49Ur7K9y6jWLrXiSUlOpPrbXVz7kW3-4QTsbCRfve8N36snfcZoKHvxbhnuHUxUhRunLyqraBl8mAzKPvP96kNtZGqBEcd6HyCUUJeSeWIqCN",
-  libraryHero:
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuBJ9mx5RJxkb-EBiN1V3vCb-_Yr-r00IM_TqHtTU5s2IFTeh_IPtK72JkBBlEzMJ2q0JqaOu-9_-NS0KgqaYBsbWQP0yBgdPoqTjLhECZOldMfg2iPN-OdbA89VOuI7Eua0VpKQ5lUBQ54aQkRcj_QFhmmGv-MJdB1x066UKMVAji0zQqdRW3OQIzqtl6N1iBtij6mKeuAjAv8nBd8OI0P90o4Pnr2s7a9p5mMP4n5JgoMUnZsV9MkQS5W9RhLKGtNi85g8GhRaqzAn",
-  silentWing:
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuCIja1gh0jyjEy6rAuyiXErpU_HxSAavMeY5wbQgJNE5v6mQSikRs0wA1YqA1vAsbeJ_hhcMJBsXl03Mmxr50W-CvbCpjsiaRjLgvRrQNnOM5zxw60AWJnmeBD7QQuL9xZUmXBzLImr_VcQKpZGVU5RRyupOeusNtIalpgiyIIPAVcmxsTqsE275nPyXG2PXomRDtN_GqDUWdovy9TtTUqKUBMX7P4Se9G4oXkkyGlCACAqJZX9oYoZGE8D5bjfaDaGhVkdNiZnJ4eM",
-  gardenTerrace:
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuAajPUXAQuZhnECBzaK95Ye2oWjJqeJXD9sJd9ByrXX9dKshR8dez1hsCxJTFl6VSAsw4MnW-fprtFDZdkmDz-U1IOCdk8ybYCkEwwjsl1w64JnXkHyN74A08TYwaMiUHBmR2iK7jcrkQlMiBA3-i8vitEM_NL6RmtfD4USTgCjC6_zv_4myPoBsaDUSzNY7AlhzUkRYF307HzkyyWrdBXoX9jNDZ3eIBRgoOE7WbdOl98jRb5kGJsbXcK8nN-d8DQhdSQdaCC2hYeY",
-  questBadge:
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuBiFrdJZ4Dbes4W1eDWwKlGrjgKFYLx_--NdPBqIFqjG_HizPzsDs0Kb0DBuOHRPsDd9_VxASnQtiosBt54rNbsDAYyPFhPdf4S7FMZ2z8iEcf0Bk6VKW7PXjg3SY-Ij6mcirffgBaoaY40Mal0q8GNdjbwFYtJYcnvrK3jwug6sBtetwxm2cr6yc2M1jfWRrePl0ljCDpSpJ0VhzluuJ4mxY8XfPlRarSTJOgOrH6a6hP2-FKGcuqbGjl-pjR4yDrBfGRutm6LoUf7",
-  ancientBook:
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuDCSqbmwrpvEJo6a2lGiiidClW8ZwGMYeXQl5wKFqd_fJ4FtO9qEamR2L5cUQFAnn-hqDQxzVFh8oF7VCyjXod7O2XRbrutJkgahAkiZ01m0zJBjn6gltYzVJfQr6tZGiuZogz6tViiwp2Ko_IoIBPvWiviru8tqX_xTlKEgG83A4OOvYHRMpg2HZwwfZU9_7r0Y_orpUxm-Su9dhRgrrt6aoj2xAYWMKxi8grxBpheyylPxGhSF3B80cXMi11jFbiPr3oLxkRWeeX-",
-  studyRoomIso:
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuAOT_CfQriB0PuSY1h5vU4qHloTKjnDGdMBMWqZfcUiioy7aQE6-5XKWokQlrJEBV6wAWjppPm0U2zF46brHQoXDLDh6gIam-2UDuUGnqzZ9wLfU4Sy0RieR4vUUDHtdk4DMuMoGJo2MwS6pvz9R4xxF69eIY9LZsBkjgWTizJaL5dBvCJuXSeapRdm4GSVmV_KTnfSo5ycojzyEy3ff0XG67_2sr3cfcd-81XodS9Padir9bJZlidkVRu6Ke7SRWEZx8IO5RstFroY",
-  archivalScribe:
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuB3tdzuvZIvx-GXJdCguNtLmUXzYYRVtKEARG31WQdEBpWQvc1l-Um1bxdCY28w_e7kdKZ9bc0Ikj2mxfWoCeWOmtt9wcvH732qeOa0t1AWb-_9qoxc_KQq4KpJnDaMiogDhhzOmPpD_4J-uXGi3Z-G9rtEHoeU4YwxC0yOGlo5bWeXxxhFUzEajQCCNDOJJ41_sS9lDsNBzComqhEPsCb5ay6L5fFNFnyhqyGW2bMGv72hMzF3dwK5p2FUxlDUDGfCm_dtAuUU7O8e",
+  scholarPortrait: "/site/scholar-portrait.jpg",
+  libraryHero: "/site/library-hero.jpg",
+  silentWing: "/site/silent-wing.jpg",
+  gardenTerrace: "/site/garden-terrace.jpg",
+  questBadge: "/site/quest-badge.jpg",
+  ancientBook: "/site/ancient-book.jpg",
+  studyRoomIso: "/site/study-room-iso.jpg",
+  archivalScribe: "/site/archival-scribe.jpg",
 } as const;
 
 export const siteContent = {

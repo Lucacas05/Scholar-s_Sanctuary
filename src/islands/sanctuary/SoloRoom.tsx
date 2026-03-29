@@ -29,7 +29,10 @@ export function SoloRoom({ backgroundUrl: _backgroundUrl }: SoloRoomProps) {
   useGsapReveal(rootRef);
 
   useEffect(() => {
-    if (!currentPresence || previousStateRef.current === currentPresence.state) {
+    if (
+      !currentPresence ||
+      previousStateRef.current === currentPresence.state
+    ) {
       return;
     }
 
@@ -47,14 +50,20 @@ export function SoloRoom({ backgroundUrl: _backgroundUrl }: SoloRoomProps) {
   }, [currentPresence]);
 
   return (
-    <div ref={rootRef} className="grid gap-8 xl:grid-cols-[minmax(0,1.65fr)_minmax(22rem,24rem)] 2xl:grid-cols-[minmax(0,1.8fr)_minmax(24rem,28rem)]">
+    <div
+      ref={rootRef}
+      className="grid gap-8 xl:grid-cols-[minmax(0,1.65fr)_minmax(22rem,24rem)] 2xl:grid-cols-[minmax(0,1.8fr)_minmax(24rem,28rem)]"
+    >
       <div className="space-y-8">
         {isAnonymous ? (
           <div className="gsap-rise bg-surface-container pixel-border p-5">
-            <p className="font-headline text-[10px] font-bold uppercase tracking-[0.25em] text-outline">Sala en solo lectura</p>
+            <p className="font-headline text-[10px] font-bold uppercase tracking-[0.25em] text-outline">
+              Sala en solo lectura
+            </p>
             <div className="mt-3 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <p className="text-sm leading-relaxed text-on-surface-variant">
-                El santuario silencioso se puede recorrer sin sesión, pero el reloj y las crónicas se activan solo con cuenta conectada.
+                El santuario silencioso se puede recorrer sin sesión, pero el
+                reloj y las crónicas se activan solo con cuenta conectada.
               </p>
               <a
                 href="/api/auth/login"
@@ -79,44 +88,73 @@ export function SoloRoom({ backgroundUrl: _backgroundUrl }: SoloRoomProps) {
 
         <div className="grid gap-4 md:grid-cols-3">
           <div className="gsap-rise bg-surface-container-low pixel-border p-5">
-            <p className="font-headline text-[10px] font-bold uppercase tracking-[0.25em] text-outline">Vigilias</p>
-            <p className="mt-3 font-headline text-3xl font-black text-primary">{summary.sessionsCount}</p>
+            <p className="font-headline text-[10px] font-bold uppercase tracking-[0.25em] text-outline">
+              Vigilias
+            </p>
+            <p className="mt-3 font-headline text-3xl font-black text-primary">
+              {summary.sessionsCount}
+            </p>
           </div>
           <div className="gsap-rise bg-surface-container-low pixel-border p-5">
-            <p className="font-headline text-[10px] font-bold uppercase tracking-[0.25em] text-outline">Horas</p>
-            <p className="mt-3 font-headline text-3xl font-black text-tertiary">{summary.focusHours} h</p>
+            <p className="font-headline text-[10px] font-bold uppercase tracking-[0.25em] text-outline">
+              Horas
+            </p>
+            <p className="mt-3 font-headline text-3xl font-black text-tertiary">
+              {summary.focusHours} h
+            </p>
           </div>
           <div className="gsap-rise bg-surface-container-low pixel-border p-5">
-            <p className="font-headline text-[10px] font-bold uppercase tracking-[0.25em] text-outline">Días activos</p>
-            <p className="mt-3 font-headline text-3xl font-black text-secondary">{summary.archiveDays}</p>
+            <p className="font-headline text-[10px] font-bold uppercase tracking-[0.25em] text-outline">
+              Días activos
+            </p>
+            <p className="mt-3 font-headline text-3xl font-black text-secondary">
+              {summary.archiveDays}
+            </p>
           </div>
         </div>
       </div>
 
       <aside className="space-y-6">
         <div className="gsap-rise">
-          <StudyTimer roomKind="solo" roomCode={SOLO_ROOM_CODE} roomName="Santuario silencioso" />
+          <StudyTimer
+            roomKind="solo"
+            roomCode={SOLO_ROOM_CODE}
+            roomName="Santuario silencioso"
+          />
         </div>
 
         <div className="gsap-rise bg-secondary-container p-[4px]">
           <div className="bg-surface-container-low p-6">
             <div className="mb-4 flex items-center gap-3">
               <ScrollText size={18} className="text-primary" />
-              <h3 className="font-headline text-lg font-black uppercase tracking-tight text-primary">Archivo reciente</h3>
+              <h3 className="font-headline text-lg font-black uppercase tracking-tight text-primary">
+                Archivo reciente
+              </h3>
             </div>
             {chronicles.length === 0 ? (
               <p className="text-sm leading-relaxed text-on-surface-variant">
-                El primer cierre del reloj abrirá la primera entrada del santuario privado.
+                El primer cierre del reloj abrirá la primera entrada del
+                santuario privado.
               </p>
             ) : (
               <div className="space-y-4">
                 {chronicles.map((entry) => (
-                  <div key={entry.id} className="border-l-2 border-primary pl-4">
+                  <div
+                    key={entry.id}
+                    className="border-l-2 border-primary pl-4"
+                  >
                     <p className="font-headline text-[10px] font-bold uppercase tracking-[0.25em] text-outline">
-                      {new Date(entry.timestamp).toLocaleDateString("es-ES", { day: "2-digit", month: "short" })}
+                      {new Date(entry.timestamp).toLocaleDateString("es-ES", {
+                        day: "2-digit",
+                        month: "short",
+                      })}
                     </p>
-                    <p className="mt-1 font-headline text-sm font-black uppercase tracking-tight text-on-surface">{entry.title}</p>
-                    <p className="mt-1 text-sm leading-relaxed text-on-surface-variant">{entry.description}</p>
+                    <p className="mt-1 font-headline text-sm font-black uppercase tracking-tight text-on-surface">
+                      {entry.title}
+                    </p>
+                    <p className="mt-1 text-sm leading-relaxed text-on-surface-variant">
+                      {entry.description}
+                    </p>
                   </div>
                 ))}
               </div>

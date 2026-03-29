@@ -1,4 +1,10 @@
-import type { ClientMessage, ServerMessage, PresenceState, TimerPhase, TimerStatus } from "@/lib/server/ws-types";
+import type {
+  ClientMessage,
+  ServerMessage,
+  PresenceState,
+  TimerPhase,
+  TimerStatus,
+} from "@/lib/server/ws-types";
 import { sanctuaryActions } from "@/lib/sanctuary/store";
 
 let ws: WebSocket | null = null;
@@ -9,15 +15,13 @@ let pingTimer: ReturnType<typeof setInterval> | null = null;
 let awayTimer: ReturnType<typeof setTimeout> | null = null;
 let awayListenersBound = false;
 let awayActive = false;
-let desiredPresence:
-  | {
-      state: PresenceState;
-      phase: TimerPhase;
-      status: TimerStatus;
-      remainingSeconds: number;
-      message: string;
-    }
-  | null = null;
+let desiredPresence: {
+  state: PresenceState;
+  phase: TimerPhase;
+  status: TimerStatus;
+  remainingSeconds: number;
+  message: string;
+} | null = null;
 const messageListeners = new Set<(msg: ServerMessage) => void>();
 
 const MAX_RECONNECT_DELAY = 30_000;
@@ -98,9 +102,11 @@ function bindAwayListeners() {
   }
 
   awayListenersBound = true;
-  ["pointerdown", "keydown", "mousemove", "touchstart", "focus"].forEach((eventName) => {
-    window.addEventListener(eventName, registerActivity, { passive: true });
-  });
+  ["pointerdown", "keydown", "mousemove", "touchstart", "focus"].forEach(
+    (eventName) => {
+      window.addEventListener(eventName, registerActivity, { passive: true });
+    },
+  );
 }
 
 function scheduleReconnect() {
@@ -108,7 +114,10 @@ function scheduleReconnect() {
     return;
   }
 
-  const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), MAX_RECONNECT_DELAY);
+  const delay = Math.min(
+    1000 * Math.pow(2, reconnectAttempts),
+    MAX_RECONNECT_DELAY,
+  );
   reconnectAttempts += 1;
 
   reconnectTimer = setTimeout(() => {
@@ -156,7 +165,10 @@ export function connect() {
     return;
   }
 
-  if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
+  if (
+    ws &&
+    (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)
+  ) {
     return;
   }
 

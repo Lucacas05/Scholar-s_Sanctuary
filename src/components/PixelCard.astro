@@ -24,18 +24,30 @@ const variants = {
 ---
 
 <div class:list={["relative", variants[variant], "pixel-border", className]}>
-  {namePlate && (
-    <div class="absolute -top-4 left-4 bg-secondary-container text-primary-fixed px-3 py-1 font-headline font-bold text-[10px] uppercase tracking-widest z-10 pixel-shadow">
-      {namePlate}
-    </div>
-  )}
-  <div class="h-full p-6">
-    {(title || subtitle) && (
-      <div class="mb-4">
-        {title && <h3 class="font-headline font-black text-xl uppercase tracking-tighter text-on-surface">{title}</h3>}
-        {subtitle && <p class="text-[10px] font-headline font-bold text-outline uppercase tracking-widest mt-1">{subtitle}</p>}
+  {
+    namePlate && (
+      <div class="absolute -top-4 left-4 bg-secondary-container text-primary-fixed px-3 py-1 font-headline font-bold text-[10px] uppercase tracking-widest z-10 pixel-shadow">
+        {namePlate}
       </div>
-    )}
+    )
+  }
+  <div class="h-full p-6">
+    {
+      (title || subtitle) && (
+        <div class="mb-4">
+          {title && (
+            <h3 class="font-headline font-black text-xl uppercase tracking-tighter text-on-surface">
+              {title}
+            </h3>
+          )}
+          {subtitle && (
+            <p class="text-[10px] font-headline font-bold text-outline uppercase tracking-widest mt-1">
+              {subtitle}
+            </p>
+          )}
+        </div>
+      )
+    }
     <slot />
   </div>
 </div>

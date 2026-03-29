@@ -2,7 +2,9 @@ import type { APIContext } from "astro";
 import { db } from "@/lib/server/db";
 import { isGitHubOAuthConfigured } from "@/lib/server/oauth";
 
-const selectUserStateStatement = db.prepare("SELECT state_json FROM users WHERE id = ?");
+const selectUserStateStatement = db.prepare(
+  "SELECT state_json FROM users WHERE id = ?",
+);
 const updateUserStateStatement = db.prepare(
   "UPDATE users SET state_json = ?, updated_at = datetime('now') WHERE id = ?",
 );
@@ -18,7 +20,9 @@ export async function GET({ locals }: APIContext) {
     });
   }
 
-  const row = selectUserStateStatement.get(locals.user.id) as { state_json: string | null } | undefined;
+  const row = selectUserStateStatement.get(locals.user.id) as
+    | { state_json: string | null }
+    | undefined;
   let stateJson: unknown = null;
 
   if (row?.state_json) {
@@ -41,7 +45,9 @@ export async function POST({ locals, request }: APIContext) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const payload = (await request.json().catch(() => null)) as { state?: unknown } | null;
+  const payload = (await request.json().catch(() => null)) as {
+    state?: unknown;
+  } | null;
   if (!payload || !("state" in payload)) {
     return Response.json({ error: "Invalid payload" }, { status: 400 });
   }

@@ -35,7 +35,9 @@ function computeStreak(rows: Array<{ day: string }>): number {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const todayStr = today.toISOString().slice(0, 10);
-  const yesterdayStr = new Date(today.getTime() - 86400000).toISOString().slice(0, 10);
+  const yesterdayStr = new Date(today.getTime() - 86400000)
+    .toISOString()
+    .slice(0, 10);
 
   if (rows[0].day !== todayStr && rows[0].day !== yesterdayStr) {
     return 0;
@@ -60,7 +62,8 @@ export async function GET({ locals, url }: APIContext) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const range = url.searchParams.get("range") === "weekly" ? "-6 days" : "-29 days";
+  const range =
+    url.searchParams.get("range") === "weekly" ? "-6 days" : "-29 days";
 
   const overall = overallStatsStatement.get(locals.user.id) as {
     totalSessions: number;
@@ -73,7 +76,9 @@ export async function GET({ locals, url }: APIContext) {
     focusSeconds: number;
   }>;
 
-  const streakRows = streakStatement.all(locals.user.id) as Array<{ day: string }>;
+  const streakRows = streakStatement.all(locals.user.id) as Array<{
+    day: string;
+  }>;
   const streakDays = computeStreak(streakRows);
 
   const avgFocusSeconds =

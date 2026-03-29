@@ -11,7 +11,10 @@ export function getScenePixelHeight(map: SceneMap) {
   return map.height * map.tileSize;
 }
 
-export function drawSceneBackground(ctx: CanvasRenderingContext2D, map: SceneMap) {
+export function drawSceneBackground(
+  ctx: CanvasRenderingContext2D,
+  map: SceneMap,
+) {
   const { theme, width, height, tileSize } = map;
   const pixelWidth = getScenePixelWidth(map);
   const pixelHeight = getScenePixelHeight(map);
@@ -28,7 +31,12 @@ export function drawSceneBackground(ctx: CanvasRenderingContext2D, map: SceneMap
   for (let row = 0; row < height; row += 1) {
     for (let col = 0; col < width; col += 1) {
       ctx.fillStyle = (row + col) % 2 === 0 ? theme.floorA : theme.floorB;
-      ctx.fillRect(col * tileSize, Math.max(54, row * tileSize), tileSize, tileSize);
+      ctx.fillRect(
+        col * tileSize,
+        Math.max(54, row * tileSize),
+        tileSize,
+        tileSize,
+      );
       ctx.fillStyle = "rgba(255,255,255,0.03)";
       ctx.fillRect(col * tileSize, Math.max(54, row * tileSize), tileSize, 1);
     }
@@ -62,7 +70,7 @@ export function drawSceneProp(
     return;
   }
 
-  const atlasImage = prop.atlas ? atlasImages?.[prop.atlas] ?? null : null;
+  const atlasImage = prop.atlas ? (atlasImages?.[prop.atlas] ?? null) : null;
 
   if (!atlasImage || !prop.source) {
     ctx.restore();
@@ -100,7 +108,12 @@ function drawProceduralProp(ctx: CanvasRenderingContext2D, prop: SceneProp) {
 
   if (prop.shape === "tree") {
     ctx.fillStyle = "#3d2a1b";
-    ctx.fillRect(prop.x + Math.round(prop.w / 2) - 6, prop.y + prop.h - 26, 12, 26);
+    ctx.fillRect(
+      prop.x + Math.round(prop.w / 2) - 6,
+      prop.y + prop.h - 26,
+      12,
+      26,
+    );
     ctx.fillStyle = "#274e2f";
     ctx.fillRect(prop.x + 6, prop.y + 10, prop.w - 12, 22);
     ctx.fillStyle = "#35663e";

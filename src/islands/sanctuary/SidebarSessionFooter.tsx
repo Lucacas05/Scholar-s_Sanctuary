@@ -10,7 +10,10 @@ export function SidebarSessionFooter() {
         <Settings size={16} />
         <span>Perfil y avatar</span>
       </a>
-      <a href="/api/auth/login" className="flex w-full items-center gap-3 p-2 font-headline text-xs font-bold uppercase tracking-widest text-outline transition hover:text-primary">
+      <a
+        href="/api/auth/login"
+        className="flex w-full items-center gap-3 p-2 font-headline text-xs font-bold uppercase tracking-widest text-outline transition hover:text-primary"
+      >
         <LogOut size={16} />
         <span>Acceso con GitHub</span>
       </a>

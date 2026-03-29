@@ -1,5 +1,12 @@
 import { useRef } from "react";
-import { BookOpen, Flame, History, ScrollText, Trophy, Users } from "lucide-react";
+import {
+  BookOpen,
+  Flame,
+  History,
+  ScrollText,
+  Trophy,
+  Users,
+} from "lucide-react";
 import { siteContent } from "@/data/site";
 import { useGsapReveal } from "@/islands/sanctuary/useGsapReveal";
 import { PomodoroAnalytics } from "@/islands/sanctuary/PomodoroAnalytics";
@@ -81,7 +88,10 @@ function getRoomLabel(roomCode: string, roomName?: string) {
   return roomName ?? "Biblioteca compartida";
 }
 
-function buildTimelineEntries(state: ReturnType<typeof useSanctuaryStore>, userId: string): TimelineEntry[] {
+function buildTimelineEntries(
+  state: ReturnType<typeof useSanctuaryStore>,
+  userId: string,
+): TimelineEntry[] {
   const sessions = state.sessions
     .filter((session) => session.userId === userId)
     .sort((left, right) => right.completedAt - left.completedAt);
@@ -96,11 +106,16 @@ function buildTimelineEntries(state: ReturnType<typeof useSanctuaryStore>, userI
 
   return sessions.slice(0, 6).map((session) => {
     const matchingChronicle =
-      chronicleByWindow.find((entry) => Math.abs(entry.timestamp - session.completedAt) <= 10 * 60 * 1000) ?? null;
+      chronicleByWindow.find(
+        (entry) =>
+          Math.abs(entry.timestamp - session.completedAt) <= 10 * 60 * 1000,
+      ) ?? null;
 
     const title =
       matchingChronicle?.title ??
-      (session.roomKind === "solo" ? "Vigilia en el santuario silencioso" : "Sesión en biblioteca compartida");
+      (session.roomKind === "solo"
+        ? "Vigilia en el santuario silencioso"
+        : "Sesión en biblioteca compartida");
 
     const note =
       matchingChronicle?.description ??
@@ -109,7 +124,9 @@ function buildTimelineEntries(state: ReturnType<typeof useSanctuaryStore>, userI
         : "Sesión social completada dentro de la biblioteca compartida.");
 
     const roomName = state.rooms[session.roomCode]?.name;
-    const tone = matchingChronicle?.tone ?? (session.roomKind === "solo" ? "primary" : "tertiary");
+    const tone =
+      matchingChronicle?.tone ??
+      (session.roomKind === "solo" ? "primary" : "tertiary");
 
     return {
       key: session.id,
@@ -123,14 +140,34 @@ function buildTimelineEntries(state: ReturnType<typeof useSanctuaryStore>, userI
   });
 }
 
-function buildCadenceEntries(state: ReturnType<typeof useSanctuaryStore>, userId: string): CadenceEntry[] {
-  const sessions = state.sessions.filter((session) => session.userId === userId);
+function buildCadenceEntries(
+  state: ReturnType<typeof useSanctuaryStore>,
+  userId: string,
+): CadenceEntry[] {
+  const sessions = state.sessions.filter(
+    (session) => session.userId === userId,
+  );
 
   if (sessions.length === 0) {
     return [
-      { label: "Vigilias del alba", value: "0", width: "0%", tone: "bg-primary" },
-      { label: "Anotaciones del mediodía", value: "0", width: "0%", tone: "bg-secondary" },
-      { label: "Transcripciones nocturnas", value: "0", width: "0%", tone: "bg-tertiary" },
+      {
+        label: "Vigilias del alba",
+        value: "0",
+        width: "0%",
+        tone: "bg-primary",
+      },
+      {
+        label: "Anotaciones del mediodía",
+        value: "0",
+        width: "0%",
+        tone: "bg-secondary",
+      },
+      {
+        label: "Transcripciones nocturnas",
+        value: "0",
+        width: "0%",
+        tone: "bg-tertiary",
+      },
     ];
   }
 
@@ -216,17 +253,26 @@ export function ChroniclesArchive() {
 
           <div className="flex flex-col gap-3 sm:flex-row">
             {isAnonymous ? (
-              <a href="/api/auth/login" className={`${buttonBaseClass} ${buttonVariants.primary}`}>
+              <a
+                href="/api/auth/login"
+                className={`${buttonBaseClass} ${buttonVariants.primary}`}
+              >
                 <Users size={16} />
                 Iniciar sesión
               </a>
             ) : (
               <>
-                <a href="/estudio" className={`${buttonBaseClass} ${buttonVariants.primary}`}>
+                <a
+                  href="/estudio"
+                  className={`${buttonBaseClass} ${buttonVariants.primary}`}
+                >
                   <BookOpen size={16} />
                   Reanudar lectura
                 </a>
-                <a href="/biblioteca-compartida" className={`${buttonBaseClass} ${buttonVariants.tertiary}`}>
+                <a
+                  href="/biblioteca-compartida"
+                  className={`${buttonBaseClass} ${buttonVariants.tertiary}`}
+                >
                   <Users size={16} />
                   Ir a la biblioteca
                 </a>
@@ -238,17 +284,24 @@ export function ChroniclesArchive() {
 
       {isAnonymous ? (
         <section className="gsap-rise bg-surface-container pixel-border p-5">
-          <p className="font-headline text-[10px] font-bold uppercase tracking-[0.25em] text-outline">Archivo bloqueado</p>
+          <p className="font-headline text-[10px] font-bold uppercase tracking-[0.25em] text-outline">
+            Archivo bloqueado
+          </p>
           <p className="mt-3 text-sm leading-relaxed text-on-surface-variant">
-            Las crónicas y los hitos aparecerán aquí cuando tengas una sesión activa y el santuario pueda guardar tu progreso.
+            Las crónicas y los hitos aparecerán aquí cuando tengas una sesión
+            activa y el santuario pueda guardar tu progreso.
           </p>
         </section>
       ) : null}
 
       <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div className="gsap-rise bg-surface-container pixel-border p-5">
-          <p className="font-headline text-[10px] font-bold uppercase tracking-[0.25em] text-outline">Horas totales</p>
-          <p className="mt-2 font-headline text-3xl font-black text-primary">{summary.focusHours} h</p>
+          <p className="font-headline text-[10px] font-bold uppercase tracking-[0.25em] text-outline">
+            Horas totales
+          </p>
+          <p className="mt-2 font-headline text-3xl font-black text-primary">
+            {summary.focusHours} h
+          </p>
           <p className="mt-2 text-xs text-on-surface-variant">
             A través de {summary.sessionsCount} vigilias registradas.
           </p>
@@ -258,20 +311,36 @@ export function ChroniclesArchive() {
           <p className="font-headline text-[10px] font-bold uppercase tracking-[0.25em] text-outline">
             Sesiones completadas
           </p>
-          <p className="mt-2 font-headline text-3xl font-black text-secondary">{summary.sessionsCount}</p>
-          <p className="mt-2 text-xs text-on-surface-variant">El archivo ya conserva tu ritmo de foco reciente.</p>
+          <p className="mt-2 font-headline text-3xl font-black text-secondary">
+            {summary.sessionsCount}
+          </p>
+          <p className="mt-2 text-xs text-on-surface-variant">
+            El archivo ya conserva tu ritmo de foco reciente.
+          </p>
         </div>
 
         <div className="gsap-rise bg-surface-container pixel-border p-5">
-          <p className="font-headline text-[10px] font-bold uppercase tracking-[0.25em] text-outline">Racha visible</p>
-          <p className="mt-2 font-headline text-3xl font-black text-tertiary">{summary.streakDays} días</p>
-          <p className="mt-2 text-xs text-on-surface-variant">Días seguidos con actividad dentro del santuario.</p>
+          <p className="font-headline text-[10px] font-bold uppercase tracking-[0.25em] text-outline">
+            Racha visible
+          </p>
+          <p className="mt-2 font-headline text-3xl font-black text-tertiary">
+            {summary.streakDays} días
+          </p>
+          <p className="mt-2 text-xs text-on-surface-variant">
+            Días seguidos con actividad dentro del santuario.
+          </p>
         </div>
 
         <div className="gsap-rise bg-surface-container pixel-border p-5">
-          <p className="font-headline text-[10px] font-bold uppercase tracking-[0.25em] text-outline">Hitos abiertos</p>
-          <p className="mt-2 font-headline text-3xl font-black text-primary">{summary.achievementsCount}</p>
-          <p className="mt-2 text-xs text-on-surface-variant">Marcas ya desbloqueadas por {summary.profile.displayName}.</p>
+          <p className="font-headline text-[10px] font-bold uppercase tracking-[0.25em] text-outline">
+            Hitos abiertos
+          </p>
+          <p className="mt-2 font-headline text-3xl font-black text-primary">
+            {summary.achievementsCount}
+          </p>
+          <p className="mt-2 text-xs text-on-surface-variant">
+            Marcas ya desbloqueadas por {summary.profile.displayName}.
+          </p>
         </div>
       </section>
 
@@ -304,7 +373,8 @@ export function ChroniclesArchive() {
                     El archivo aún está en blanco
                   </p>
                   <p className="mt-2 text-sm leading-relaxed text-on-surface-variant">
-                    Completa tus primeras sesiones con el Pomodoro y las crónicas empezarán a escribirse aquí.
+                    Completa tus primeras sesiones con el Pomodoro y las
+                    crónicas empezarán a escribirse aquí.
                   </p>
                 </div>
               ) : (
@@ -313,14 +383,20 @@ export function ChroniclesArchive() {
                     <div
                       key={entry.key}
                       className={`grid grid-cols-[auto_1fr] gap-4 md:gap-6 ${
-                        index < timelineEntries.length - 1 ? "mb-6 border-b border-outline-variant/40 pb-6" : ""
+                        index < timelineEntries.length - 1
+                          ? "mb-6 border-b border-outline-variant/40 pb-6"
+                          : ""
                       }`}
                     >
                       <div className="flex flex-col items-center">
-                        <div className={`flex h-12 w-12 items-center justify-center border-4 ${accentClasses[entry.tone]}`}>
+                        <div
+                          className={`flex h-12 w-12 items-center justify-center border-4 ${accentClasses[entry.tone]}`}
+                        >
                           <History size={18} />
                         </div>
-                        {index < timelineEntries.length - 1 && <div className="mt-2 min-h-16 w-1 flex-1 bg-outline-variant/70" />}
+                        {index < timelineEntries.length - 1 && (
+                          <div className="mt-2 min-h-16 w-1 flex-1 bg-outline-variant/70" />
+                        )}
                       </div>
 
                       <div className="pt-1">
@@ -339,18 +415,24 @@ export function ChroniclesArchive() {
                               <p className="font-headline text-[10px] font-bold uppercase tracking-widest text-outline">
                                 Duración
                               </p>
-                              <p className="text-sm font-headline font-black text-primary">{entry.duration}</p>
+                              <p className="text-sm font-headline font-black text-primary">
+                                {entry.duration}
+                              </p>
                             </div>
                             <div className="border-b-4 border-tertiary bg-surface-container-low px-3 py-2">
                               <p className="font-headline text-[10px] font-bold uppercase tracking-widest text-outline">
                                 Contexto
                               </p>
-                              <p className="text-sm font-headline font-black text-tertiary">{entry.context}</p>
+                              <p className="text-sm font-headline font-black text-tertiary">
+                                {entry.context}
+                              </p>
                             </div>
                           </div>
                         </div>
 
-                        <p className="mt-4 text-sm leading-relaxed text-on-surface-variant">{entry.note}</p>
+                        <p className="mt-4 text-sm leading-relaxed text-on-surface-variant">
+                          {entry.note}
+                        </p>
                       </div>
                     </div>
                   ))}
@@ -378,10 +460,15 @@ export function ChroniclesArchive() {
                       <span className="text-xs font-headline font-bold uppercase tracking-widest text-on-surface">
                         {entry.label}
                       </span>
-                      <span className="text-xs font-headline font-black text-outline">{entry.value}</span>
+                      <span className="text-xs font-headline font-black text-outline">
+                        {entry.value}
+                      </span>
                     </div>
                     <div className="h-4 overflow-hidden bg-surface-container-highest">
-                      <div className={`h-full ${entry.tone}`} style={{ width: entry.width }} />
+                      <div
+                        className={`h-full ${entry.tone}`}
+                        style={{ width: entry.width }}
+                      />
                     </div>
                   </div>
                 ))}
@@ -409,7 +496,9 @@ export function ChroniclesArchive() {
                     <p className="text-sm font-headline font-black uppercase tracking-tight text-on-surface">
                       {achievement.title}
                     </p>
-                    <p className="mt-2 text-sm leading-relaxed text-on-surface-variant">{achievement.description}</p>
+                    <p className="mt-2 text-sm leading-relaxed text-on-surface-variant">
+                      {achievement.description}
+                    </p>
                     <p className="mt-2 font-headline text-[10px] font-bold uppercase tracking-[0.25em] text-outline">
                       {achievement.unlockedAt
                         ? `Desbloqueado el ${new Date(achievement.unlockedAt).toLocaleDateString("es-ES")}`

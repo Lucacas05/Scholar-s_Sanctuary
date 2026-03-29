@@ -21,15 +21,21 @@ interface GardenRoomProps {
 export function GardenRoom({ backgroundUrl: _backgroundUrl }: GardenRoomProps) {
   const sanctuary = useSanctuaryStore();
   const currentRoom = getCurrentRoom(sanctuary);
-  const gardenMembers = currentRoom ? getRoomMembers(sanctuary, currentRoom.code, "garden") : [];
-  const libraryMembers = currentRoom ? getRoomMembers(sanctuary, currentRoom.code, "library") : [];
+  const gardenMembers = currentRoom
+    ? getRoomMembers(sanctuary, currentRoom.code, "garden")
+    : [];
+  const libraryMembers = currentRoom
+    ? getRoomMembers(sanctuary, currentRoom.code, "library")
+    : [];
   const currentPresence = getCurrentPresence(sanctuary);
   const currentAvatar = getRenderableCurrentProfile(sanctuary).avatar;
   const [message, setMessage] = useState(currentPresence?.message ?? "");
   const sceneRef = useRef<SanctuaryCanvasHandle | null>(null);
   const previousStateRef = useRef("");
   const isAnonymous = sanctuary.sessionState === "anonymous";
-  const canSpeak = sanctuary.sessionState === "authenticated" && currentPresence?.space === "garden";
+  const canSpeak =
+    sanctuary.sessionState === "authenticated" &&
+    currentPresence?.space === "garden";
 
   useEffect(() => {
     setMessage(currentPresence?.message ?? "");
@@ -37,13 +43,18 @@ export function GardenRoom({ backgroundUrl: _backgroundUrl }: GardenRoomProps) {
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
-      sceneRef.current?.actualizarOtrosJugadores(toCanvasRemotePlayers("garden", gardenMembers));
+      sceneRef.current?.actualizarOtrosJugadores(
+        toCanvasRemotePlayers("garden", gardenMembers),
+      );
     });
     return () => window.cancelAnimationFrame(frame);
   }, [gardenMembers]);
 
   useEffect(() => {
-    if (!currentPresence || previousStateRef.current === currentPresence.state) {
+    if (
+      !currentPresence ||
+      previousStateRef.current === currentPresence.state
+    ) {
       return;
     }
 
@@ -117,9 +128,12 @@ export function GardenRoom({ backgroundUrl: _backgroundUrl }: GardenRoomProps) {
           lockedLabel="Este jardín se abre al conectar tu cuenta. De momento queda como vista previa del descanso compartido."
         />
         <div className="bg-surface-container pixel-border p-6">
-          <p className="font-headline text-[10px] font-bold uppercase tracking-[0.25em] text-outline">Acceso restringido</p>
+          <p className="font-headline text-[10px] font-bold uppercase tracking-[0.25em] text-outline">
+            Acceso restringido
+          </p>
           <p className="mt-3 text-sm leading-relaxed text-on-surface-variant">
-            El jardín solo permite mensajes y presencia compartida cuando la sesión está autenticada.
+            El jardín solo permite mensajes y presencia compartida cuando la
+            sesión está autenticada.
           </p>
           <a
             href="/api/auth/login"
@@ -143,24 +157,38 @@ export function GardenRoom({ backgroundUrl: _backgroundUrl }: GardenRoomProps) {
           ref={sceneRef}
           title={`Jardín de ${currentRoom.name}`}
           subtitle="La pausa social vive aquí: paseo ligero, bocadillos breves y transición suave antes de volver al foco."
-          badge={currentRoom.kind === "public" ? "Descanso público" : "Descanso privado"}
+          badge={
+            currentRoom.kind === "public"
+              ? "Descanso público"
+              : "Descanso privado"
+          }
           sceneKind="garden"
           avatar={currentAvatar}
         />
 
         <div className="grid gap-4 md:grid-cols-2">
           <div className="bg-surface-container-low pixel-border p-5">
-            <p className="font-headline text-[10px] font-bold uppercase tracking-[0.25em] text-outline">Actualmente en pausa</p>
-            <p className="mt-3 font-headline text-3xl font-black text-tertiary">{gardenMembers.length}</p>
+            <p className="font-headline text-[10px] font-bold uppercase tracking-[0.25em] text-outline">
+              Actualmente en pausa
+            </p>
+            <p className="mt-3 font-headline text-3xl font-black text-tertiary">
+              {gardenMembers.length}
+            </p>
             <p className="mt-2 text-sm leading-relaxed text-on-surface-variant">
-              Personajes visibles en el jardín mientras su reloj está en descanso.
+              Personajes visibles en el jardín mientras su reloj está en
+              descanso.
             </p>
           </div>
           <div className="bg-surface-container-low pixel-border p-5">
-            <p className="font-headline text-[10px] font-bold uppercase tracking-[0.25em] text-outline">Siguen en biblioteca</p>
-            <p className="mt-3 font-headline text-3xl font-black text-primary">{libraryMembers.length}</p>
+            <p className="font-headline text-[10px] font-bold uppercase tracking-[0.25em] text-outline">
+              Siguen en biblioteca
+            </p>
+            <p className="mt-3 font-headline text-3xl font-black text-primary">
+              {libraryMembers.length}
+            </p>
             <p className="mt-2 text-sm leading-relaxed text-on-surface-variant">
-              Miembros que siguen concentrados en sus propias vigilias dentro de la sala.
+              Miembros que siguen concentrados en sus propias vigilias dentro de
+              la sala.
             </p>
           </div>
         </div>
@@ -177,7 +205,9 @@ export function GardenRoom({ backgroundUrl: _backgroundUrl }: GardenRoomProps) {
         <div className="bg-surface-container pixel-border p-6">
           <div className="mb-4 flex items-center gap-3">
             <MessageSquareQuote size={18} className="text-primary" />
-            <h3 className="font-headline text-lg font-black uppercase tracking-tight text-primary">Bocadillo de descanso</h3>
+            <h3 className="font-headline text-lg font-black uppercase tracking-tight text-primary">
+              Bocadillo de descanso
+            </h3>
           </div>
 
           <textarea
@@ -185,7 +215,11 @@ export function GardenRoom({ backgroundUrl: _backgroundUrl }: GardenRoomProps) {
             onChange={(event) => setMessage(event.target.value.slice(0, 80))}
             disabled={!canSpeak}
             className="min-h-28 w-full rounded-none border-2 border-outline-variant bg-surface-container-low px-4 py-3 text-sm text-on-surface outline-none focus:border-primary disabled:cursor-not-allowed disabled:opacity-50"
-            placeholder={canSpeak ? "Escribe un saludo breve para tu círculo..." : "Empieza una pausa para poder hablar en el jardín."}
+            placeholder={
+              canSpeak
+                ? "Escribe un saludo breve para tu círculo..."
+                : "Empieza una pausa para poder hablar en el jardín."
+            }
           />
 
           <div className="mt-4 flex flex-wrap gap-3">
@@ -213,10 +247,14 @@ export function GardenRoom({ backgroundUrl: _backgroundUrl }: GardenRoomProps) {
         <div className="bg-surface-container pixel-border p-6">
           <div className="mb-4 flex items-center gap-3">
             <Trees size={18} className="text-tertiary" />
-            <h3 className="font-headline text-lg font-black uppercase tracking-tight text-tertiary">Pulso del jardín</h3>
+            <h3 className="font-headline text-lg font-black uppercase tracking-tight text-tertiary">
+              Pulso del jardín
+            </h3>
           </div>
           <p className="text-sm leading-relaxed text-on-surface-variant">
-            Cuando una pausa termine, el reloj volverá a dejarte listo para la biblioteca. No hay chat continuo: solo mensajes breves mientras dura el descanso.
+            Cuando una pausa termine, el reloj volverá a dejarte listo para la
+            biblioteca. No hay chat continuo: solo mensajes breves mientras dura
+            el descanso.
           </p>
           <a
             href="/biblioteca-compartida"

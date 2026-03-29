@@ -1,6 +1,9 @@
 import { useRef } from "react";
 import { UserRound } from "lucide-react";
-import { getRenderableCurrentProfile, useSanctuaryStore } from "@/lib/sanctuary/store";
+import {
+  getRenderableCurrentProfile,
+  useSanctuaryStore,
+} from "@/lib/sanctuary/store";
 import { PixelAvatar } from "@/islands/sanctuary/PixelAvatar";
 import { useGsapReveal } from "@/islands/sanctuary/useGsapReveal";
 
@@ -9,13 +12,18 @@ interface AuthModePanelProps {
   compact?: boolean;
 }
 
-export function AuthModePanel({ contextLabel, compact = false }: AuthModePanelProps) {
+export function AuthModePanel({
+  contextLabel,
+  compact = false,
+}: AuthModePanelProps) {
   const sanctuary = useSanctuaryStore();
   const currentProfile = getRenderableCurrentProfile(sanctuary);
   const avatar = currentProfile.avatar;
   const rootRef = useRef<HTMLDivElement | null>(null);
   const isAuthenticated = sanctuary.sessionState === "authenticated";
-  const title = isAuthenticated ? currentProfile.displayName : "Acceso en solo lectura";
+  const title = isAuthenticated
+    ? currentProfile.displayName
+    : "Acceso en solo lectura";
   const description = isAuthenticated
     ? `Sesión activa como ${currentProfile.handle} con progreso sincronizable entre dispositivos.`
     : "Explora el santuario y sus vistas bloqueadas hasta conectar tu cuenta de GitHub.";
@@ -24,7 +32,10 @@ export function AuthModePanel({ contextLabel, compact = false }: AuthModePanelPr
 
   if (compact) {
     return (
-      <div ref={rootRef} className="relative overflow-hidden bg-surface-container pixel-border">
+      <div
+        ref={rootRef}
+        className="relative overflow-hidden bg-surface-container pixel-border"
+      >
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_16%_20%,rgba(255,185,97,0.12),transparent_20%),radial-gradient(circle_at_84%_24%,rgba(173,208,168,0.1),transparent_18%)]" />
         <div className="relative p-3 md:p-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -33,8 +44,12 @@ export function AuthModePanel({ contextLabel, compact = false }: AuthModePanelPr
                 <PixelAvatar avatar={avatar} state="idle" size="sm" />
               </div>
               <div className="min-w-0">
-                <p className="font-headline text-[10px] font-bold uppercase tracking-[0.25em] text-outline">{contextLabel}</p>
-                <h2 className="font-headline text-base font-black uppercase tracking-tighter text-on-surface md:text-lg">{title}</h2>
+                <p className="font-headline text-[10px] font-bold uppercase tracking-[0.25em] text-outline">
+                  {contextLabel}
+                </p>
+                <h2 className="font-headline text-base font-black uppercase tracking-tighter text-on-surface md:text-lg">
+                  {title}
+                </h2>
               </div>
             </div>
             <div className="gsap-rise inline-flex items-center gap-2 rounded-none border border-outline-variant bg-surface-container-low px-3 py-2 font-headline text-[10px] font-bold uppercase tracking-[0.22em] text-outline">
@@ -48,7 +63,10 @@ export function AuthModePanel({ contextLabel, compact = false }: AuthModePanelPr
   }
 
   return (
-    <div ref={rootRef} className="relative overflow-hidden bg-surface-container pixel-border">
+    <div
+      ref={rootRef}
+      className="relative overflow-hidden bg-surface-container pixel-border"
+    >
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(255,185,97,0.16),transparent_22%),radial-gradient(circle_at_84%_24%,rgba(173,208,168,0.12),transparent_18%)]" />
       <div className="relative p-5 md:p-6">
         <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
@@ -57,9 +75,15 @@ export function AuthModePanel({ contextLabel, compact = false }: AuthModePanelPr
               <PixelAvatar avatar={avatar} state="idle" size="md" />
             </div>
             <div>
-              <p className="font-headline text-[10px] font-bold uppercase tracking-[0.25em] text-outline">{contextLabel}</p>
-              <h2 className="font-headline text-xl font-black uppercase tracking-tighter text-on-surface md:text-2xl">{title}</h2>
-              <p className="mt-1 text-sm text-on-surface-variant">{description}</p>
+              <p className="font-headline text-[10px] font-bold uppercase tracking-[0.25em] text-outline">
+                {contextLabel}
+              </p>
+              <h2 className="font-headline text-xl font-black uppercase tracking-tighter text-on-surface md:text-2xl">
+                {title}
+              </h2>
+              <p className="mt-1 text-sm text-on-surface-variant">
+                {description}
+              </p>
             </div>
           </div>
           <div className="gsap-rise inline-flex items-center gap-2 self-start rounded-none border border-outline-variant bg-surface-container-low px-4 py-3 font-headline text-[10px] font-bold uppercase tracking-[0.22em] text-outline md:self-auto">

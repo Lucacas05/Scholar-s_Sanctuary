@@ -50,7 +50,10 @@ const hairTones = {
   white: "#ececec",
 } as const;
 
-const sizeMetrics: Record<NonNullable<PixelAvatarProps["size"]>, SizeMetrics> = {
+const sizeMetrics: Record<
+  NonNullable<PixelAvatarProps["size"]>,
+  SizeMetrics
+> = {
   sm: {
     frameWidth: 86,
     frameHeight: 108,
@@ -137,15 +140,30 @@ function FaceOverlay({
     <>
       <span
         className="absolute rounded-none bg-[#2a201d]"
-        style={{ left: 24 * unit, top: 17 * unit, width: 4 * unit, height: 2 * unit }}
+        style={{
+          left: 24 * unit,
+          top: 17 * unit,
+          width: 4 * unit,
+          height: 2 * unit,
+        }}
       />
       <span
         className="absolute rounded-none bg-[#2a201d]"
-        style={{ left: 36 * unit, top: 17 * unit, width: 4 * unit, height: 2 * unit }}
+        style={{
+          left: 36 * unit,
+          top: 17 * unit,
+          width: 4 * unit,
+          height: 2 * unit,
+        }}
       />
       <span
         className="absolute rounded-none bg-[#7b4d3e]"
-        style={{ left: 29 * unit, top: 26 * unit, width: 6 * unit, height: unit }}
+        style={{
+          left: 29 * unit,
+          top: 26 * unit,
+          width: 6 * unit,
+          height: unit,
+        }}
       />
       {avatar.accessory === "bigote" && (
         <span
@@ -199,7 +217,10 @@ export function PixelAvatar({
   const showPanel = stage === "panel";
 
   return (
-    <div className="relative" style={{ width: metrics.frameWidth, height: metrics.frameHeight }}>
+    <div
+      className="relative"
+      style={{ width: metrics.frameWidth, height: metrics.frameHeight }}
+    >
       {showPanel || anchor === "bottom" ? (
         <div
           className={`absolute inset-x-[14%] bottom-1 h-5 rounded-full ${
@@ -213,7 +234,9 @@ export function PixelAvatar({
             ? "rounded-[1rem] border border-surface-container-highest/80 bg-surface-container/50 shadow-[0_12px_0_rgba(0,0,0,0.16)]"
             : "bg-transparent"
         } ${
-          highlighted ? "ring-2 ring-primary/70 ring-offset-2 ring-offset-surface" : ""
+          highlighted
+            ? "ring-2 ring-primary/70 ring-offset-2 ring-offset-surface"
+            : ""
         }`}
         style={{
           left: stageLeft,
@@ -314,7 +337,11 @@ export function PixelAvatar({
           <StateIcon
             size={Math.round(metrics.badgeSize * 0.5)}
             className={
-              state === "break" ? "text-tertiary" : state === "studying" ? "text-primary" : "text-outline"
+              state === "break"
+                ? "text-tertiary"
+                : state === "studying"
+                  ? "text-primary"
+                  : "text-outline"
             }
           />
         </div>

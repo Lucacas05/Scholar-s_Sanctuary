@@ -26,9 +26,12 @@ const {
 const Icon = icon ? ICONS[icon] : null;
 
 const variants = {
-  primary: "bg-primary text-on-primary border-b-[3px] border-on-primary-fixed-variant hover:brightness-105",
-  secondary: "bg-tertiary text-on-tertiary border-b-[3px] border-on-tertiary-fixed-variant hover:brightness-105",
-  tertiary: "bg-surface-container-highest text-on-surface border-2 border-outline-variant/50 hover:border-primary/50",
+  primary:
+    "bg-primary text-on-primary border-b-[3px] border-on-primary-fixed-variant hover:brightness-105",
+  secondary:
+    "bg-tertiary text-on-tertiary border-b-[3px] border-on-tertiary-fixed-variant hover:brightness-105",
+  tertiary:
+    "bg-surface-container-highest text-on-surface border-2 border-outline-variant/50 hover:border-primary/50",
   ghost: "bg-transparent text-outline hover:text-primary",
 };
 
@@ -51,14 +54,16 @@ const classes = [
   .join(" ");
 ---
 
-{href ? (
-  <a href={href} class={classes} aria-label={ariaLabel}>
-    {Icon && <Icon size={16} />}
-    <slot />
-  </a>
-) : (
-  <button type={type} class={classes} aria-label={ariaLabel}>
-    {Icon && <Icon size={16} />}
-    <slot />
-  </button>
-)}
+{
+  href ? (
+    <a href={href} class={classes} aria-label={ariaLabel}>
+      {Icon && <Icon size={16} />}
+      <slot />
+    </a>
+  ) : (
+    <button type={type} class={classes} aria-label={ariaLabel}>
+      {Icon && <Icon size={16} />}
+      <slot />
+    </button>
+  )
+}

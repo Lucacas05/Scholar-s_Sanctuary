@@ -1,12 +1,21 @@
 import type { AvatarConfig } from "@/lib/sanctuary/store";
 
-export type SceneKind = "solo-library" | "shared-library" | "public-library" | "garden";
+export type SceneKind =
+  | "solo-library"
+  | "shared-library"
+  | "public-library"
+  | "garden";
 export type Facing = "up" | "down" | "left" | "right";
 export type ActorPose = "idle" | "walk" | "sitting";
 export type ActorState = "idle" | "studying" | "break";
 export type SceneLayer = "back" | "mid-back" | "mid-front" | "front";
 
-export const sceneLayerOrder: SceneLayer[] = ["back", "mid-back", "mid-front", "front"];
+export const sceneLayerOrder: SceneLayer[] = [
+  "back",
+  "mid-back",
+  "mid-front",
+  "front",
+];
 
 export interface CanvasRemotePlayer {
   id: string;

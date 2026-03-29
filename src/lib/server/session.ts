@@ -31,7 +31,9 @@ const createSessionStatement = db.prepare(
   "INSERT INTO sessions (id, user_id, expires_at) VALUES (?, ?, ?)",
 );
 const deleteSessionStatement = db.prepare("DELETE FROM sessions WHERE id = ?");
-const deleteExpiredSessionsStatement = db.prepare("DELETE FROM sessions WHERE expires_at <= ?");
+const deleteExpiredSessionsStatement = db.prepare(
+  "DELETE FROM sessions WHERE expires_at <= ?",
+);
 const selectSessionStatement = db.prepare(`
   SELECT
     sessions.id AS sessionId,
@@ -69,7 +71,9 @@ export function cleanupExpiredSessions() {
 
 export function createSession(userId: string) {
   const id = crypto.randomUUID();
-  const expiresAt = new Date(Date.now() + SESSION_TTL_SECONDS * 1000).toISOString();
+  const expiresAt = new Date(
+    Date.now() + SESSION_TTL_SECONDS * 1000,
+  ).toISOString();
   createSessionStatement.run(id, userId, expiresAt);
   return { id, expiresAt };
 }
@@ -108,7 +112,11 @@ export function getSessionIdFromCookies(cookies: CookieJar) {
   return cookies.get(SESSION_COOKIE_NAME)?.value ?? null;
 }
 
-export function setSessionCookie(cookies: CookieJar, sessionId: string, request: Request) {
+export function setSessionCookie(
+  cookies: CookieJar,
+  sessionId: string,
+  request: Request,
+) {
   cookies.set(SESSION_COOKIE_NAME, sessionId, {
     path: "/",
     httpOnly: true,
@@ -126,7 +134,11 @@ export function getOAuthStateFromCookies(cookies: CookieJar) {
   return cookies.get(OAUTH_STATE_COOKIE_NAME)?.value ?? null;
 }
 
-export function setOAuthStateCookie(cookies: CookieJar, state: string, request: Request) {
+export function setOAuthStateCookie(
+  cookies: CookieJar,
+  state: string,
+  request: Request,
+) {
   cookies.set(OAUTH_STATE_COOKIE_NAME, state, {
     path: "/",
     httpOnly: true,
@@ -161,7 +173,11 @@ export function getOAuthNextFromCookies(cookies: CookieJar) {
   return sanitizeNextPath(cookies.get(OAUTH_NEXT_COOKIE_NAME)?.value ?? null);
 }
 
-export function setOAuthNextCookie(cookies: CookieJar, nextPath: string, request: Request) {
+export function setOAuthNextCookie(
+  cookies: CookieJar,
+  nextPath: string,
+  request: Request,
+) {
   const safePath = sanitizeNextPath(nextPath);
   if (!safePath) {
     deleteCookie(cookies, OAUTH_NEXT_COOKIE_NAME, request);

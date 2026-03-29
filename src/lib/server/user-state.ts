@@ -16,7 +16,9 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 export function getUserStateSnapshot(userId: string): UserStateSnapshot {
-  const row = selectUserStateStatement.get(userId) as { stateJson: string | null } | undefined;
+  const row = selectUserStateStatement.get(userId) as
+    | { stateJson: string | null }
+    | undefined;
   let parsed: unknown = null;
 
   if (row?.stateJson) {
@@ -28,7 +30,9 @@ export function getUserStateSnapshot(userId: string): UserStateSnapshot {
   }
 
   const preferredStartPath =
-    isRecord(parsed) && typeof parsed.preferredStartPath === "string" && parsed.preferredStartPath.startsWith("/")
+    isRecord(parsed) &&
+    typeof parsed.preferredStartPath === "string" &&
+    parsed.preferredStartPath.startsWith("/")
       ? parsed.preferredStartPath
       : "/biblioteca-compartida";
 
@@ -38,7 +42,9 @@ export function getUserStateSnapshot(userId: string): UserStateSnapshot {
         ? parsed.onboardingCompleted
         : false,
     onboardingGoal:
-      isRecord(parsed) && typeof parsed.onboardingGoal === "string" ? parsed.onboardingGoal : "",
+      isRecord(parsed) && typeof parsed.onboardingGoal === "string"
+        ? parsed.onboardingGoal
+        : "",
     preferredStartPath,
     stateJson: parsed,
   };

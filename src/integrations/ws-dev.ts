@@ -43,9 +43,7 @@ export function wsDevIntegration(): AstroIntegration {
 
 async function loadAndAttach(
   viteServer: Parameters<
-    NonNullable<
-      AstroIntegration["hooks"]["astro:server:setup"]
-    >
+    NonNullable<AstroIntegration["hooks"]["astro:server:setup"]>
   >[0]["server"],
   httpServer: http.Server,
 ): Promise<void> {

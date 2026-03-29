@@ -234,11 +234,7 @@ function leaveCurrentRoom(userId: string): void {
   broadcastToRoom(roomCode, { type: "member-left", userId });
 }
 
-function handleJoinRoom(
-  userId: string,
-  roomCode: string,
-  ws: WebSocket,
-): void {
+function handleJoinRoom(userId: string, roomCode: string, ws: WebSocket): void {
   // Verify the user is a member of this room in the database
   const isMember = checkRoomMembership.get(roomCode, userId);
   if (!isMember) {
@@ -274,7 +270,11 @@ function handleJoinRoom(
   // Build the presence object for the joining user
   const joinerPresence = buildMemberPresence(userId);
   if (joinerPresence) {
-    broadcastToRoom(roomCode, { type: "member-joined", member: joinerPresence }, userId);
+    broadcastToRoom(
+      roomCode,
+      { type: "member-joined", member: joinerPresence },
+      userId,
+    );
   }
 
   // Send the full room state to the user who just joined
@@ -423,7 +423,10 @@ function attachWebSocketServer(server: http.Server): void {
   // Handle HTTP upgrade requests
   server.on("upgrade", (req, socket, head) => {
     // Only handle upgrades to /ws — let everything else through (e.g. Vite HMR)
-    const url = new URL(req.url ?? "/", `http://${req.headers.host ?? "localhost"}`);
+    const url = new URL(
+      req.url ?? "/",
+      `http://${req.headers.host ?? "localhost"}`,
+    );
     if (url.pathname !== "/ws") return;
 
     // Parse session cookie
@@ -452,49 +455,52 @@ function attachWebSocketServer(server: http.Server): void {
   });
 
   // Handle new connections
-  wss.on("connection", (rawWs: WebSocket, _req: http.IncomingMessage, userId: string) => {
-    const ws = rawWs as ExtendedWebSocket;
-    ws[ALIVE_KEY] = true;
+  wss.on(
+    "connection",
+    (rawWs: WebSocket, _req: http.IncomingMessage, userId: string) => {
+      const ws = rawWs as ExtendedWebSocket;
+      ws[ALIVE_KEY] = true;
 
-    // If the user already has an active connection, close the old one
-    const existingWs = connectedClients.get(userId);
-    if (existingWs) {
-      send(existingWs as WebSocket, {
-        type: "error",
-        message: "Connection replaced by a new session.",
+      // If the user already has an active connection, close the old one
+      const existingWs = connectedClients.get(userId);
+      if (existingWs) {
+        send(existingWs as WebSocket, {
+          type: "error",
+          message: "Connection replaced by a new session.",
+        });
+        existingWs.close(4000, "Replaced");
+        handleDisconnect(userId);
+      }
+
+      connectedClients.set(userId, ws);
+      setUserOnlineStatement.run(userId);
+
+      // Pre-load the user's profile into cache
+      loadAndCacheProfile(userId);
+
+      // Message handler
+      ws.on("message", (data) => {
+        const raw = typeof data === "string" ? data : data.toString("utf-8");
+        handleMessage(userId, ws, raw);
       });
-      existingWs.close(4000, "Replaced");
-      handleDisconnect(userId);
-    }
 
-    connectedClients.set(userId, ws);
-    setUserOnlineStatement.run(userId);
+      // Pong handler for heartbeat
+      ws.on("pong", () => {
+        (ws as ExtendedWebSocket)[ALIVE_KEY] = true;
+      });
 
-    // Pre-load the user's profile into cache
-    loadAndCacheProfile(userId);
+      // Cleanup on close
+      ws.on("close", () => {
+        handleDisconnect(userId);
+      });
 
-    // Message handler
-    ws.on("message", (data) => {
-      const raw = typeof data === "string" ? data : data.toString("utf-8");
-      handleMessage(userId, ws, raw);
-    });
-
-    // Pong handler for heartbeat
-    ws.on("pong", () => {
-      (ws as ExtendedWebSocket)[ALIVE_KEY] = true;
-    });
-
-    // Cleanup on close
-    ws.on("close", () => {
-      handleDisconnect(userId);
-    });
-
-    // Cleanup on error
-    ws.on("error", (err) => {
-      console.error(`[ws] Error for user ${userId}:`, err.message);
-      handleDisconnect(userId);
-    });
-  });
+      // Cleanup on error
+      ws.on("error", (err) => {
+        console.error(`[ws] Error for user ${userId}:`, err.message);
+        handleDisconnect(userId);
+      });
+    },
+  );
 
   console.log("[ws] WebSocket server initialized on path /ws");
 }

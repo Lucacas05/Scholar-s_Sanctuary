@@ -325,7 +325,6 @@ export function IdentityBadge({
           (achievement) => achievement.unlockedAt,
         )
       : [];
-  const highlightedAchievements = unlockedAchievements.slice(0, 3);
   const settingsLink =
     typeof window !== "undefined"
       ? `/ajustes?next=${encodeURIComponent(window.location.pathname + window.location.search)}`
@@ -349,7 +348,7 @@ export function IdentityBadge({
           </p>
           {sessionUser ? (
             <div className="mt-2 flex flex-wrap justify-end gap-2">
-              {highlightedAchievements.map((achievement) => (
+              {unlockedAchievements.map((achievement) => (
                 <span
                   key={achievement.id}
                   className="border border-outline-variant bg-surface-container-high px-2 py-1 font-headline text-[9px] font-bold uppercase tracking-[0.2em] text-secondary"

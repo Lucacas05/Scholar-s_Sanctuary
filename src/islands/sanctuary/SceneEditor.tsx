@@ -1,12 +1,42 @@
 import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
-import { Copy, Download, Eraser, Grid3x3, Import, Layers2, MousePointer2, Plus, Redo2, RotateCcw, Save, Undo2 } from "lucide-react";
-import { sceneAtlasCatalog, sceneAtlasEntries, type SceneAtlasId } from "@/lib/sanctuary/canvas/atlasCatalog";
+import {
+  Copy,
+  Download,
+  Eraser,
+  Grid3x3,
+  Import,
+  Layers2,
+  MousePointer2,
+  Plus,
+  Redo2,
+  RotateCcw,
+  Save,
+  Undo2,
+} from "lucide-react";
+import {
+  sceneAtlasCatalog,
+  sceneAtlasEntries,
+  type SceneAtlasId,
+} from "@/lib/sanctuary/canvas/atlasCatalog";
 import { drawPixelAvatar } from "@/lib/sanctuary/canvas/avatarPainter";
-import { drawSceneBackground, drawSceneProp } from "@/lib/sanctuary/canvas/renderer";
+import {
+  drawSceneBackground,
+  drawSceneProp,
+} from "@/lib/sanctuary/canvas/renderer";
 import { sceneMaps } from "@/lib/sanctuary/canvas/sceneMaps";
-import { sceneLayerOrder, type SceneKind, type SceneLayer, type SceneMap, type SceneProp, type TilePoint } from "@/lib/sanctuary/canvas/types";
-import { getCurrentProfileSummary, useSanctuaryStore } from "@/lib/sanctuary/store";
+import {
+  sceneLayerOrder,
+  type SceneKind,
+  type SceneLayer,
+  type SceneMap,
+  type SceneProp,
+  type TilePoint,
+} from "@/lib/sanctuary/canvas/types";
+import {
+  getCurrentProfileSummary,
+  useSanctuaryStore,
+} from "@/lib/sanctuary/store";
 
 declare global {
   interface Window {
@@ -17,7 +47,8 @@ declare global {
 
 const STORAGE_KEY = "scholars-sanctuary-scene-editor-v1";
 const ATLAS_VIEW_STORAGE_KEY = "scholars-sanctuary-scene-editor-atlas-view-v1";
-const ATLAS_PREVIEW_ZOOM_STORAGE_KEY = "scholars-sanctuary-scene-editor-atlas-preview-zoom-v1";
+const ATLAS_PREVIEW_ZOOM_STORAGE_KEY =
+  "scholars-sanctuary-scene-editor-atlas-preview-zoom-v1";
 const TILE_SNAP = 2;
 const MIN_ATLAS_PREVIEW_ZOOM = 0.1;
 const MIN_PROP_SCALE = 0.05;
@@ -26,7 +57,13 @@ const MAX_HISTORY_STEPS = 80;
 const ATLAS_PREVIEW_MODAL_WIDTH = 720;
 const ATLAS_PREVIEW_MODAL_HEIGHT = 460;
 
-type EditorTool = "select" | "prop" | "spawnLocal" | "seatLocal" | "wanderNodes" | "remoteSlots";
+type EditorTool =
+  | "select"
+  | "prop"
+  | "spawnLocal"
+  | "seatLocal"
+  | "wanderNodes"
+  | "remoteSlots";
 
 type Selection =
   | { kind: "prop"; id: string }
@@ -194,20 +231,32 @@ function buildCatalog(): PropCatalogItem[] {
     }
 
     seen.add(key);
-    const defaultRenderScale = "defaultRenderScale" in entry ? entry.defaultRenderScale : 1;
+    const defaultRenderScale =
+      "defaultRenderScale" in entry ? entry.defaultRenderScale : 1;
     catalog.push({
       key,
       label: `Nuevo recorte · ${entry.label}`,
       category: "atlas-sheet",
-        template: {
-          atlas: entry.id,
-          source: { x: 0, y: 0, w: entry.defaultSlice.w, h: entry.defaultSlice.h },
-          w: Math.max(MIN_PROP_SIZE, Math.round(entry.defaultSlice.w * defaultRenderScale)),
-          h: Math.max(MIN_PROP_SIZE, Math.round(entry.defaultSlice.h * defaultRenderScale)),
-          rotation: 0,
-          layer: "back",
+      template: {
+        atlas: entry.id,
+        source: {
+          x: 0,
+          y: 0,
+          w: entry.defaultSlice.w,
+          h: entry.defaultSlice.h,
         },
-      });
+        w: Math.max(
+          MIN_PROP_SIZE,
+          Math.round(entry.defaultSlice.w * defaultRenderScale),
+        ),
+        h: Math.max(
+          MIN_PROP_SIZE,
+          Math.round(entry.defaultSlice.h * defaultRenderScale),
+        ),
+        rotation: 0,
+        layer: "back",
+      },
+    });
   });
 
   return catalog.sort((left, right) => {
@@ -242,7 +291,12 @@ function isFormFieldTarget(target: EventTarget | null) {
   }
 
   const tag = target.tagName;
-  return tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || target.isContentEditable;
+  return (
+    tag === "INPUT" ||
+    tag === "TEXTAREA" ||
+    tag === "SELECT" ||
+    target.isContentEditable
+  );
 }
 
 function getPropScaleValue(prop: SceneProp) {
@@ -252,7 +306,10 @@ function getPropScaleValue(prop: SceneProp) {
 
   const scaleX = prop.w / Math.max(1, prop.source.w);
   const scaleY = prop.h / Math.max(1, prop.source.h);
-  return Math.max(MIN_PROP_SCALE, Number((((scaleX + scaleY) / 2) || 1).toFixed(2)));
+  return Math.max(
+    MIN_PROP_SCALE,
+    Number(((scaleX + scaleY) / 2 || 1).toFixed(2)),
+  );
 }
 
 function applyPropScale(prop: SceneProp, scale: number) {
@@ -287,11 +344,22 @@ function getRotatedBounds(prop: SceneProp) {
   };
 }
 
-function getAtlasViewportWindow(atlasImage: HTMLImageElement, zoom: number, previewWidth: number, previewHeight: number) {
+function getAtlasViewportWindow(
+  atlasImage: HTMLImageElement,
+  zoom: number,
+  previewWidth: number,
+  previewHeight: number,
+) {
   const safeZoom = clamp(zoom, MIN_ATLAS_PREVIEW_ZOOM, 6);
   return {
-    viewportW: Math.max(32, Math.min(atlasImage.width, Math.round((previewWidth - 16) / safeZoom))),
-    viewportH: Math.max(32, Math.min(atlasImage.height, Math.round((previewHeight - 16) / safeZoom))),
+    viewportW: Math.max(
+      32,
+      Math.min(atlasImage.width, Math.round((previewWidth - 16) / safeZoom)),
+    ),
+    viewportH: Math.max(
+      32,
+      Math.min(atlasImage.height, Math.round((previewHeight - 16) / safeZoom)),
+    ),
   };
 }
 
@@ -302,16 +370,35 @@ function getCenteredAtlasViewport(
   previewWidth = ATLAS_PREVIEW_MODAL_WIDTH,
   previewHeight = ATLAS_PREVIEW_MODAL_HEIGHT,
 ) {
-  const { viewportW, viewportH } = getAtlasViewportWindow(atlasImage, zoom, previewWidth, previewHeight);
+  const { viewportW, viewportH } = getAtlasViewportWindow(
+    atlasImage,
+    zoom,
+    previewWidth,
+    previewHeight,
+  );
   const centerX = source.x + source.w / 2;
   const centerY = source.y + source.h / 2;
   return {
-    x: clamp(Math.round(centerX - viewportW / 2), 0, Math.max(0, atlasImage.width - viewportW)),
-    y: clamp(Math.round(centerY - viewportH / 2), 0, Math.max(0, atlasImage.height - viewportH)),
+    x: clamp(
+      Math.round(centerX - viewportW / 2),
+      0,
+      Math.max(0, atlasImage.width - viewportW),
+    ),
+    y: clamp(
+      Math.round(centerY - viewportH / 2),
+      0,
+      Math.max(0, atlasImage.height - viewportH),
+    ),
   };
 }
 
-function clampPropPosition(prop: SceneProp, x: number, y: number, maxWidth: number, maxHeight: number) {
+function clampPropPosition(
+  prop: SceneProp,
+  x: number,
+  y: number,
+  maxWidth: number,
+  maxHeight: number,
+) {
   const bounds = getRotatedBounds(prop);
   const minX = Math.ceil(bounds.width / 2 - prop.w / 2);
   const minY = Math.ceil(bounds.height / 2 - prop.h / 2);
@@ -323,19 +410,40 @@ function clampPropPosition(prop: SceneProp, x: number, y: number, maxWidth: numb
   };
 }
 
-function buildPreviewProp(prop: Omit<SceneProp, "id">, previewSize: number): SceneProp {
+function buildPreviewProp(
+  prop: Omit<SceneProp, "id">,
+  previewSize: number,
+): SceneProp {
   const padding = 8;
-  const bounds = getRotatedBounds({ ...prop, id: "preview-bounds", x: 0, y: 0 });
-  const scale = Math.min((previewSize - padding * 2) / bounds.width, (previewSize - padding * 2) / bounds.height, 1.75);
+  const bounds = getRotatedBounds({
+    ...prop,
+    id: "preview-bounds",
+    x: 0,
+    y: 0,
+  });
+  const scale = Math.min(
+    (previewSize - padding * 2) / bounds.width,
+    (previewSize - padding * 2) / bounds.height,
+    1.75,
+  );
   const width = Math.max(8, Math.round(prop.w * scale));
   const height = Math.max(8, Math.round(prop.h * scale));
-  const scaledBounds = getRotatedBounds({ ...prop, id: "preview-bounds", x: 0, y: 0, w: width, h: height });
+  const scaledBounds = getRotatedBounds({
+    ...prop,
+    id: "preview-bounds",
+    x: 0,
+    y: 0,
+    w: width,
+    h: height,
+  });
 
   return {
     ...prop,
     id: "preview",
     x: Math.round((previewSize - width) / 2 - (scaledBounds.width - width) / 2),
-    y: Math.round((previewSize - height) / 2 - (scaledBounds.height - height) / 2),
+    y: Math.round(
+      (previewSize - height) / 2 - (scaledBounds.height - height) / 2,
+    ),
     w: width,
     h: height,
   };
@@ -385,30 +493,57 @@ function normalizeSceneMap(value: unknown, sceneKind: SceneKind): SceneMap {
         .map((entry, index) => {
           const prop = entry as Record<string, unknown>;
           return {
-            id: typeof prop.id === "string" ? prop.id : createPropId(`prop-${index}`),
+            id:
+              typeof prop.id === "string"
+                ? prop.id
+                : createPropId(`prop-${index}`),
             atlas: typeof prop.atlas === "string" ? prop.atlas : undefined,
             source:
               prop.source && typeof prop.source === "object"
                 ? {
-                    x: typeof (prop.source as Record<string, unknown>).x === "number" ? (prop.source as Record<string, unknown>).x as number : 0,
-                    y: typeof (prop.source as Record<string, unknown>).y === "number" ? (prop.source as Record<string, unknown>).y as number : 0,
-                    w: typeof (prop.source as Record<string, unknown>).w === "number" ? (prop.source as Record<string, unknown>).w as number : 0,
-                    h: typeof (prop.source as Record<string, unknown>).h === "number" ? (prop.source as Record<string, unknown>).h as number : 0,
+                    x:
+                      typeof (prop.source as Record<string, unknown>).x ===
+                      "number"
+                        ? ((prop.source as Record<string, unknown>).x as number)
+                        : 0,
+                    y:
+                      typeof (prop.source as Record<string, unknown>).y ===
+                      "number"
+                        ? ((prop.source as Record<string, unknown>).y as number)
+                        : 0,
+                    w:
+                      typeof (prop.source as Record<string, unknown>).w ===
+                      "number"
+                        ? ((prop.source as Record<string, unknown>).w as number)
+                        : 0,
+                    h:
+                      typeof (prop.source as Record<string, unknown>).h ===
+                      "number"
+                        ? ((prop.source as Record<string, unknown>).h as number)
+                        : 0,
                   }
                 : undefined,
             x: typeof prop.x === "number" ? prop.x : 0,
             y: typeof prop.y === "number" ? prop.y : 0,
             w: typeof prop.w === "number" ? prop.w : 32,
             h: typeof prop.h === "number" ? prop.h : 32,
-            rotation: typeof prop.rotation === "number" ? normalizeRotation(prop.rotation) : 0,
+            rotation:
+              typeof prop.rotation === "number"
+                ? normalizeRotation(prop.rotation)
+                : 0,
             layer:
-              prop.layer === "mid-back" || prop.layer === "mid-front" || prop.layer === "front"
+              prop.layer === "mid-back" ||
+              prop.layer === "mid-front" ||
+              prop.layer === "front"
                 ? prop.layer
                 : "back",
             alpha: typeof prop.alpha === "number" ? prop.alpha : undefined,
             tint: typeof prop.tint === "string" ? prop.tint : undefined,
             shape:
-              prop.shape === "tree" || prop.shape === "column" || prop.shape === "bench" || prop.shape === "path"
+              prop.shape === "tree" ||
+              prop.shape === "column" ||
+              prop.shape === "bench" ||
+              prop.shape === "path"
                 ? prop.shape
                 : undefined,
           } satisfies SceneProp;
@@ -418,52 +553,85 @@ function normalizeSceneMap(value: unknown, sceneKind: SceneKind): SceneMap {
   const normalizedSeatLocal =
     candidate.seatLocal === null
       ? undefined
-      : normalizeTilePoint(candidate.seatLocal, fallback.seatLocal ?? fallback.spawnLocal);
+      : normalizeTilePoint(
+          candidate.seatLocal,
+          fallback.seatLocal ?? fallback.spawnLocal,
+        );
   const normalizedSeatSlots = Array.isArray(candidate.seatSlots)
-    ? candidate.seatSlots.map((point) => normalizeTilePoint(point, fallback.seatLocal ?? fallback.spawnLocal))
+    ? candidate.seatSlots.map((point) =>
+        normalizeTilePoint(point, fallback.seatLocal ?? fallback.spawnLocal),
+      )
     : candidate.seatLocal
-      ? [normalizedSeatLocal ?? normalizeTilePoint(candidate.seatLocal, fallback.seatLocal ?? fallback.spawnLocal)]
+      ? [
+          normalizedSeatLocal ??
+            normalizeTilePoint(
+              candidate.seatLocal,
+              fallback.seatLocal ?? fallback.spawnLocal,
+            ),
+        ]
       : fallback.seatSlots;
   const primarySeat = normalizedSeatSlots?.[0] ?? normalizedSeatLocal;
 
   return {
     name: sceneKind,
-    width: typeof candidate.width === "number" ? candidate.width : fallback.width,
-    height: typeof candidate.height === "number" ? candidate.height : fallback.height,
-    tileSize: typeof candidate.tileSize === "number" ? candidate.tileSize : fallback.tileSize,
+    width:
+      typeof candidate.width === "number" ? candidate.width : fallback.width,
+    height:
+      typeof candidate.height === "number" ? candidate.height : fallback.height,
+    tileSize:
+      typeof candidate.tileSize === "number"
+        ? candidate.tileSize
+        : fallback.tileSize,
     spawnLocal: normalizeTilePoint(candidate.spawnLocal, fallback.spawnLocal),
     seatLocal: primarySeat,
     seatSlots: normalizedSeatSlots,
     wanderNodes: Array.isArray(candidate.wanderNodes)
-      ? candidate.wanderNodes.map((point) => normalizeTilePoint(point, fallback.spawnLocal))
+      ? candidate.wanderNodes.map((point) =>
+          normalizeTilePoint(point, fallback.spawnLocal),
+        )
       : fallback.wanderNodes,
     remoteSlots: Array.isArray(candidate.remoteSlots)
-      ? candidate.remoteSlots.map((point) => normalizeTilePoint(point, fallback.spawnLocal))
+      ? candidate.remoteSlots.map((point) =>
+          normalizeTilePoint(point, fallback.spawnLocal),
+        )
       : fallback.remoteSlots,
     props,
     theme: {
       skyTop:
-        candidate.theme && typeof candidate.theme === "object" && typeof (candidate.theme as Record<string, unknown>).skyTop === "string"
+        candidate.theme &&
+        typeof candidate.theme === "object" &&
+        typeof (candidate.theme as Record<string, unknown>).skyTop === "string"
           ? ((candidate.theme as Record<string, unknown>).skyTop as string)
           : fallback.theme.skyTop,
       skyBottom:
-        candidate.theme && typeof candidate.theme === "object" && typeof (candidate.theme as Record<string, unknown>).skyBottom === "string"
+        candidate.theme &&
+        typeof candidate.theme === "object" &&
+        typeof (candidate.theme as Record<string, unknown>).skyBottom ===
+          "string"
           ? ((candidate.theme as Record<string, unknown>).skyBottom as string)
           : fallback.theme.skyBottom,
       floorA:
-        candidate.theme && typeof candidate.theme === "object" && typeof (candidate.theme as Record<string, unknown>).floorA === "string"
+        candidate.theme &&
+        typeof candidate.theme === "object" &&
+        typeof (candidate.theme as Record<string, unknown>).floorA === "string"
           ? ((candidate.theme as Record<string, unknown>).floorA as string)
           : fallback.theme.floorA,
       floorB:
-        candidate.theme && typeof candidate.theme === "object" && typeof (candidate.theme as Record<string, unknown>).floorB === "string"
+        candidate.theme &&
+        typeof candidate.theme === "object" &&
+        typeof (candidate.theme as Record<string, unknown>).floorB === "string"
           ? ((candidate.theme as Record<string, unknown>).floorB as string)
           : fallback.theme.floorB,
       border:
-        candidate.theme && typeof candidate.theme === "object" && typeof (candidate.theme as Record<string, unknown>).border === "string"
+        candidate.theme &&
+        typeof candidate.theme === "object" &&
+        typeof (candidate.theme as Record<string, unknown>).border === "string"
           ? ((candidate.theme as Record<string, unknown>).border as string)
           : fallback.theme.border,
       glow:
-        candidate.theme && typeof candidate.theme === "object" && typeof (candidate.theme as Record<string, unknown>).glow === "string"
+        candidate.theme &&
+        typeof candidate.theme === "object" &&
+        typeof (candidate.theme as Record<string, unknown>).glow === "string"
           ? ((candidate.theme as Record<string, unknown>).glow as string)
           : fallback.theme.glow,
     },
@@ -485,14 +653,18 @@ function loadDrafts(): EditorDrafts {
   try {
     const parsed = JSON.parse(raw) as Partial<Record<SceneKind, unknown>>;
     return {
-      "solo-library": parsed["solo-library"] ? normalizeSceneMap(parsed["solo-library"], "solo-library") : defaults["solo-library"],
+      "solo-library": parsed["solo-library"]
+        ? normalizeSceneMap(parsed["solo-library"], "solo-library")
+        : defaults["solo-library"],
       "shared-library": parsed["shared-library"]
         ? normalizeSceneMap(parsed["shared-library"], "shared-library")
         : defaults["shared-library"],
       "public-library": parsed["public-library"]
         ? normalizeSceneMap(parsed["public-library"], "public-library")
         : defaults["public-library"],
-      garden: parsed.garden ? normalizeSceneMap(parsed.garden, "garden") : defaults.garden,
+      garden: parsed.garden
+        ? normalizeSceneMap(parsed.garden, "garden")
+        : defaults.garden,
     };
   } catch {
     return defaults;
@@ -564,10 +736,15 @@ function sanitizeSelection(scene: SceneMap, selection: Selection): Selection {
 function findSelectionAt(scene: SceneMap, x: number, y: number): Selection {
   const markerRadius = 8;
 
-  const checkMarker = (point: TilePoint, selection: Exclude<Selection, null>) => {
+  const checkMarker = (
+    point: TilePoint,
+    selection: Exclude<Selection, null>,
+  ) => {
     const markerX = point.x * scene.tileSize;
     const markerY = point.y * scene.tileSize;
-    return Math.hypot(markerX - x, markerY - y) <= markerRadius ? selection : null;
+    return Math.hypot(markerX - x, markerY - y) <= markerRadius
+      ? selection
+      : null;
   };
 
   const spawnHit = checkMarker(scene.spawnLocal, { kind: "spawnLocal" });
@@ -577,35 +754,48 @@ function findSelectionAt(scene: SceneMap, x: number, y: number): Selection {
 
   const seatPoints = getSeatPoints(scene);
   for (let index = 0; index < seatPoints.length; index += 1) {
-    const seatHit = checkMarker(seatPoints[index], { kind: "seatLocal", index });
+    const seatHit = checkMarker(seatPoints[index], {
+      kind: "seatLocal",
+      index,
+    });
     if (seatHit) {
       return seatHit;
     }
   }
 
   for (let index = 0; index < scene.wanderNodes.length; index += 1) {
-    const hit = checkMarker(scene.wanderNodes[index], { kind: "wanderNodes", index });
+    const hit = checkMarker(scene.wanderNodes[index], {
+      kind: "wanderNodes",
+      index,
+    });
     if (hit) {
       return hit;
     }
   }
 
   for (let index = 0; index < scene.remoteSlots.length; index += 1) {
-    const hit = checkMarker(scene.remoteSlots[index], { kind: "remoteSlots", index });
+    const hit = checkMarker(scene.remoteSlots[index], {
+      kind: "remoteSlots",
+      index,
+    });
     if (hit) {
       return hit;
     }
   }
 
-  const orderedProps = [...scene.props].sort((left, right) => getLayerOrder(left.layer) - getLayerOrder(right.layer));
+  const orderedProps = [...scene.props].sort(
+    (left, right) => getLayerOrder(left.layer) - getLayerOrder(right.layer),
+  );
 
   for (let index = orderedProps.length - 1; index >= 0; index -= 1) {
     const prop = orderedProps[index];
     const centerX = prop.x + prop.w / 2;
     const centerY = prop.y + prop.h / 2;
     const radians = -getPropRotationRadians(prop);
-    const localX = (x - centerX) * Math.cos(radians) - (y - centerY) * Math.sin(radians);
-    const localY = (x - centerX) * Math.sin(radians) + (y - centerY) * Math.cos(radians);
+    const localX =
+      (x - centerX) * Math.cos(radians) - (y - centerY) * Math.sin(radians);
+    const localY =
+      (x - centerX) * Math.sin(radians) + (y - centerY) * Math.cos(radians);
     if (Math.abs(localX) <= prop.w / 2 && Math.abs(localY) <= prop.h / 2) {
       return { kind: "prop", id: prop.id };
     }
@@ -667,7 +857,12 @@ function getAtlasMeta(atlasId?: string) {
   return sceneAtlasCatalog[atlasId as SceneAtlasId] ?? null;
 }
 
-function PropPreviewCanvas({ prop, atlasImages, size = 72, className = "" }: PropPreviewCanvasProps) {
+function PropPreviewCanvas({
+  prop,
+  atlasImages,
+  size = 72,
+  className = "",
+}: PropPreviewCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
@@ -708,7 +903,11 @@ function PropPreviewCanvas({ prop, atlasImages, size = 72, className = "" }: Pro
     <canvas
       ref={canvasRef}
       className={`block border border-outline-variant bg-surface-variant ${className}`}
-      style={{ imageRendering: "pixelated", width: `${size}px`, height: `${size}px` }}
+      style={{
+        imageRendering: "pixelated",
+        width: `${size}px`,
+        height: `${size}px`,
+      }}
     />
   );
 }
@@ -748,12 +947,25 @@ function AtlasSheetPreview({
       ctx.fillText("...", Math.floor(size / 2) - 8, Math.floor(size / 2));
     } else {
       const padding = 6;
-      const scale = Math.min((size - padding * 2) / atlasImage.width, (size - padding * 2) / atlasImage.height);
+      const scale = Math.min(
+        (size - padding * 2) / atlasImage.width,
+        (size - padding * 2) / atlasImage.height,
+      );
       const drawW = Math.max(8, Math.floor(atlasImage.width * scale));
       const drawH = Math.max(8, Math.floor(atlasImage.height * scale));
       const drawX = Math.floor((size - drawW) / 2);
       const drawY = Math.floor((size - drawH) / 2);
-      ctx.drawImage(atlasImage, 0, 0, atlasImage.width, atlasImage.height, drawX, drawY, drawW, drawH);
+      ctx.drawImage(
+        atlasImage,
+        0,
+        0,
+        atlasImage.width,
+        atlasImage.height,
+        drawX,
+        drawY,
+        drawW,
+        drawH,
+      );
     }
 
     ctx.strokeStyle = "rgba(255,255,255,0.08)";
@@ -764,7 +976,11 @@ function AtlasSheetPreview({
     <canvas
       ref={canvasRef}
       className={`block border border-outline-variant bg-surface-variant ${className}`}
-      style={{ imageRendering: "pixelated", width: `${size}px`, height: `${size}px` }}
+      style={{
+        imageRendering: "pixelated",
+        width: `${size}px`,
+        height: `${size}px`,
+      }}
     />
   );
 }
@@ -837,16 +1053,23 @@ function AtlasSourcePreview({
       return;
     }
 
-    const { viewportW, viewportH } = getAtlasViewportWindow(atlasImage, zoom, width, height);
+    const { viewportW, viewportH } = getAtlasViewportWindow(
+      atlasImage,
+      zoom,
+      width,
+      height,
+    );
     const maxX = Math.max(0, atlasImage.width - viewportW);
     const maxY = Math.max(0, atlasImage.height - viewportH);
     const originX = clamp(
-      viewportOrigin?.x ?? getCenteredAtlasViewport(source, atlasImage, zoom, width, height).x,
+      viewportOrigin?.x ??
+        getCenteredAtlasViewport(source, atlasImage, zoom, width, height).x,
       0,
       maxX,
     );
     const originY = clamp(
-      viewportOrigin?.y ?? getCenteredAtlasViewport(source, atlasImage, zoom, width, height).y,
+      viewportOrigin?.y ??
+        getCenteredAtlasViewport(source, atlasImage, zoom, width, height).y,
       0,
       maxY,
     );
@@ -856,7 +1079,17 @@ function AtlasSourcePreview({
     const drawX = Math.floor((width - drawW) / 2);
     const drawY = Math.floor((height - drawH) / 2);
 
-    ctx.drawImage(atlasImage, originX, originY, viewportW, viewportH, drawX, drawY, drawW, drawH);
+    ctx.drawImage(
+      atlasImage,
+      originX,
+      originY,
+      viewportW,
+      viewportH,
+      drawX,
+      drawY,
+      drawW,
+      drawH,
+    );
 
     ctx.strokeStyle = "#ffb961";
     ctx.lineWidth = 2;
@@ -871,7 +1104,11 @@ function AtlasSourcePreview({
     ctx.fillRect(8, height - 26, width - 16, 18);
     ctx.fillStyle = "#ede0dc";
     ctx.font = "bold 10px monospace";
-    ctx.fillText(`x:${source.x} y:${source.y} w:${source.w} h:${source.h}`, 14, height - 14);
+    ctx.fillText(
+      `x:${source.x} y:${source.y} w:${source.w} h:${source.h}`,
+      14,
+      height - 14,
+    );
 
     renderStateRef.current = {
       scale,
@@ -906,7 +1143,12 @@ function AtlasSourcePreview({
   }
 
   function handlePointerMove(event: React.PointerEvent<HTMLCanvasElement>) {
-    if (!atlasImage || !dragStateRef.current || dragStateRef.current.pointerId !== event.pointerId || !onViewportChange) {
+    if (
+      !atlasImage ||
+      !dragStateRef.current ||
+      dragStateRef.current.pointerId !== event.pointerId ||
+      !onViewportChange
+    ) {
       return;
     }
 
@@ -950,18 +1192,30 @@ function AtlasSourcePreview({
       return;
     }
 
-    const atlasPointX = state.originX + ((canvasX - state.drawX) / state.drawW) * state.viewportW;
-    const atlasPointY = state.originY + ((canvasY - state.drawY) / state.drawH) * state.viewportH;
+    const atlasPointX =
+      state.originX + ((canvasX - state.drawX) / state.drawW) * state.viewportW;
+    const atlasPointY =
+      state.originY + ((canvasY - state.drawY) / state.drawH) * state.viewportH;
     const nextSource = {
       ...source,
-      x: clamp(Math.round(atlasPointX - source.w / 2), 0, Math.max(0, atlasImage.width - source.w)),
-      y: clamp(Math.round(atlasPointY - source.h / 2), 0, Math.max(0, atlasImage.height - source.h)),
+      x: clamp(
+        Math.round(atlasPointX - source.w / 2),
+        0,
+        Math.max(0, atlasImage.width - source.w),
+      ),
+      y: clamp(
+        Math.round(atlasPointY - source.h / 2),
+        0,
+        Math.max(0, atlasImage.height - source.h),
+      ),
     };
 
     onSourceChange(nextSource);
 
     if (onViewportChange) {
-      onViewportChange(getCenteredAtlasViewport(nextSource, atlasImage, zoom, width, height));
+      onViewportChange(
+        getCenteredAtlasViewport(nextSource, atlasImage, zoom, width, height),
+      );
     }
   }
 
@@ -987,7 +1241,9 @@ export function SceneEditor() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const viewportShellRef = useRef<HTMLDivElement | null>(null);
   const dragRef = useRef<DragState | null>(null);
-  const lastNonEmptySelectionRef = useRef<Exclude<Selection, null> | null>(null);
+  const lastNonEmptySelectionRef = useRef<Exclude<Selection, null> | null>(
+    null,
+  );
   const copyButtonRef = useRef<HTMLButtonElement | null>(null);
   const copyButtonFillRef = useRef<HTMLSpanElement | null>(null);
   const copyButtonLabelRef = useRef<HTMLSpanElement | null>(null);
@@ -997,13 +1253,21 @@ export function SceneEditor() {
   const draftsRef = useRef<EditorDrafts>(loadDrafts());
   const dragHistorySnapshotRef = useRef<EditorDrafts | null>(null);
   const dragHistoryWasRecordedRef = useRef(false);
-  const [atlasImages, setAtlasImages] = useState<Partial<Record<string, HTMLImageElement>>>({});
-  const [atlasViewPositions, setAtlasViewPositions] = useState<Record<string, AtlasViewportOrigin>>(() => loadAtlasViewPositions());
-  const [atlasPreviewZooms, setAtlasPreviewZooms] = useState<Record<string, number>>(() => loadAtlasPreviewZooms());
+  const [atlasImages, setAtlasImages] = useState<
+    Partial<Record<string, HTMLImageElement>>
+  >({});
+  const [atlasViewPositions, setAtlasViewPositions] = useState<
+    Record<string, AtlasViewportOrigin>
+  >(() => loadAtlasViewPositions());
+  const [atlasPreviewZooms, setAtlasPreviewZooms] = useState<
+    Record<string, number>
+  >(() => loadAtlasPreviewZooms());
   const [drafts, setDrafts] = useState<EditorDrafts>(() => draftsRef.current);
   const [sceneKind, setSceneKind] = useState<SceneKind>("solo-library");
   const [tool, setTool] = useState<EditorTool>("select");
-  const [selectedCatalogKey, setSelectedCatalogKey] = useState<string>(catalog[0]?.key ?? "");
+  const [selectedCatalogKey, setSelectedCatalogKey] = useState<string>(
+    catalog[0]?.key ?? "",
+  );
   const [selection, setSelection] = useState<Selection>(null);
   const [zoom, setZoom] = useState(3);
   const [displayZoom, setDisplayZoom] = useState(3);
@@ -1014,12 +1278,22 @@ export function SceneEditor() {
   const [isAtlasInspectorOpen, setIsAtlasInspectorOpen] = useState(false);
   const [historyState, setHistoryState] = useState({ undo: 0, redo: 0 });
   const scene = drafts[sceneKind];
-  const selectedProp = selection?.kind === "prop" ? findProp(scene, selection.id) : null;
-  const selectedCatalog = catalog.find((item) => item.key === selectedCatalogKey) ?? null;
-  const selectedPropAtlasViewKey = selectedProp ? `${sceneKind}:${selectedProp.id}` : null;
-  const selectedPropAtlasView = selectedPropAtlasViewKey ? atlasViewPositions[selectedPropAtlasViewKey] ?? null : null;
-  const selectedPropAtlasPreviewZoom = selectedPropAtlasViewKey ? atlasPreviewZooms[selectedPropAtlasViewKey] ?? 1 : 1;
-  const selectedPropAtlasImage = selectedProp?.atlas ? atlasImages[selectedProp.atlas] ?? null : null;
+  const selectedProp =
+    selection?.kind === "prop" ? findProp(scene, selection.id) : null;
+  const selectedCatalog =
+    catalog.find((item) => item.key === selectedCatalogKey) ?? null;
+  const selectedPropAtlasViewKey = selectedProp
+    ? `${sceneKind}:${selectedProp.id}`
+    : null;
+  const selectedPropAtlasView = selectedPropAtlasViewKey
+    ? (atlasViewPositions[selectedPropAtlasViewKey] ?? null)
+    : null;
+  const selectedPropAtlasPreviewZoom = selectedPropAtlasViewKey
+    ? (atlasPreviewZooms[selectedPropAtlasViewKey] ?? 1)
+    : 1;
+  const selectedPropAtlasImage = selectedProp?.atlas
+    ? (atlasImages[selectedProp.atlas] ?? null)
+    : null;
 
   useEffect(() => {
     draftsRef.current = drafts;
@@ -1064,19 +1338,33 @@ export function SceneEditor() {
     if (typeof window === "undefined") {
       return;
     }
-    window.localStorage.setItem(ATLAS_VIEW_STORAGE_KEY, JSON.stringify(atlasViewPositions));
+    window.localStorage.setItem(
+      ATLAS_VIEW_STORAGE_KEY,
+      JSON.stringify(atlasViewPositions),
+    );
   }, [atlasViewPositions]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
       return;
     }
-    window.localStorage.setItem(ATLAS_PREVIEW_ZOOM_STORAGE_KEY, JSON.stringify(atlasPreviewZooms));
+    window.localStorage.setItem(
+      ATLAS_PREVIEW_ZOOM_STORAGE_KEY,
+      JSON.stringify(atlasPreviewZooms),
+    );
   }, [atlasPreviewZooms]);
 
   useEffect(() => {
     renderCanvas();
-  }, [drafts, sceneKind, selection, showGrid, displayZoom, currentAvatar, atlasImages]);
+  }, [
+    drafts,
+    sceneKind,
+    selection,
+    showGrid,
+    displayZoom,
+    currentAvatar,
+    atlasImages,
+  ]);
 
   useEffect(() => {
     const shell = viewportShellRef.current;
@@ -1128,7 +1416,8 @@ export function SceneEditor() {
     window.render_game_to_text = () =>
       JSON.stringify({
         mode: "editor-escenas",
-        coordinateSystem: "pixeles lógicos en canvas; origen arriba-izquierda, x hacia la derecha, y hacia abajo",
+        coordinateSystem:
+          "pixeles lógicos en canvas; origen arriba-izquierda, x hacia la derecha, y hacia abajo",
         scene: scene.name,
         tool,
         selection,
@@ -1142,7 +1431,8 @@ export function SceneEditor() {
         history: historyState,
         atlasPreviewZoom: selectedPropAtlasPreviewZoom,
         atlasView:
-          selectedPropAtlasViewKey && atlasViewPositions[selectedPropAtlasViewKey]
+          selectedPropAtlasViewKey &&
+          atlasViewPositions[selectedPropAtlasViewKey]
             ? atlasViewPositions[selectedPropAtlasViewKey]
             : null,
         selectedProp:
@@ -1158,7 +1448,14 @@ export function SceneEditor() {
                 scale: getPropScaleValue(selectedProp),
               }
             : selectedProp
-              ? { id: selectedProp.id, layer: selectedProp.layer, w: selectedProp.w, h: selectedProp.h, rotation: normalizeRotation(selectedProp.rotation), scale: 1 }
+              ? {
+                  id: selectedProp.id,
+                  layer: selectedProp.layer,
+                  w: selectedProp.w,
+                  h: selectedProp.h,
+                  rotation: normalizeRotation(selectedProp.rotation),
+                  scale: 1,
+                }
               : null,
       });
     window.advanceTime = () => undefined;
@@ -1167,7 +1464,15 @@ export function SceneEditor() {
       delete window.render_game_to_text;
       delete window.advanceTime;
     };
-  }, [scene, tool, selection, atlasViewPositions, selectedPropAtlasViewKey, isAtlasInspectorOpen, selectedPropAtlasPreviewZoom]);
+  }, [
+    scene,
+    tool,
+    selection,
+    atlasViewPositions,
+    selectedPropAtlasViewKey,
+    isAtlasInspectorOpen,
+    selectedPropAtlasPreviewZoom,
+  ]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -1212,9 +1517,16 @@ export function SceneEditor() {
         }
       }
 
-      if (isAtlasInspectorOpen && (event.code === "Space" || event.key === " ")) {
+      if (
+        isAtlasInspectorOpen &&
+        (event.code === "Space" || event.key === " ")
+      ) {
         const activeSource = selectedProp?.source;
-        if (activeSource && selectedPropAtlasImage && selectedPropAtlasViewKey) {
+        if (
+          activeSource &&
+          selectedPropAtlasImage &&
+          selectedPropAtlasViewKey
+        ) {
           event.preventDefault();
           setAtlasViewPositions((current) => ({
             ...current,
@@ -1243,7 +1555,15 @@ export function SceneEditor() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isAtlasInspectorOpen, selection, scene, selectedProp, selectedPropAtlasImage, selectedPropAtlasPreviewZoom, selectedPropAtlasViewKey]);
+  }, [
+    isAtlasInspectorOpen,
+    selection,
+    scene,
+    selectedProp,
+    selectedPropAtlasImage,
+    selectedPropAtlasPreviewZoom,
+    selectedPropAtlasViewKey,
+  ]);
 
   function animateCopyButton(success: boolean) {
     const button = copyButtonRef.current;
@@ -1269,7 +1589,10 @@ export function SceneEditor() {
       defaults: { ease: "power2.out" },
       onComplete: () => {
         setCopyButtonText("Copiar JSON");
-        gsap.set(fill, { scaleX: 0, clearProps: "transformOrigin,backgroundColor" });
+        gsap.set(fill, {
+          scaleX: 0,
+          clearProps: "transformOrigin,backgroundColor",
+        });
         gsap.set(label, { clearProps: "color" });
       },
     });
@@ -1308,7 +1631,9 @@ export function SceneEditor() {
     drawSceneBackground(ctx, scene);
     scene.props
       .filter((prop) => prop.layer === "back" || prop.layer === "mid-back")
-      .sort((left, right) => getLayerOrder(left.layer) - getLayerOrder(right.layer))
+      .sort(
+        (left, right) => getLayerOrder(left.layer) - getLayerOrder(right.layer),
+      )
       .forEach((prop) => drawSceneProp(ctx, prop, atlasImages));
 
     if (showGrid) {
@@ -1328,18 +1653,48 @@ export function SceneEditor() {
 
     scene.props
       .filter((prop) => prop.layer === "mid-front" || prop.layer === "front")
-      .sort((left, right) => getLayerOrder(left.layer) - getLayerOrder(right.layer))
+      .sort(
+        (left, right) => getLayerOrder(left.layer) - getLayerOrder(right.layer),
+      )
       .forEach((prop) => drawSceneProp(ctx, prop, atlasImages));
 
-    drawMarker(ctx, scene, scene.spawnLocal, "SP", "#ffb961", selection?.kind === "spawnLocal");
+    drawMarker(
+      ctx,
+      scene,
+      scene.spawnLocal,
+      "SP",
+      "#ffb961",
+      selection?.kind === "spawnLocal",
+    );
     getSeatPoints(scene).forEach((point, index) => {
-      drawMarker(ctx, scene, point, `AS${index + 1}`, "#e7bdb1", selection?.kind === "seatLocal" && selection.index === index);
+      drawMarker(
+        ctx,
+        scene,
+        point,
+        `AS${index + 1}`,
+        "#e7bdb1",
+        selection?.kind === "seatLocal" && selection.index === index,
+      );
     });
     scene.wanderNodes.forEach((point, index) => {
-      drawMarker(ctx, scene, point, `W${index + 1}`, "#add0a8", selection?.kind === "wanderNodes" && selection.index === index);
+      drawMarker(
+        ctx,
+        scene,
+        point,
+        `W${index + 1}`,
+        "#add0a8",
+        selection?.kind === "wanderNodes" && selection.index === index,
+      );
     });
     scene.remoteSlots.forEach((point, index) => {
-      drawMarker(ctx, scene, point, `R${index + 1}`, "#7bd2ff", selection?.kind === "remoteSlots" && selection.index === index);
+      drawMarker(
+        ctx,
+        scene,
+        point,
+        `R${index + 1}`,
+        "#7bd2ff",
+        selection?.kind === "remoteSlots" && selection.index === index,
+      );
     });
 
     if (selection?.kind === "prop") {
@@ -1351,7 +1706,12 @@ export function SceneEditor() {
         ctx.setLineDash([4, 3]);
         ctx.translate(prop.x + prop.w / 2, prop.y + prop.h / 2);
         ctx.rotate(getPropRotationRadians(prop));
-        ctx.strokeRect(-prop.w / 2 + 1, -prop.h / 2 + 1, prop.w - 2, prop.h - 2);
+        ctx.strokeRect(
+          -prop.w / 2 + 1,
+          -prop.h / 2 + 1,
+          prop.w - 2,
+          prop.h - 2,
+        );
         ctx.restore();
       }
     }
@@ -1367,14 +1727,20 @@ export function SceneEditor() {
   function pushUndoSnapshot(snapshot: EditorDrafts) {
     undoStackRef.current.push(cloneDrafts(snapshot));
     if (undoStackRef.current.length > MAX_HISTORY_STEPS) {
-      undoStackRef.current.splice(0, undoStackRef.current.length - MAX_HISTORY_STEPS);
+      undoStackRef.current.splice(
+        0,
+        undoStackRef.current.length - MAX_HISTORY_STEPS,
+      );
     }
     redoStackRef.current = [];
     syncHistoryState();
   }
 
   function applyDrafts(nextDrafts: EditorDrafts, nextSelection?: Selection) {
-    const sanitizedSelection = sanitizeSelection(nextDrafts[sceneKind], nextSelection ?? selection);
+    const sanitizedSelection = sanitizeSelection(
+      nextDrafts[sceneKind],
+      nextSelection ?? selection,
+    );
     draftsRef.current = nextDrafts;
     setDrafts(nextDrafts);
     setSelection(sanitizedSelection);
@@ -1383,7 +1749,10 @@ export function SceneEditor() {
     }
   }
 
-  function updateScene(mutator: (draft: SceneMap) => void, options?: { recordHistory?: boolean; snapshot?: EditorDrafts }) {
+  function updateScene(
+    mutator: (draft: SceneMap) => void,
+    options?: { recordHistory?: boolean; snapshot?: EditorDrafts },
+  ) {
     const currentDrafts = draftsRef.current;
     const nextDrafts = cloneDrafts(currentDrafts);
     mutator(nextDrafts[sceneKind]);
@@ -1412,13 +1781,20 @@ export function SceneEditor() {
 
     undoStackRef.current.push(cloneDrafts(draftsRef.current));
     if (undoStackRef.current.length > MAX_HISTORY_STEPS) {
-      undoStackRef.current.splice(0, undoStackRef.current.length - MAX_HISTORY_STEPS);
+      undoStackRef.current.splice(
+        0,
+        undoStackRef.current.length - MAX_HISTORY_STEPS,
+      );
     }
     syncHistoryState();
     applyDrafts(cloneDrafts(next));
   }
 
-  function toSceneCoordinates(event: React.PointerEvent<HTMLCanvasElement> | React.MouseEvent<HTMLCanvasElement>) {
+  function toSceneCoordinates(
+    event:
+      | React.PointerEvent<HTMLCanvasElement>
+      | React.MouseEvent<HTMLCanvasElement>,
+  ) {
     const canvas = canvasRef.current;
     if (!canvas) {
       return { x: 0, y: 0 };
@@ -1430,7 +1806,10 @@ export function SceneEditor() {
     };
   }
 
-  function updateMarkerPoint(target: Exclude<Selection, null>, point: TilePoint) {
+  function updateMarkerPoint(
+    target: Exclude<Selection, null>,
+    point: TilePoint,
+  ) {
     updateScene((draft) => {
       if (target.kind === "spawnLocal") {
         draft.spawnLocal = point;
@@ -1446,7 +1825,11 @@ export function SceneEditor() {
     });
   }
 
-  function moveSelectionToPointer(target: Exclude<Selection, null> | null, pointerX: number, pointerY: number) {
+  function moveSelectionToPointer(
+    target: Exclude<Selection, null> | null,
+    pointerX: number,
+    pointerY: number,
+  ) {
     if (!target) {
       return;
     }
@@ -1490,7 +1873,13 @@ export function SceneEditor() {
       y: 0,
     };
 
-    const next = clampPropPosition(prop, x - template.template.w / 2, y - template.template.h / 2, scene.width * scene.tileSize, scene.height * scene.tileSize);
+    const next = clampPropPosition(
+      prop,
+      x - template.template.w / 2,
+      y - template.template.h / 2,
+      scene.width * scene.tileSize,
+      scene.height * scene.tileSize,
+    );
     prop.x = next.x;
     prop.y = next.y;
 
@@ -1525,7 +1914,9 @@ export function SceneEditor() {
     setSelection(null);
   }
 
-  function handleCanvasPointerDown(event: React.PointerEvent<HTMLCanvasElement>) {
+  function handleCanvasPointerDown(
+    event: React.PointerEvent<HTMLCanvasElement>,
+  ) {
     const { x, y } = toSceneCoordinates(event);
     const hit = findSelectionAt(scene, x, y);
 
@@ -1608,7 +1999,9 @@ export function SceneEditor() {
     }
   }
 
-  function handleCanvasPointerMove(event: React.PointerEvent<HTMLCanvasElement>) {
+  function handleCanvasPointerMove(
+    event: React.PointerEvent<HTMLCanvasElement>,
+  ) {
     if (!dragRef.current) {
       return;
     }
@@ -1623,41 +2016,57 @@ export function SceneEditor() {
 
     if (activeDrag.selection.kind === "prop") {
       const propSelection = activeDrag.selection;
-      updateScene((draft) => {
-        const prop = draft.props.find((entry) => entry.id === propSelection.id);
-        if (!prop) {
-          return;
-        }
-        const next = clampPropPosition(
-          prop,
-          x - activeDrag.offsetX,
-          y - activeDrag.offsetY,
-          draft.width * draft.tileSize,
-          draft.height * draft.tileSize,
-        );
-        prop.x = next.x;
-        prop.y = next.y;
-      }, { recordHistory: false });
+      updateScene(
+        (draft) => {
+          const prop = draft.props.find(
+            (entry) => entry.id === propSelection.id,
+          );
+          if (!prop) {
+            return;
+          }
+          const next = clampPropPosition(
+            prop,
+            x - activeDrag.offsetX,
+            y - activeDrag.offsetY,
+            draft.width * draft.tileSize,
+            draft.height * draft.tileSize,
+          );
+          prop.x = next.x;
+          prop.y = next.y;
+        },
+        { recordHistory: false },
+      );
       return;
     }
 
     const point = {
-      x: clamp(snapTile((x - activeDrag.offsetX) / scene.tileSize), 0, scene.width),
-      y: clamp(snapTile((y - activeDrag.offsetY) / scene.tileSize), 0, scene.height),
+      x: clamp(
+        snapTile((x - activeDrag.offsetX) / scene.tileSize),
+        0,
+        scene.width,
+      ),
+      y: clamp(
+        snapTile((y - activeDrag.offsetY) / scene.tileSize),
+        0,
+        scene.height,
+      ),
     };
-    updateScene((draft) => {
-      if (activeDrag.selection.kind === "spawnLocal") {
-        draft.spawnLocal = point;
-      } else if (activeDrag.selection.kind === "seatLocal") {
-        const seatPoints = getSeatPoints(draft);
-        seatPoints[activeDrag.selection.index] = point;
-        setSeatPoints(draft, seatPoints);
-      } else if (activeDrag.selection.kind === "wanderNodes") {
-        draft.wanderNodes[activeDrag.selection.index] = point;
-      } else if (activeDrag.selection.kind === "remoteSlots") {
-        draft.remoteSlots[activeDrag.selection.index] = point;
-      }
-    }, { recordHistory: false });
+    updateScene(
+      (draft) => {
+        if (activeDrag.selection.kind === "spawnLocal") {
+          draft.spawnLocal = point;
+        } else if (activeDrag.selection.kind === "seatLocal") {
+          const seatPoints = getSeatPoints(draft);
+          seatPoints[activeDrag.selection.index] = point;
+          setSeatPoints(draft, seatPoints);
+        } else if (activeDrag.selection.kind === "wanderNodes") {
+          draft.wanderNodes[activeDrag.selection.index] = point;
+        } else if (activeDrag.selection.kind === "remoteSlots") {
+          draft.remoteSlots[activeDrag.selection.index] = point;
+        }
+      },
+      { recordHistory: false },
+    );
   }
 
   function handleCanvasPointerUp() {
@@ -1702,7 +2111,8 @@ export function SceneEditor() {
 
       if (selection.kind === "seatLocal") {
         const seatPoints = getSeatPoints(draft);
-        seatPoints[selection.index] = seatPoints[selection.index] ?? clonePoint(draft.spawnLocal);
+        seatPoints[selection.index] =
+          seatPoints[selection.index] ?? clonePoint(draft.spawnLocal);
         mutator(seatPoints[selection.index]);
         setSeatPoints(draft, seatPoints);
         return;
@@ -1847,8 +2257,9 @@ export function SceneEditor() {
               Editor de escenas del santuario
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-relaxed text-on-surface-variant">
-              Esta ruta no toca la navegación principal. Sirve para montar tus fondos, colocar props, definir spawn,
-              asiento, nodos y exportar un JSON listo para integrarlo después en el visor 2D.
+              Esta ruta no toca la navegación principal. Sirve para montar tus
+              fondos, colocar props, definir spawn, asiento, nodos y exportar un
+              JSON listo para integrarlo después en el visor 2D.
             </p>
           </div>
 
@@ -1880,7 +2291,10 @@ export function SceneEditor() {
                 aria-hidden="true"
                 className="absolute inset-0 z-0 origin-left scale-x-0 bg-primary"
               />
-              <span ref={copyButtonLabelRef} className="relative z-10 inline-flex items-center gap-2">
+              <span
+                ref={copyButtonLabelRef}
+                className="relative z-10 inline-flex items-center gap-2"
+              >
                 <Copy size={14} /> {copyButtonText}
               </span>
             </button>
@@ -1898,7 +2312,9 @@ export function SceneEditor() {
       <section className="grid gap-6 lg:grid-cols-[16rem_minmax(0,1fr)_20rem] xl:grid-cols-[18rem_minmax(0,1fr)_22rem]">
         <aside className="space-y-4 lg:sticky lg:top-28 lg:max-h-[calc(100vh-8rem)] lg:self-start lg:overflow-y-auto lg:pr-2">
           <div className="bg-surface-container-lowest pixel-border p-4">
-            <p className="font-headline text-[10px] font-bold uppercase tracking-[0.24em] text-outline">Escena activa</p>
+            <p className="font-headline text-[10px] font-bold uppercase tracking-[0.24em] text-outline">
+              Escena activa
+            </p>
             <div className="mt-3 grid gap-2">
               {(Object.keys(sceneLabels) as SceneKind[]).map((entry) => (
                 <button
@@ -1922,12 +2338,16 @@ export function SceneEditor() {
 
           <div className="bg-surface-container-lowest pixel-border p-4">
             <div className="mb-3 flex items-center justify-between">
-              <p className="font-headline text-[10px] font-bold uppercase tracking-[0.24em] text-outline">Herramientas</p>
+              <p className="font-headline text-[10px] font-bold uppercase tracking-[0.24em] text-outline">
+                Herramientas
+              </p>
               <button
                 type="button"
                 onClick={() => setShowGrid((current) => !current)}
                 className={`inline-flex items-center gap-2 border px-2 py-1 font-headline text-[10px] font-bold uppercase tracking-[0.16em] ${
-                  showGrid ? "border-primary text-primary" : "border-outline-variant text-outline"
+                  showGrid
+                    ? "border-primary text-primary"
+                    : "border-outline-variant text-outline"
                 }`}
               >
                 <Grid3x3 size={12} /> Grid
@@ -1946,7 +2366,11 @@ export function SceneEditor() {
                       : "border-outline-variant bg-surface text-on-surface"
                   }`}
                 >
-                  {entry === "select" ? <MousePointer2 size={14} className="mb-2" /> : <Plus size={14} className="mb-2" />}
+                  {entry === "select" ? (
+                    <MousePointer2 size={14} className="mb-2" />
+                  ) : (
+                    <Plus size={14} className="mb-2" />
+                  )}
                   <span className="block">{toolLabels[entry]}</span>
                 </button>
               ))}
@@ -1955,7 +2379,9 @@ export function SceneEditor() {
 
           <div className="bg-surface-container-lowest pixel-border p-4">
             <div className="mb-3 flex items-center justify-between">
-              <p className="font-headline text-[10px] font-bold uppercase tracking-[0.24em] text-outline">Paleta</p>
+              <p className="font-headline text-[10px] font-bold uppercase tracking-[0.24em] text-outline">
+                Paleta
+              </p>
               <span className="font-headline text-[10px] font-bold uppercase tracking-[0.16em] text-outline">
                 {catalog.length} elementos
               </span>
@@ -2023,11 +2449,13 @@ export function SceneEditor() {
                         : selectedCatalog.category === "atlas"
                           ? "Atlas curado"
                           : "Forma procedural"}{" "}
-                      · {selectedCatalog.template.w}×{selectedCatalog.template.h}
+                      · {selectedCatalog.template.w}×
+                      {selectedCatalog.template.h}
                     </p>
                     {selectedCatalog.template.atlas ? (
                       <p className="mt-1 text-[10px] uppercase tracking-[0.16em] text-primary">
-                        {getAtlasMeta(selectedCatalog.template.atlas)?.label ?? selectedCatalog.template.atlas}
+                        {getAtlasMeta(selectedCatalog.template.atlas)?.label ??
+                          selectedCatalog.template.atlas}
                       </p>
                     ) : null}
                   </div>
@@ -2042,7 +2470,8 @@ export function SceneEditor() {
                     Atlases cargados
                   </p>
                   <p className="mt-1 text-xs leading-relaxed text-on-surface-variant">
-                    Aquí tienes `Top-Down_Retro_Interior`, `Interiors_free`, `lpc-walls`, `wall_puerta` y el atlas de biblioteca.
+                    Aquí tienes `Top-Down_Retro_Interior`, `Interiors_free`,
+                    `lpc-walls`, `wall_puerta` y el atlas de biblioteca.
                   </p>
                 </div>
                 <span className="font-headline text-[10px] font-bold uppercase tracking-[0.16em] text-outline">
@@ -2068,13 +2497,18 @@ export function SceneEditor() {
                       }`}
                     >
                       <div className="flex items-center gap-3">
-                        <AtlasSheetPreview atlasImage={atlasImages[entry.id] ?? null} size={56} className="shrink-0" />
+                        <AtlasSheetPreview
+                          atlasImage={atlasImages[entry.id] ?? null}
+                          size={56}
+                          className="shrink-0"
+                        />
                         <div className="min-w-0">
                           <span className="block font-headline text-xs font-bold uppercase tracking-[0.16em] text-on-surface">
                             {entry.label}
                           </span>
                           <span className="mt-1 block text-[10px] uppercase tracking-[0.16em] text-outline">
-                            Slice inicial {entry.defaultSlice.w}×{entry.defaultSlice.h}
+                            Slice inicial {entry.defaultSlice.w}×
+                            {entry.defaultSlice.h}
                           </span>
                         </div>
                       </div>
@@ -2089,7 +2523,9 @@ export function SceneEditor() {
         <div className="min-w-0 space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3 bg-surface-container-lowest pixel-border px-4 py-3">
             <div>
-              <p className="font-headline text-[10px] font-bold uppercase tracking-[0.24em] text-outline">Viewport</p>
+              <p className="font-headline text-[10px] font-bold uppercase tracking-[0.24em] text-outline">
+                Viewport
+              </p>
               <h2 className="font-headline text-2xl font-black uppercase tracking-tighter text-on-surface">
                 {sceneLabels[sceneKind]}
               </h2>
@@ -2134,9 +2570,15 @@ export function SceneEditor() {
           <div className="bg-surface-container-lowest pixel-border p-4">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="font-headline text-[10px] font-bold uppercase tracking-[0.24em] text-outline">Flujo</p>
+                <p className="font-headline text-[10px] font-bold uppercase tracking-[0.24em] text-outline">
+                  Flujo
+                </p>
                 <p className="mt-2 text-sm leading-relaxed text-on-surface-variant">
-                  1. Elige escena. 2. Cambia rápido entre `V` para seleccionar y `C` para colocar props. 3. Ajusta propiedades. 4. Haz doble clic en el canvas para mandar la selección al ratón. 5. Usa deshacer y rehacer si pruebas una variante. 6. Exporta el JSON.
+                  1. Elige escena. 2. Cambia rápido entre `V` para seleccionar y
+                  `C` para colocar props. 3. Ajusta propiedades. 4. Haz doble
+                  clic en el canvas para mandar la selección al ratón. 5. Usa
+                  deshacer y rehacer si pruebas una variante. 6. Exporta el
+                  JSON.
                 </p>
               </div>
               {flash ? (
@@ -2152,12 +2594,16 @@ export function SceneEditor() {
           <div className="bg-surface-container-lowest pixel-border p-4">
             <div className="mb-3 flex items-center gap-2">
               <Layers2 size={16} className="text-primary" />
-              <p className="font-headline text-sm font-black uppercase tracking-[0.16em] text-on-surface">Inspector</p>
+              <p className="font-headline text-sm font-black uppercase tracking-[0.16em] text-on-surface">
+                Inspector
+              </p>
             </div>
 
             {selectedProp ? (
               <div className="space-y-4">
-                <p className="font-headline text-[10px] font-bold uppercase tracking-[0.18em] text-outline">{selectedProp.id}</p>
+                <p className="font-headline text-[10px] font-bold uppercase tracking-[0.18em] text-outline">
+                  {selectedProp.id}
+                </p>
 
                 <div className="grid gap-3 md:grid-cols-[auto_minmax(0,1fr)]">
                   <PropPreviewCanvas
@@ -2171,53 +2617,76 @@ export function SceneEditor() {
                       Vista previa
                     </p>
                     <p className="text-xs leading-relaxed text-on-surface-variant">
-                      Aquí ves la pieza tal como se renderiza. Si el recorte sale mal, ajusta el bloque de atlas de abajo.
+                      Aquí ves la pieza tal como se renderiza. Si el recorte
+                      sale mal, ajusta el bloque de atlas de abajo.
                     </p>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <label className="space-y-1">
-                    <span className="font-headline text-[10px] font-bold uppercase tracking-[0.16em] text-outline">X</span>
+                    <span className="font-headline text-[10px] font-bold uppercase tracking-[0.16em] text-outline">
+                      X
+                    </span>
                     <input
                       type="number"
                       value={selectedProp.x}
-                      onChange={(event) => updateSelectedProp((prop) => {
-                        prop.x = Number(event.target.value);
-                      })}
+                      onChange={(event) =>
+                        updateSelectedProp((prop) => {
+                          prop.x = Number(event.target.value);
+                        })
+                      }
                       className="w-full border border-outline-variant bg-surface px-3 py-2 text-sm text-on-surface"
                     />
                   </label>
                   <label className="space-y-1">
-                    <span className="font-headline text-[10px] font-bold uppercase tracking-[0.16em] text-outline">Y</span>
+                    <span className="font-headline text-[10px] font-bold uppercase tracking-[0.16em] text-outline">
+                      Y
+                    </span>
                     <input
                       type="number"
                       value={selectedProp.y}
-                      onChange={(event) => updateSelectedProp((prop) => {
-                        prop.y = Number(event.target.value);
-                      })}
+                      onChange={(event) =>
+                        updateSelectedProp((prop) => {
+                          prop.y = Number(event.target.value);
+                        })
+                      }
                       className="w-full border border-outline-variant bg-surface px-3 py-2 text-sm text-on-surface"
                     />
                   </label>
                   <label className="space-y-1">
-                    <span className="font-headline text-[10px] font-bold uppercase tracking-[0.16em] text-outline">Render W</span>
+                    <span className="font-headline text-[10px] font-bold uppercase tracking-[0.16em] text-outline">
+                      Render W
+                    </span>
                     <input
                       type="number"
                       value={selectedProp.w}
-                      onChange={(event) => updateSelectedProp((prop) => {
-                        prop.w = Math.max(MIN_PROP_SIZE, Number(event.target.value));
-                      })}
+                      onChange={(event) =>
+                        updateSelectedProp((prop) => {
+                          prop.w = Math.max(
+                            MIN_PROP_SIZE,
+                            Number(event.target.value),
+                          );
+                        })
+                      }
                       className="w-full border border-outline-variant bg-surface px-3 py-2 text-sm text-on-surface"
                     />
                   </label>
                   <label className="space-y-1">
-                    <span className="font-headline text-[10px] font-bold uppercase tracking-[0.16em] text-outline">Render H</span>
+                    <span className="font-headline text-[10px] font-bold uppercase tracking-[0.16em] text-outline">
+                      Render H
+                    </span>
                     <input
                       type="number"
                       value={selectedProp.h}
-                      onChange={(event) => updateSelectedProp((prop) => {
-                        prop.h = Math.max(MIN_PROP_SIZE, Number(event.target.value));
-                      })}
+                      onChange={(event) =>
+                        updateSelectedProp((prop) => {
+                          prop.h = Math.max(
+                            MIN_PROP_SIZE,
+                            Number(event.target.value),
+                          );
+                        })
+                      }
                       className="w-full border border-outline-variant bg-surface px-3 py-2 text-sm text-on-surface"
                     />
                   </label>
@@ -2230,7 +2699,8 @@ export function SceneEditor() {
                         Rotación
                       </p>
                       <p className="mt-1 text-xs leading-relaxed text-on-surface-variant">
-                        Gira la pieza sobre su centro sin cambiar el recorte ni la escala guardada.
+                        Gira la pieza sobre su centro sin cambiar el recorte ni
+                        la escala guardada.
                       </p>
                     </div>
                     <span className="font-headline text-sm font-black uppercase tracking-[0.14em] text-primary">
@@ -2245,9 +2715,13 @@ export function SceneEditor() {
                       max="180"
                       step="15"
                       value={normalizeRotation(selectedProp.rotation)}
-                      onChange={(event) => updateSelectedProp((prop) => {
-                        prop.rotation = normalizeRotation(Number(event.target.value));
-                      })}
+                      onChange={(event) =>
+                        updateSelectedProp((prop) => {
+                          prop.rotation = normalizeRotation(
+                            Number(event.target.value),
+                          );
+                        })
+                      }
                     />
                     <input
                       type="number"
@@ -2255,9 +2729,13 @@ export function SceneEditor() {
                       max="180"
                       step="15"
                       value={normalizeRotation(selectedProp.rotation)}
-                      onChange={(event) => updateSelectedProp((prop) => {
-                        prop.rotation = normalizeRotation(Number(event.target.value));
-                      })}
+                      onChange={(event) =>
+                        updateSelectedProp((prop) => {
+                          prop.rotation = normalizeRotation(
+                            Number(event.target.value),
+                          );
+                        })
+                      }
                       className="w-full border border-outline-variant bg-surface px-3 py-2 text-sm text-on-surface"
                     />
                   </div>
@@ -2267,9 +2745,11 @@ export function SceneEditor() {
                       <button
                         key={angle}
                         type="button"
-                        onClick={() => updateSelectedProp((prop) => {
-                          prop.rotation = angle;
-                        })}
+                        onClick={() =>
+                          updateSelectedProp((prop) => {
+                            prop.rotation = angle;
+                          })
+                        }
                         className="border border-outline-variant bg-surface px-2 py-2 font-headline text-[10px] font-bold uppercase tracking-[0.16em] text-on-surface"
                       >
                         {angle}°
@@ -2286,7 +2766,8 @@ export function SceneEditor() {
                           Escala en escena
                         </p>
                         <p className="mt-1 text-xs leading-relaxed text-on-surface-variant">
-                          Cambia el tamaño final con el que la pieza se guarda y se verá en la biblioteca.
+                          Cambia el tamaño final con el que la pieza se guarda y
+                          se verá en la biblioteca.
                         </p>
                       </div>
                       <span className="font-headline text-sm font-black uppercase tracking-[0.14em] text-primary">
@@ -2301,9 +2782,11 @@ export function SceneEditor() {
                         max="6"
                         step="0.05"
                         value={getPropScaleValue(selectedProp)}
-                        onChange={(event) => updateSelectedProp((prop) => {
-                          applyPropScale(prop, Number(event.target.value));
-                        })}
+                        onChange={(event) =>
+                          updateSelectedProp((prop) => {
+                            applyPropScale(prop, Number(event.target.value));
+                          })
+                        }
                       />
                       <input
                         type="number"
@@ -2311,9 +2794,11 @@ export function SceneEditor() {
                         max="6"
                         step="0.05"
                         value={getPropScaleValue(selectedProp)}
-                        onChange={(event) => updateSelectedProp((prop) => {
-                          applyPropScale(prop, Number(event.target.value));
-                        })}
+                        onChange={(event) =>
+                          updateSelectedProp((prop) => {
+                            applyPropScale(prop, Number(event.target.value));
+                          })
+                        }
                         className="w-full border border-outline-variant bg-surface px-3 py-2 text-sm text-on-surface"
                       />
                     </div>
@@ -2322,15 +2807,21 @@ export function SceneEditor() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <label className="space-y-1">
-                    <span className="font-headline text-[10px] font-bold uppercase tracking-[0.16em] text-outline">Capa</span>
+                    <span className="font-headline text-[10px] font-bold uppercase tracking-[0.16em] text-outline">
+                      Capa
+                    </span>
                     <select
                       value={selectedProp.layer}
-                      onChange={(event) => updateSelectedProp((prop) => {
-                        prop.layer =
-                          event.target.value === "mid-back" || event.target.value === "mid-front" || event.target.value === "front"
-                            ? event.target.value
-                            : "back";
-                      })}
+                      onChange={(event) =>
+                        updateSelectedProp((prop) => {
+                          prop.layer =
+                            event.target.value === "mid-back" ||
+                            event.target.value === "mid-front" ||
+                            event.target.value === "front"
+                              ? event.target.value
+                              : "back";
+                        })
+                      }
                       className="w-full border border-outline-variant bg-surface px-3 py-2 text-sm text-on-surface"
                     >
                       {sceneLayerOrder.map((layer) => (
@@ -2341,16 +2832,20 @@ export function SceneEditor() {
                     </select>
                   </label>
                   <label className="space-y-1">
-                    <span className="font-headline text-[10px] font-bold uppercase tracking-[0.16em] text-outline">Opacidad</span>
+                    <span className="font-headline text-[10px] font-bold uppercase tracking-[0.16em] text-outline">
+                      Opacidad
+                    </span>
                     <input
                       type="number"
                       min="0"
                       max="1"
                       step="0.05"
                       value={selectedProp.alpha ?? 1}
-                      onChange={(event) => updateSelectedProp((prop) => {
-                        prop.alpha = clamp(Number(event.target.value), 0, 1);
-                      })}
+                      onChange={(event) =>
+                        updateSelectedProp((prop) => {
+                          prop.alpha = clamp(Number(event.target.value), 0, 1);
+                        })
+                      }
                       className="w-full border border-outline-variant bg-surface px-3 py-2 text-sm text-on-surface"
                     />
                   </label>
@@ -2408,30 +2903,39 @@ export function SceneEditor() {
                         Recorte del atlas
                       </p>
                       <p className="mt-1 text-xs leading-relaxed text-on-surface-variant">
-                        Ajusta `x`, `y`, `w` y `h` del sprite original si el recorte viene mal o se está comiendo parte del elemento. La vista grande del atlas ahora se abre fuera del flujo para que no apriete el inspector.
+                        Ajusta `x`, `y`, `w` y `h` del sprite original si el
+                        recorte viene mal o se está comiendo parte del elemento.
+                        La vista grande del atlas ahora se abre fuera del flujo
+                        para que no apriete el inspector.
                       </p>
                     </div>
 
                     <label className="space-y-1">
-                      <span className="font-headline text-[10px] font-bold uppercase tracking-[0.16em] text-outline">Atlas</span>
+                      <span className="font-headline text-[10px] font-bold uppercase tracking-[0.16em] text-outline">
+                        Atlas
+                      </span>
                       <select
                         value={selectedProp.atlas ?? "library"}
-                        onChange={(event) => updateSelectedProp((prop) => {
-                          const nextAtlas = event.target.value;
-                          const nextMeta = getAtlasMeta(nextAtlas);
-                          if (!nextMeta) {
-                            return;
-                          }
-                          const scale = prop.source ? getPropScaleValue(prop) : 1;
-                          prop.atlas = nextAtlas;
-                          prop.source = {
-                            x: 0,
-                            y: 0,
-                            w: nextMeta.defaultSlice.w,
-                            h: nextMeta.defaultSlice.h,
-                          };
-                          applyPropScale(prop, scale);
-                        })}
+                        onChange={(event) =>
+                          updateSelectedProp((prop) => {
+                            const nextAtlas = event.target.value;
+                            const nextMeta = getAtlasMeta(nextAtlas);
+                            if (!nextMeta) {
+                              return;
+                            }
+                            const scale = prop.source
+                              ? getPropScaleValue(prop)
+                              : 1;
+                            prop.atlas = nextAtlas;
+                            prop.source = {
+                              x: 0,
+                              y: 0,
+                              w: nextMeta.defaultSlice.w,
+                              h: nextMeta.defaultSlice.h,
+                            };
+                            applyPropScale(prop, scale);
+                          })
+                        }
                         className="w-full border border-outline-variant bg-surface px-3 py-2 text-sm text-on-surface"
                       >
                         {sceneAtlasEntries.map((entry) => (
@@ -2448,7 +2952,8 @@ export function SceneEditor() {
                           Vista del atlas
                         </p>
                         <p className="text-xs leading-relaxed text-on-surface-variant">
-                          Ábrela en grande para moverte mejor por la hoja y ajustar el recorte con más aire.
+                          Ábrela en grande para moverte mejor por la hoja y
+                          ajustar el recorte con más aire.
                         </p>
                       </div>
                       <button
@@ -2475,7 +2980,9 @@ export function SceneEditor() {
                 </p>
                 <div className="grid grid-cols-2 gap-3">
                   <label className="space-y-1">
-                    <span className="font-headline text-[10px] font-bold uppercase tracking-[0.16em] text-outline">Tile X</span>
+                    <span className="font-headline text-[10px] font-bold uppercase tracking-[0.16em] text-outline">
+                      Tile X
+                    </span>
                     <input
                       type="number"
                       step="0.5"
@@ -2483,19 +2990,23 @@ export function SceneEditor() {
                         selection.kind === "spawnLocal"
                           ? scene.spawnLocal.x
                           : selection.kind === "seatLocal"
-                            ? getSeatPoints(scene)[selection.index]?.x ?? 0
+                            ? (getSeatPoints(scene)[selection.index]?.x ?? 0)
                             : selection.kind === "wanderNodes"
-                              ? scene.wanderNodes[selection.index]?.x ?? 0
-                              : scene.remoteSlots[selection.index]?.x ?? 0
+                              ? (scene.wanderNodes[selection.index]?.x ?? 0)
+                              : (scene.remoteSlots[selection.index]?.x ?? 0)
                       }
-                      onChange={(event) => updateSelectedMarker((point) => {
-                        point.x = Number(event.target.value);
-                      })}
+                      onChange={(event) =>
+                        updateSelectedMarker((point) => {
+                          point.x = Number(event.target.value);
+                        })
+                      }
                       className="w-full border border-outline-variant bg-surface px-3 py-2 text-sm text-on-surface"
                     />
                   </label>
                   <label className="space-y-1">
-                    <span className="font-headline text-[10px] font-bold uppercase tracking-[0.16em] text-outline">Tile Y</span>
+                    <span className="font-headline text-[10px] font-bold uppercase tracking-[0.16em] text-outline">
+                      Tile Y
+                    </span>
                     <input
                       type="number"
                       step="0.5"
@@ -2503,14 +3014,16 @@ export function SceneEditor() {
                         selection.kind === "spawnLocal"
                           ? scene.spawnLocal.y
                           : selection.kind === "seatLocal"
-                            ? getSeatPoints(scene)[selection.index]?.y ?? 0
+                            ? (getSeatPoints(scene)[selection.index]?.y ?? 0)
                             : selection.kind === "wanderNodes"
-                              ? scene.wanderNodes[selection.index]?.y ?? 0
-                              : scene.remoteSlots[selection.index]?.y ?? 0
+                              ? (scene.wanderNodes[selection.index]?.y ?? 0)
+                              : (scene.remoteSlots[selection.index]?.y ?? 0)
                       }
-                      onChange={(event) => updateSelectedMarker((point) => {
-                        point.y = Number(event.target.value);
-                      })}
+                      onChange={(event) =>
+                        updateSelectedMarker((point) => {
+                          point.y = Number(event.target.value);
+                        })
+                      }
                       className="w-full border border-outline-variant bg-surface px-3 py-2 text-sm text-on-surface"
                     />
                   </label>
@@ -2528,7 +3041,8 @@ export function SceneEditor() {
               </div>
             ) : (
               <p className="text-sm leading-relaxed text-on-surface-variant">
-                Selecciona un prop o un marker dentro del canvas para ajustar su posición, tamaño o capa.
+                Selecciona un prop o un marker dentro del canvas para ajustar su
+                posición, tamaño o capa.
               </p>
             )}
           </div>
@@ -2536,18 +3050,26 @@ export function SceneEditor() {
           <div className="bg-surface-container-lowest pixel-border p-4">
             <div className="mb-3 flex items-center gap-2">
               <Save size={16} className="text-tertiary" />
-              <p className="font-headline text-sm font-black uppercase tracking-[0.16em] text-on-surface">Tema</p>
+              <p className="font-headline text-sm font-black uppercase tracking-[0.16em] text-on-surface">
+                Tema
+              </p>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              {(["skyTop", "skyBottom", "floorA", "floorB", "border"] as const).map((key) => (
+              {(
+                ["skyTop", "skyBottom", "floorA", "floorB", "border"] as const
+              ).map((key) => (
                 <label key={key} className="space-y-1">
-                  <span className="font-headline text-[10px] font-bold uppercase tracking-[0.16em] text-outline">{key}</span>
+                  <span className="font-headline text-[10px] font-bold uppercase tracking-[0.16em] text-outline">
+                    {key}
+                  </span>
                   <input
                     type="color"
                     value={scene.theme[key]}
-                    onChange={(event) => updateScene((draft) => {
-                      draft.theme[key] = event.target.value;
-                    })}
+                    onChange={(event) =>
+                      updateScene((draft) => {
+                        draft.theme[key] = event.target.value;
+                      })
+                    }
                     className="h-10 w-full border border-outline-variant bg-surface"
                   />
                 </label>
@@ -2558,12 +3080,14 @@ export function SceneEditor() {
           <div className="bg-surface-container-lowest pixel-border p-4">
             <div className="mb-3 flex items-center gap-2">
               <Import size={16} className="text-primary" />
-              <p className="font-headline text-sm font-black uppercase tracking-[0.16em] text-on-surface">Importar JSON</p>
+              <p className="font-headline text-sm font-black uppercase tracking-[0.16em] text-on-surface">
+                Importar JSON
+              </p>
             </div>
             <textarea
               value={importBuffer}
               onChange={(event) => setImportBuffer(event.target.value)}
-              placeholder='Pega aquí un JSON de escena para reemplazar la actual.'
+              placeholder="Pega aquí un JSON de escena para reemplazar la actual."
               className="min-h-[10rem] w-full border border-outline-variant bg-surface px-3 py-3 text-xs leading-relaxed text-on-surface"
             />
             <div className="mt-3 flex gap-2">
@@ -2588,14 +3112,28 @@ export function SceneEditor() {
           <div className="bg-surface-container-lowest pixel-border p-4">
             <div className="mb-3 flex items-center gap-2">
               <Eraser size={16} className="text-secondary" />
-              <p className="font-headline text-sm font-black uppercase tracking-[0.16em] text-on-surface">Notas</p>
+              <p className="font-headline text-sm font-black uppercase tracking-[0.16em] text-on-surface">
+                Notas
+              </p>
             </div>
             <ul className="space-y-2 text-sm leading-relaxed text-on-surface-variant">
               <li>El editor guarda cada escena en local automáticamente.</li>
-              <li>Los props se exportan en el mismo formato que usa el visor actual.</li>
-              <li>Deshacer y rehacer actúan sobre el JSON de la escena activa y permiten revertir arrastres completos.</li>
-              <li>`V` activa seleccionar y `C` activa colocar props mientras no estés escribiendo en un campo.</li>
-              <li>Por ahora el tamaño del canvas sigue el stage actual del juego: 20×12 tiles de 16 px.</li>
+              <li>
+                Los props se exportan en el mismo formato que usa el visor
+                actual.
+              </li>
+              <li>
+                Deshacer y rehacer actúan sobre el JSON de la escena activa y
+                permiten revertir arrastres completos.
+              </li>
+              <li>
+                `V` activa seleccionar y `C` activa colocar props mientras no
+                estés escribiendo en un campo.
+              </li>
+              <li>
+                Por ahora el tamaño del canvas sigue el stage actual del juego:
+                20×12 tiles de 16 px.
+              </li>
             </ul>
           </div>
         </aside>
@@ -2613,7 +3151,10 @@ export function SceneEditor() {
                   {getAtlasMeta(selectedProp.atlas)?.label ?? "Atlas"}
                 </h3>
                 <p className="mt-2 max-w-2xl text-sm leading-relaxed text-on-surface-variant">
-                  Arrastra la vista para moverte por la hoja. Haz doble clic dentro del atlas para mandar el recorte al punto clicado y pulsa `Espacio` para recentrar la vista sobre la selección actual.
+                  Arrastra la vista para moverte por la hoja. Haz doble clic
+                  dentro del atlas para mandar el recorte al punto clicado y
+                  pulsa `Espacio` para recentrar la vista sobre la selección
+                  actual.
                 </p>
               </div>
 
@@ -2660,7 +3201,9 @@ export function SceneEditor() {
                     {selectedProp.id}
                   </p>
                   <p className="mt-2 text-xs leading-relaxed text-on-surface-variant">
-                    Doble clic en el atlas para mandar el recorte al punto clicado. El doble clic en el canvas principal sigue recolocando la pieza en la escena.
+                    Doble clic en el atlas para mandar el recorte al punto
+                    clicado. El doble clic en el canvas principal sigue
+                    recolocando la pieza en la escena.
                   </p>
                 </div>
 
@@ -2670,60 +3213,89 @@ export function SceneEditor() {
                       Recorte del atlas
                     </p>
                     <p className="text-xs leading-relaxed text-on-surface-variant">
-                      Aquí se edita el recorte completo. El inspector pequeño ya no repite estos campos.
+                      Aquí se edita el recorte completo. El inspector pequeño ya
+                      no repite estos campos.
                     </p>
                   </div>
 
                   <div className="mt-3 grid grid-cols-2 gap-3">
                     <label className="space-y-1">
-                      <span className="font-headline text-[10px] font-bold uppercase tracking-[0.16em] text-outline">Source X</span>
+                      <span className="font-headline text-[10px] font-bold uppercase tracking-[0.16em] text-outline">
+                        Source X
+                      </span>
                       <input
                         type="number"
                         value={selectedProp.source.x}
-                        onChange={(event) => updateSelectedProp((prop) => {
-                          if (!prop.source) return;
-                          prop.source.x = Math.max(0, Number(event.target.value));
-                        })}
+                        onChange={(event) =>
+                          updateSelectedProp((prop) => {
+                            if (!prop.source) return;
+                            prop.source.x = Math.max(
+                              0,
+                              Number(event.target.value),
+                            );
+                          })
+                        }
                         className="w-full border border-outline-variant bg-surface-variant px-3 py-2 text-sm text-on-surface"
                       />
                     </label>
                     <label className="space-y-1">
-                      <span className="font-headline text-[10px] font-bold uppercase tracking-[0.16em] text-outline">Source Y</span>
+                      <span className="font-headline text-[10px] font-bold uppercase tracking-[0.16em] text-outline">
+                        Source Y
+                      </span>
                       <input
                         type="number"
                         value={selectedProp.source.y}
-                        onChange={(event) => updateSelectedProp((prop) => {
-                          if (!prop.source) return;
-                          prop.source.y = Math.max(0, Number(event.target.value));
-                        })}
+                        onChange={(event) =>
+                          updateSelectedProp((prop) => {
+                            if (!prop.source) return;
+                            prop.source.y = Math.max(
+                              0,
+                              Number(event.target.value),
+                            );
+                          })
+                        }
                         className="w-full border border-outline-variant bg-surface-variant px-3 py-2 text-sm text-on-surface"
                       />
                     </label>
                     <label className="space-y-1">
-                      <span className="font-headline text-[10px] font-bold uppercase tracking-[0.16em] text-outline">Source W</span>
+                      <span className="font-headline text-[10px] font-bold uppercase tracking-[0.16em] text-outline">
+                        Source W
+                      </span>
                       <input
                         type="number"
                         value={selectedProp.source.w}
-                        onChange={(event) => updateSelectedProp((prop) => {
-                          if (!prop.source) return;
-                          const scale = getPropScaleValue(prop);
-                          prop.source.w = Math.max(1, Number(event.target.value));
-                          applyPropScale(prop, scale);
-                        })}
+                        onChange={(event) =>
+                          updateSelectedProp((prop) => {
+                            if (!prop.source) return;
+                            const scale = getPropScaleValue(prop);
+                            prop.source.w = Math.max(
+                              1,
+                              Number(event.target.value),
+                            );
+                            applyPropScale(prop, scale);
+                          })
+                        }
                         className="w-full border border-outline-variant bg-surface-variant px-3 py-2 text-sm text-on-surface"
                       />
                     </label>
                     <label className="space-y-1">
-                      <span className="font-headline text-[10px] font-bold uppercase tracking-[0.16em] text-outline">Source H</span>
+                      <span className="font-headline text-[10px] font-bold uppercase tracking-[0.16em] text-outline">
+                        Source H
+                      </span>
                       <input
                         type="number"
                         value={selectedProp.source.h}
-                        onChange={(event) => updateSelectedProp((prop) => {
-                          if (!prop.source) return;
-                          const scale = getPropScaleValue(prop);
-                          prop.source.h = Math.max(1, Number(event.target.value));
-                          applyPropScale(prop, scale);
-                        })}
+                        onChange={(event) =>
+                          updateSelectedProp((prop) => {
+                            if (!prop.source) return;
+                            const scale = getPropScaleValue(prop);
+                            prop.source.h = Math.max(
+                              1,
+                              Number(event.target.value),
+                            );
+                            applyPropScale(prop, scale);
+                          })
+                        }
                         className="w-full border border-outline-variant bg-surface-variant px-3 py-2 text-sm text-on-surface"
                       />
                     </label>
@@ -2736,7 +3308,8 @@ export function SceneEditor() {
                       Zoom del atlas
                     </p>
                     <p className="text-xs leading-relaxed text-on-surface-variant">
-                      Solo acerca o aleja la imagen grande del atlas. No cambia el tamaño con el que se guarda la pieza en la biblioteca.
+                      Solo acerca o aleja la imagen grande del atlas. No cambia
+                      el tamaño con el que se guarda la pieza en la biblioteca.
                     </p>
                   </div>
 
@@ -2755,7 +3328,9 @@ export function SceneEditor() {
                         if (!selectedPropAtlasViewKey) return;
                         setAtlasPreviewZooms((current) => ({
                           ...current,
-                          [selectedPropAtlasViewKey]: Number(event.target.value),
+                          [selectedPropAtlasViewKey]: Number(
+                            event.target.value,
+                          ),
                         }));
                       }}
                     />
@@ -2769,7 +3344,11 @@ export function SceneEditor() {
                         if (!selectedPropAtlasViewKey) return;
                         setAtlasPreviewZooms((current) => ({
                           ...current,
-                          [selectedPropAtlasViewKey]: clamp(Number(event.target.value), MIN_ATLAS_PREVIEW_ZOOM, 6),
+                          [selectedPropAtlasViewKey]: clamp(
+                            Number(event.target.value),
+                            MIN_ATLAS_PREVIEW_ZOOM,
+                            6,
+                          ),
                         }));
                       }}
                       className="w-full border border-outline-variant bg-surface-variant px-3 py-2 text-sm text-on-surface"
@@ -2783,7 +3362,8 @@ export function SceneEditor() {
                       Escala en escena
                     </p>
                     <p className="text-xs leading-relaxed text-on-surface-variant">
-                      Esto sí cambia el tamaño final con el que la pieza se guarda y se verá luego dentro de la biblioteca.
+                      Esto sí cambia el tamaño final con el que la pieza se
+                      guarda y se verá luego dentro de la biblioteca.
                     </p>
                   </div>
 
@@ -2798,9 +3378,11 @@ export function SceneEditor() {
                       max="6"
                       step="0.05"
                       value={getPropScaleValue(selectedProp)}
-                      onChange={(event) => updateSelectedProp((prop) => {
-                        applyPropScale(prop, Number(event.target.value));
-                      })}
+                      onChange={(event) =>
+                        updateSelectedProp((prop) => {
+                          applyPropScale(prop, Number(event.target.value));
+                        })
+                      }
                     />
                     <input
                       type="number"
@@ -2808,9 +3390,11 @@ export function SceneEditor() {
                       max="6"
                       step="0.05"
                       value={getPropScaleValue(selectedProp)}
-                      onChange={(event) => updateSelectedProp((prop) => {
-                        applyPropScale(prop, Number(event.target.value));
-                      })}
+                      onChange={(event) =>
+                        updateSelectedProp((prop) => {
+                          applyPropScale(prop, Number(event.target.value));
+                        })
+                      }
                       className="w-full border border-outline-variant bg-surface-variant px-3 py-2 text-sm text-on-surface"
                     />
                   </div>

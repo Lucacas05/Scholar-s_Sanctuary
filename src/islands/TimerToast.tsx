@@ -1,4 +1,4 @@
-import { X, Play, CheckCircle, Coffee, Sun } from "lucide-react";
+import { X, Play, CheckCircle, Coffee, Sun, Trophy } from "lucide-react";
 import type { TimerToastData } from "./useTimerNotifications";
 
 const ICON_MAP = {
@@ -6,6 +6,7 @@ const ICON_MAP = {
   "focus-end": CheckCircle,
   "break-start": Coffee,
   "break-end": Sun,
+  achievement: Trophy,
 } as const;
 
 interface TimerToastStackProps {

@@ -78,9 +78,14 @@ export async function GET({ cookies, redirect, request, url }: APIContext) {
 
     const userState = getUserStateSnapshot(userId);
     const targetPath =
-      nextPath ?? (userState.onboardingCompleted ? userState.preferredStartPath : "/bienvenida");
+      nextPath ??
+      (userState.onboardingCompleted
+        ? userState.preferredStartPath
+        : "/bienvenida");
 
-    return redirect(`${targetPath}${targetPath.includes("?") ? "&" : "?"}auth=success`);
+    return redirect(
+      `${targetPath}${targetPath.includes("?") ? "&" : "?"}auth=success`,
+    );
   } catch {
     return redirect("/?auth=error");
   }

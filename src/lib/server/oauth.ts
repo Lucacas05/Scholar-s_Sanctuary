@@ -5,7 +5,11 @@ function trimTrailingSlash(value: string) {
 }
 
 export function isGitHubOAuthConfigured() {
-  return Boolean(import.meta.env.GITHUB_CLIENT_ID && import.meta.env.GITHUB_CLIENT_SECRET && import.meta.env.SITE_URL);
+  return Boolean(
+    import.meta.env.GITHUB_CLIENT_ID &&
+    import.meta.env.GITHUB_CLIENT_SECRET &&
+    import.meta.env.SITE_URL,
+  );
 }
 
 export function getGitHubOAuth() {

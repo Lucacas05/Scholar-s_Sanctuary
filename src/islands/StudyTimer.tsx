@@ -23,7 +23,12 @@ function formatTime(seconds: number) {
   return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
 }
 
-export function StudyTimer({ roomKind, roomCode, roomName, showGardenHint = false }: StudyTimerProps) {
+export function StudyTimer({
+  roomKind,
+  roomCode,
+  roomName,
+  showGardenHint = false,
+}: StudyTimerProps) {
   const sanctuary = useSanctuaryStore();
   const [now, setNow] = useState(Date.now());
   const [focusMinutes, setFocusMinutes] = useState("25");
@@ -40,19 +45,23 @@ export function StudyTimer({ roomKind, roomCode, roomName, showGardenHint = fals
     return () => window.clearInterval(interval);
   }, []);
 
-  const timer = useMemo(() => getCurrentTimer(sanctuary, now), [sanctuary, now]);
-  const boundToCurrentRoom = timer.roomKind === roomKind && timer.roomCode === roomCode;
+  const timer = useMemo(
+    () => getCurrentTimer(sanctuary, now),
+    [sanctuary, now],
+  );
+  const boundToCurrentRoom =
+    timer.roomKind === roomKind && timer.roomCode === roomCode;
   const isAnonymousBlocked = sanctuary.sessionState === "anonymous";
   const canEditDurations = !isAnonymousBlocked && timer.status !== "running";
-  const phaseLabel = timer.phase === "break" ? "Descanso activo" : "Foco en curso";
-  const hint =
-    isAnonymousBlocked
-      ? "Conecta tu cuenta para activar el reloj y registrar sesiones reales."
-      : boundToCurrentRoom
-        ? roomKind === "solo"
-          ? "Este reloj alimenta tus sesiones privadas."
-          : "Este reloj actualiza tu estado visible para el resto."
-        : `Tu reloj está vinculado a ${timer.roomLabel}.`;
+  const phaseLabel =
+    timer.phase === "break" ? "Descanso activo" : "Foco en curso";
+  const hint = isAnonymousBlocked
+    ? "Conecta tu cuenta para activar el reloj y registrar sesiones reales."
+    : boundToCurrentRoom
+      ? roomKind === "solo"
+        ? "Este reloj alimenta tus sesiones privadas."
+        : "Este reloj actualiza tu estado visible para el resto."
+      : `Tu reloj está vinculado a ${timer.roomLabel}.`;
 
   useEffect(() => {
     setFocusMinutes(String(Math.round(timer.focusDurationSeconds / 60)));
@@ -76,7 +85,10 @@ export function StudyTimer({ roomKind, roomCode, roomName, showGardenHint = fals
   };
 
   const handleApplyDurations = () => {
-    sanctuaryActions.updateTimerDurations(Number(focusMinutes), Number(breakMinutes));
+    sanctuaryActions.updateTimerDurations(
+      Number(focusMinutes),
+      Number(breakMinutes),
+    );
   };
 
   return (
@@ -87,24 +99,36 @@ export function StudyTimer({ roomKind, roomCode, roomName, showGardenHint = fals
       <div className="bg-surface-container-highest p-6">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="font-headline text-[10px] font-bold uppercase tracking-[0.25em] text-outline">{roomName}</p>
+            <p className="font-headline text-[10px] font-bold uppercase tracking-[0.25em] text-outline">
+              {roomName}
+            </p>
             <h3 className="font-headline text-2xl font-black uppercase tracking-tighter text-primary">
               {boundToCurrentRoom ? phaseLabel : "Reloj preparado"}
             </h3>
           </div>
           <div className="rounded-none border-2 border-outline-variant bg-surface-container px-3 py-2 text-right">
-            <p className="font-headline text-[10px] font-bold uppercase tracking-[0.2em] text-outline">Estado</p>
+            <p className="font-headline text-[10px] font-bold uppercase tracking-[0.2em] text-outline">
+              Estado
+            </p>
             <p className="font-headline text-xs font-black uppercase tracking-widest text-tertiary">
-              {timer.status === "running" ? "Activo" : timer.status === "paused" ? "Pausado" : "Listo"}
+              {timer.status === "running"
+                ? "Activo"
+                : timer.status === "paused"
+                  ? "Pausado"
+                  : "Listo"}
             </p>
           </div>
         </div>
 
         <div className="font-headline text-center text-[clamp(3.75rem,9vw,5.5rem)] leading-none font-black tracking-[0.04em] text-primary drop-shadow-[4px_4px_0px_#472a00]">
-          {formatTime(boundToCurrentRoom ? timer.remainingSeconds : timer.durationSeconds)}
+          {formatTime(
+            boundToCurrentRoom ? timer.remainingSeconds : timer.durationSeconds,
+          )}
         </div>
 
-        <p className="mt-4 text-center text-sm leading-relaxed text-on-surface-variant">{hint}</p>
+        <p className="mt-4 text-center text-sm leading-relaxed text-on-surface-variant">
+          {hint}
+        </p>
 
         <div className="mt-6 grid gap-3 lg:grid-cols-[1fr_1fr_auto]">
           <label className="block">
@@ -124,7 +148,9 @@ export function StudyTimer({ roomKind, roomCode, roomName, showGardenHint = fals
                 disabled={!canEditDurations}
                 className="w-full bg-transparent py-3 text-center font-headline text-lg font-black text-on-surface outline-none disabled:cursor-not-allowed"
               />
-              <span className="font-headline text-[10px] font-bold uppercase tracking-widest text-outline">min</span>
+              <span className="font-headline text-[10px] font-bold uppercase tracking-widest text-outline">
+                min
+              </span>
             </div>
           </label>
 
@@ -145,7 +171,9 @@ export function StudyTimer({ roomKind, roomCode, roomName, showGardenHint = fals
                 disabled={!canEditDurations}
                 className="w-full bg-transparent py-3 text-center font-headline text-lg font-black text-on-surface outline-none disabled:cursor-not-allowed"
               />
-              <span className="font-headline text-[10px] font-bold uppercase tracking-widest text-outline">min</span>
+              <span className="font-headline text-[10px] font-bold uppercase tracking-widest text-outline">
+                min
+              </span>
             </div>
           </label>
 
@@ -177,12 +205,24 @@ export function StudyTimer({ roomKind, roomCode, roomName, showGardenHint = fals
         <div className="mt-6 flex flex-wrap justify-center gap-4">
           <button
             type="button"
-            onClick={timer.status === "running" && boundToCurrentRoom ? sanctuaryActions.pauseTimer : handleStart}
+            onClick={
+              timer.status === "running" && boundToCurrentRoom
+                ? sanctuaryActions.pauseTimer
+                : handleStart
+            }
             disabled={isAnonymousBlocked}
             className="inline-flex items-center justify-center gap-2 border-b-[3px] border-on-primary-fixed-variant bg-primary px-6 py-2 font-headline text-xs font-bold uppercase tracking-widest text-on-primary disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {timer.status === "running" && boundToCurrentRoom ? <Pause size={16} /> : <Play size={16} />}
-            {timer.status === "running" && boundToCurrentRoom ? "Pausar" : boundToCurrentRoom && timer.status === "paused" ? "Reanudar" : "Iniciar"}
+            {timer.status === "running" && boundToCurrentRoom ? (
+              <Pause size={16} />
+            ) : (
+              <Play size={16} />
+            )}
+            {timer.status === "running" && boundToCurrentRoom
+              ? "Pausar"
+              : boundToCurrentRoom && timer.status === "paused"
+                ? "Reanudar"
+                : "Iniciar"}
           </button>
           <button
             type="button"
@@ -205,15 +245,18 @@ export function StudyTimer({ roomKind, roomCode, roomName, showGardenHint = fals
           </a>
         ) : null}
 
-        {showGardenHint && !isAnonymousBlocked && boundToCurrentRoom && timer.phase === "break" && (
-          <a
-            href="/jardin"
-            className="mt-6 inline-flex w-full items-center justify-center gap-2 border-2 border-primary/35 bg-surface-container-low px-4 py-3 font-headline text-xs font-bold uppercase tracking-[0.22em] text-primary"
-          >
-            <Sparkles size={16} />
-            Ir al jardín de descanso
-          </a>
-        )}
+        {showGardenHint &&
+          !isAnonymousBlocked &&
+          boundToCurrentRoom &&
+          timer.phase === "break" && (
+            <a
+              href="/jardin"
+              className="mt-6 inline-flex w-full items-center justify-center gap-2 border-2 border-primary/35 bg-surface-container-low px-4 py-3 font-headline text-xs font-bold uppercase tracking-[0.22em] text-primary"
+            >
+              <Sparkles size={16} />
+              Ir al jardín de descanso
+            </a>
+          )}
       </div>
       <TimerToastStack toasts={toasts} onDismiss={dismissToast} />
     </div>

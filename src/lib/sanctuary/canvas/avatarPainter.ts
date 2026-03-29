@@ -1,5 +1,9 @@
 import type { AvatarConfig } from "@/lib/sanctuary/store";
-import type { ActorPose, ActorState, Facing } from "@/lib/sanctuary/canvas/types";
+import type {
+  ActorPose,
+  ActorState,
+  Facing,
+} from "@/lib/sanctuary/canvas/types";
 
 interface DrawAvatarOptions {
   avatar: AvatarConfig;
@@ -94,12 +98,32 @@ const garmentTones = {
 } as const;
 
 const upperTones = {
-  "shirt-01-longsleeve": { primary: "#7a5638", trim: "#e9c48e", shadow: "#4d321f" },
-  "shirt-02-vneck-longsleeve": { primary: "#5f456f", trim: "#dcbde7", shadow: "#34253d" },
-  "shirt-03-scoop-longsleeve": { primary: "#6c4c45", trim: "#f0c5ae", shadow: "#43302a" },
+  "shirt-01-longsleeve": {
+    primary: "#7a5638",
+    trim: "#e9c48e",
+    shadow: "#4d321f",
+  },
+  "shirt-02-vneck-longsleeve": {
+    primary: "#5f456f",
+    trim: "#dcbde7",
+    shadow: "#34253d",
+  },
+  "shirt-03-scoop-longsleeve": {
+    primary: "#6c4c45",
+    trim: "#f0c5ae",
+    shadow: "#43302a",
+  },
   "shirt-04-tee": { primary: "#405f45", trim: "#cde4b8", shadow: "#243628" },
-  "shirt-05-vneck-tee": { primary: "#516677", trim: "#d7e5f3", shadow: "#31404c" },
-  "shirt-06-scoop-tee": { primary: "#8b6047", trim: "#f2cb95", shadow: "#5e3d2b" },
+  "shirt-05-vneck-tee": {
+    primary: "#516677",
+    trim: "#d7e5f3",
+    shadow: "#31404c",
+  },
+  "shirt-06-scoop-tee": {
+    primary: "#8b6047",
+    trim: "#f2cb95",
+    shadow: "#5e3d2b",
+  },
 } as const;
 
 const helmetTones = {
@@ -118,14 +142,29 @@ const helmetTones = {
   "sugarloaf-simple": "#a2a5ab",
 } as const;
 
-function px(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, color: string) {
+function px(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  color: string,
+) {
   ctx.fillStyle = color;
   ctx.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h));
 }
 
-function drawAccessory(ctx: CanvasRenderingContext2D, avatar: AvatarConfig, x: number, y: number, facing: Facing) {
+function drawAccessory(
+  ctx: CanvasRenderingContext2D,
+  avatar: AvatarConfig,
+  x: number,
+  y: number,
+  facing: Facing,
+) {
   const tone = hairTones[avatar.hairColor];
-  const baseX = Math.round(x - 4 + (facing === "left" ? -1 : facing === "right" ? 1 : 0));
+  const baseX = Math.round(
+    x - 4 + (facing === "left" ? -1 : facing === "right" ? 1 : 0),
+  );
   const baseY = Math.round(y - 24);
 
   if (avatar.accessory === "bigote") {
@@ -160,8 +199,20 @@ function drawAccessory(ctx: CanvasRenderingContext2D, avatar: AvatarConfig, x: n
   }
 }
 
-export function drawPixelAvatar(ctx: CanvasRenderingContext2D, options: DrawAvatarOptions) {
-  const { avatar, state, pose, facing, x, y, tick, highlighted = false } = options;
+export function drawPixelAvatar(
+  ctx: CanvasRenderingContext2D,
+  options: DrawAvatarOptions,
+) {
+  const {
+    avatar,
+    state,
+    pose,
+    facing,
+    x,
+    y,
+    tick,
+    highlighted = false,
+  } = options;
   const upper = {
     ...upperTones[avatar.upper],
     primary: garmentTones[avatar.upperColor],
@@ -177,7 +228,14 @@ export function drawPixelAvatar(ctx: CanvasRenderingContext2D, options: DrawAvat
   const headY = bodyY - 7;
   const stepFrame = Math.round((tick / 160) % 2);
   const walkOffset = pose === "walk" ? (stepFrame === 0 ? -1 : 1) : 0;
-  const bob = pose === "walk" ? (stepFrame === 0 ? 0 : 1) : state === "break" ? Math.round(Math.sin(tick / 260) * 0.8) : 0;
+  const bob =
+    pose === "walk"
+      ? stepFrame === 0
+        ? 0
+        : 1
+      : state === "break"
+        ? Math.round(Math.sin(tick / 260) * 0.8)
+        : 0;
 
   px(ctx, x - 7, y - 1, 14, 3, "rgba(0,0,0,0.32)");
 
@@ -196,13 +254,24 @@ export function drawPixelAvatar(ctx: CanvasRenderingContext2D, options: DrawAvat
     px(ctx, x + 1, y - 1, 3, 3, lower);
   }
 
-  px(ctx, bodyX, bodyY + bob, bodyWidth, pose === "sitting" ? 10 : 12, upper.primary);
+  px(
+    ctx,
+    bodyX,
+    bodyY + bob,
+    bodyWidth,
+    pose === "sitting" ? 10 : 12,
+    upper.primary,
+  );
   px(ctx, bodyX + 1, bodyY + bob + 1, bodyWidth - 2, 2, upper.trim);
   px(ctx, x - 1, bodyY + bob + 2, 2, pose === "sitting" ? 8 : 10, upper.shadow);
 
   px(ctx, headX, headY + bob, 8, 8, skin);
 
-  if (avatar.accessory === "ninguno" || avatar.accessory === "bigote" || avatar.accessory === "barba-corta") {
+  if (
+    avatar.accessory === "ninguno" ||
+    avatar.accessory === "bigote" ||
+    avatar.accessory === "barba-corta"
+  ) {
     px(ctx, headX, headY + bob, 8, 3, hair);
 
     if (avatar.hairStyle.startsWith("medium-")) {
@@ -214,12 +283,18 @@ export function drawPixelAvatar(ctx: CanvasRenderingContext2D, options: DrawAvat
       px(ctx, headX + 6, headY + bob - 1, 2, 2, hair);
     }
 
-    if (avatar.hairStyle === "short-03-curly" || avatar.hairStyle === "medium-02-curly") {
+    if (
+      avatar.hairStyle === "short-03-curly" ||
+      avatar.hairStyle === "medium-02-curly"
+    ) {
       px(ctx, headX - 1, headY + bob + 1, 1, 2, hair);
       px(ctx, headX + 8, headY + bob + 1, 1, 2, hair);
     }
 
-    if (avatar.hairStyle === "short-01-buzzcut" || avatar.hairStyle === "short-06-balding") {
+    if (
+      avatar.hairStyle === "short-01-buzzcut" ||
+      avatar.hairStyle === "short-06-balding"
+    ) {
       px(ctx, headX + 1, headY + bob, 6, 2, hair);
     }
   }
@@ -236,7 +311,12 @@ export function drawPixelAvatar(ctx: CanvasRenderingContext2D, options: DrawAvat
   }
 }
 
-export function drawSpeechBubble(ctx: CanvasRenderingContext2D, text: string, x: number, y: number) {
+export function drawSpeechBubble(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+) {
   const trimmed = text.trim();
   if (!trimmed) {
     return;
@@ -252,7 +332,14 @@ export function drawSpeechBubble(ctx: CanvasRenderingContext2D, text: string, x:
   const bubbleY = Math.round(y - 32);
 
   px(ctx, bubbleX, bubbleY, bubbleWidth, bubbleHeight, "#171311");
-  px(ctx, bubbleX + 1, bubbleY + 1, bubbleWidth - 2, bubbleHeight - 2, "#efe1cb");
+  px(
+    ctx,
+    bubbleX + 1,
+    bubbleY + 1,
+    bubbleWidth - 2,
+    bubbleHeight - 2,
+    "#efe1cb",
+  );
   px(ctx, x - 2, bubbleY + bubbleHeight - 1, 4, 4, "#171311");
   px(ctx, x - 1, bubbleY + bubbleHeight, 2, 3, "#efe1cb");
 

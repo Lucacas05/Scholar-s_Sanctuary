@@ -1,5 +1,13 @@
-import { useEffect, useCallback, useRef, useState } from "react";
 import {
+  useEffect,
+  useCallback,
+  useRef,
+  useState,
+  type Dispatch,
+  type SetStateAction,
+} from "react";
+import {
+  getAchievementsForCurrentProfile,
   subscribeTimerEvents,
   useSanctuaryStore,
   type TimerEvent,
@@ -9,10 +17,18 @@ import {
 export interface TimerToastData {
   id: string;
   message: string;
-  icon: "focus-start" | "focus-end" | "break-start" | "break-end";
+  icon:
+    | "focus-start"
+    | "focus-end"
+    | "break-start"
+    | "break-end"
+    | "achievement";
 }
 
-const EVENT_LABELS: Record<TimerEvent["kind"], { message: string; browserTitle: string; browserBody: string }> = {
+const EVENT_LABELS: Record<
+  TimerEvent["kind"],
+  { message: string; browserTitle: string; browserBody: string }
+> = {
   "focus-start": {
     message: "Sesión de foco iniciada",
     browserTitle: "Lumina — Foco iniciado",
@@ -36,6 +52,16 @@ const EVENT_LABELS: Record<TimerEvent["kind"], { message: string; browserTitle: 
 };
 
 const TOAST_DURATION_MS = 4000;
+
+function queueToast(
+  setToasts: Dispatch<SetStateAction<TimerToastData[]>>,
+  toast: TimerToastData,
+) {
+  setToasts((prev) => [...prev, toast]);
+  setTimeout(() => {
+    setToasts((prev) => prev.filter((t) => t.id !== toast.id));
+  }, TOAST_DURATION_MS);
+}
 
 function playNotificationSound() {
   try {
@@ -70,7 +96,10 @@ function playNotificationSound() {
 }
 
 function sendBrowserNotification(title: string, body: string) {
-  if (typeof Notification === "undefined" || Notification.permission !== "granted") {
+  if (
+    typeof Notification === "undefined" ||
+    Notification.permission !== "granted"
+  ) {
     return;
   }
 
@@ -86,8 +115,12 @@ export function useTimerNotifications(): {
   dismissToast: (id: string) => void;
 } {
   const sanctuary = useSanctuaryStore();
-  const prefsRef = useRef<NotificationPreferences>(sanctuary.notificationPreferences);
+  const prefsRef = useRef<NotificationPreferences>(
+    sanctuary.notificationPreferences,
+  );
   prefsRef.current = sanctuary.notificationPreferences;
+  const seededUserIdRef = useRef<string | null>(null);
+  const seenAchievementIdsRef = useRef<Set<string>>(new Set());
 
   const [toasts, setToasts] = useState<TimerToastData[]>([]);
 
@@ -102,11 +135,12 @@ export function useTimerNotifications(): {
 
       if (prefs.inAppEnabled) {
         const id = `${event.kind}-${Date.now()}`;
-        const toast: TimerToastData = { id, message: labels.message, icon: event.kind };
-        setToasts((prev) => [...prev, toast]);
-        setTimeout(() => {
-          setToasts((prev) => prev.filter((t) => t.id !== id));
-        }, TOAST_DURATION_MS);
+        const toast: TimerToastData = {
+          id,
+          message: labels.message,
+          icon: event.kind,
+        };
+        queueToast(setToasts, toast);
       }
 
       if (prefs.soundEnabled) {
@@ -120,6 +154,71 @@ export function useTimerNotifications(): {
 
     return subscribeTimerEvents(handleEvent);
   }, []);
+
+  useEffect(() => {
+    if (
+      sanctuary.sessionState !== "authenticated" ||
+      !sanctuary.currentUserId
+    ) {
+      seededUserIdRef.current = null;
+      seenAchievementIdsRef.current = new Set();
+      return;
+    }
+
+    const unlockedAchievements = getAchievementsForCurrentProfile(
+      sanctuary,
+    ).filter((achievement) => achievement.unlockedAt);
+
+    if (seededUserIdRef.current !== sanctuary.currentUserId) {
+      seededUserIdRef.current = sanctuary.currentUserId;
+      seenAchievementIdsRef.current = new Set(
+        unlockedAchievements.map((achievement) => achievement.id),
+      );
+      return;
+    }
+
+    const nextSeen = new Set(seenAchievementIdsRef.current);
+    const newAchievements = unlockedAchievements.filter((achievement) => {
+      if (nextSeen.has(achievement.id)) {
+        return false;
+      }
+
+      nextSeen.add(achievement.id);
+      return true;
+    });
+
+    if (newAchievements.length === 0) {
+      return;
+    }
+
+    seenAchievementIdsRef.current = nextSeen;
+    const prefs = prefsRef.current;
+
+    newAchievements.forEach((achievement) => {
+      if (prefs.inAppEnabled) {
+        queueToast(setToasts, {
+          id: `achievement-${achievement.id}-${achievement.unlockedAt}`,
+          message: `Insignia desbloqueada: ${achievement.title}`,
+          icon: "achievement",
+        });
+      }
+
+      if (prefs.soundEnabled) {
+        playNotificationSound();
+      }
+
+      if (prefs.browserEnabled) {
+        sendBrowserNotification(
+          "Lumina — Nueva insignia",
+          `Has desbloqueado "${achievement.title}".`,
+        );
+      }
+    });
+  }, [
+    sanctuary.achievementUnlocks,
+    sanctuary.currentUserId,
+    sanctuary.sessionState,
+  ]);
 
   return { toasts, dismissToast };
 }

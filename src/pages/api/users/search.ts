@@ -17,7 +17,10 @@ export async function GET({ locals, url }: APIContext) {
     return Response.json([]);
   }
 
-  const rows = searchUsersStatement.all(`%${query.trim()}%`, locals.user.id) as {
+  const rows = searchUsersStatement.all(
+    `%${query.trim()}%`,
+    locals.user.id,
+  ) as {
     id: string;
     username: string;
     displayName: string;

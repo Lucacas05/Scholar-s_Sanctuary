@@ -74,7 +74,7 @@ https://luminalibrary.duckdns.org/
 - Requiere estos secrets en GitHub:
   - `VPS_IP`
   - `VPS_USER`
-  - `VPS_SSH_KEY`
+  - `VPS_PASSWORD`
 - El workflow:
   - hace `git pull`
   - ejecuta `npm ci`

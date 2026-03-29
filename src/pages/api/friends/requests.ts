@@ -52,12 +52,12 @@ export async function GET({ locals }: APIContext) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const incoming = (selectIncomingRequestsStatement.all(locals.user.id) as RequestRow[]).map(
-    mapRequestRow,
-  );
-  const outgoing = (selectOutgoingRequestsStatement.all(locals.user.id) as RequestRow[]).map(
-    mapRequestRow,
-  );
+  const incoming = (
+    selectIncomingRequestsStatement.all(locals.user.id) as RequestRow[]
+  ).map(mapRequestRow);
+  const outgoing = (
+    selectOutgoingRequestsStatement.all(locals.user.id) as RequestRow[]
+  ).map(mapRequestRow);
 
   return Response.json({ incoming, outgoing });
 }

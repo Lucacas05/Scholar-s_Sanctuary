@@ -62,7 +62,7 @@ The GitHub Action now pulls, installs, builds, and restarts `lumina`:
 ```bash
 cd /var/www/Scholar-s_Sanctuary
 git pull origin main
-npm install
+npm ci
 npm run build
 sudo systemctl restart lumina
 sudo systemctl status lumina --no-pager

@@ -96,7 +96,13 @@ const btnBase =
 /*  Helpers                                                            */
 /* ------------------------------------------------------------------ */
 
-function AvatarBubble({ url, fallback }: { url: string | null; fallback: string }) {
+function AvatarBubble({
+  url,
+  fallback,
+}: {
+  url: string | null;
+  fallback: string;
+}) {
   return (
     <div className="relative flex h-12 w-12 shrink-0 items-center justify-center border-4 border-surface-container-highest bg-surface-container-low overflow-hidden">
       {url ? (
@@ -161,15 +167,21 @@ export function ScribeGuild() {
   const [rooms, setRooms] = useState<RoomSummary[]>([]);
   const [roomInvitations, setRoomInvitations] = useState<RoomInvitation[]>([]);
   const [newRoomName, setNewRoomName] = useState("");
-  const [roomPrivacy, setRoomPrivacy] = useState<"public" | "private">("private");
+  const [roomPrivacy, setRoomPrivacy] = useState<"public" | "private">(
+    "private",
+  );
   const [joinCode, setJoinCode] = useState("");
   const [inviteCode, setInviteCode] = useState("");
   const [showCreateRoom, setShowCreateRoom] = useState(false);
-  const [activeInvitesByRoom, setActiveInvitesByRoom] = useState<Record<string, ActiveInvitation[]>>({});
+  const [activeInvitesByRoom, setActiveInvitesByRoom] = useState<
+    Record<string, ActiveInvitation[]>
+  >({});
 
   /* ---- UI state ---- */
   const [activeTab, setActiveTab] = useState<"friends" | "requests">("friends");
-  const [inviteDropdownFor, setInviteDropdownFor] = useState<string | null>(null);
+  const [inviteDropdownFor, setInviteDropdownFor] = useState<string | null>(
+    null,
+  );
 
   /* ================================================================ */
   /*  Data fetching                                                    */
@@ -180,16 +192,21 @@ export function ScribeGuild() {
       const res = await fetch("/api/friends");
       if (res.ok) {
         const data = await res.json();
-        const rows = Array.isArray(data) ? data : data.friends ?? [];
+        const rows = Array.isArray(data) ? data : (data.friends ?? []);
         setFriends(
-          rows.map((row: { id: string; friend?: Omit<Friend, "id" | "friendId"> & { id: string } }) => ({
-            id: row.id,
-            friendId: row.friend?.id ?? "",
-            username: row.friend?.username ?? "",
-            displayName: row.friend?.displayName ?? "",
-            avatarUrl: row.friend?.avatarUrl ?? null,
-            lastSeenAt: row.friend?.lastSeenAt ?? null,
-          })),
+          rows.map(
+            (row: {
+              id: string;
+              friend?: Omit<Friend, "id" | "friendId"> & { id: string };
+            }) => ({
+              id: row.id,
+              friendId: row.friend?.id ?? "",
+              username: row.friend?.username ?? "",
+              displayName: row.friend?.displayName ?? "",
+              avatarUrl: row.friend?.avatarUrl ?? null,
+              lastSeenAt: row.friend?.lastSeenAt ?? null,
+            }),
+          ),
         );
       }
     } catch {
@@ -379,7 +396,10 @@ export function ScribeGuild() {
       const res = await fetch("/api/rooms", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newRoomName.trim(), privacy: roomPrivacy }),
+        body: JSON.stringify({
+          name: newRoomName.trim(),
+          privacy: roomPrivacy,
+        }),
       });
       if (res.ok) {
         fetchRooms();
@@ -461,7 +481,10 @@ export function ScribeGuild() {
     setInviteDropdownFor(null);
   };
 
-  const handleRevokeInvitation = async (roomCode: string, invitationId: string) => {
+  const handleRevokeInvitation = async (
+    roomCode: string,
+    invitationId: string,
+  ) => {
     try {
       const res = await fetch(`/api/rooms/${roomCode}/invite`, {
         method: "DELETE",
@@ -699,12 +722,16 @@ export function ScribeGuild() {
               <div className="divide-y divide-surface-container-highest">
                 {friends.length === 0 ? (
                   <div className="p-8 text-center">
-                    <Users size={32} className="mx-auto mb-3 text-outline-variant" />
+                    <Users
+                      size={32}
+                      className="mx-auto mb-3 text-outline-variant"
+                    />
                     <p className="font-headline text-sm font-bold uppercase tracking-tight text-outline">
                       Sin amigos todavia
                     </p>
                     <p className="mt-1 text-xs text-on-surface-variant font-body">
-                      Busca usuarios por su @usuario de GitHub para enviar solicitudes.
+                      Busca usuarios por su @usuario de GitHub para enviar
+                      solicitudes.
                     </p>
                   </div>
                 ) : (
@@ -764,7 +791,10 @@ export function ScribeGuild() {
                                     }
                                     className="flex w-full items-center gap-2 px-4 py-3 text-left font-headline text-[10px] font-bold uppercase tracking-widest text-on-surface hover:bg-surface-container-highest transition"
                                   >
-                                    <Crown size={12} className="text-secondary" />
+                                    <Crown
+                                      size={12}
+                                      className="text-secondary"
+                                    />
                                     {room.name}
                                   </button>
                                 ))}
@@ -902,7 +932,8 @@ export function ScribeGuild() {
             {/* Footer link */}
             <div className="border-t-4 border-surface-container-highest p-4">
               <span className="inline-flex items-center gap-1 font-headline text-xs font-bold uppercase tracking-widest text-primary">
-                {friends.length} amigo{friends.length !== 1 ? "s" : ""} en el gremio
+                {friends.length} amigo{friends.length !== 1 ? "s" : ""} en el
+                gremio
                 <ArrowUpRight size={14} />
               </span>
             </div>
@@ -1030,7 +1061,8 @@ export function ScribeGuild() {
                           </p>
                           <p className="font-headline text-[10px] font-bold uppercase tracking-widest text-outline">
                             {room.memberCount} miembro
-                            {room.memberCount !== 1 ? "s" : ""} · {room.privacy === "private" ? "Privada" : "Publica"}
+                            {room.memberCount !== 1 ? "s" : ""} ·{" "}
+                            {room.privacy === "private" ? "Privada" : "Publica"}
                           </p>
                         </div>
                       </div>
@@ -1038,28 +1070,42 @@ export function ScribeGuild() {
                         {room.code}
                       </span>
                     </div>
-                    {room.ownerId === sanctuary.currentUserId && (activeInvitesByRoom[room.code]?.length ?? 0) > 0 && (
-                      <div className="mt-3 space-y-2 border-t border-outline-variant/30 pt-3">
-                        <p className="font-headline text-[10px] font-bold uppercase tracking-[0.2em] text-outline">
-                          Invitaciones activas ({activeInvitesByRoom[room.code].length})
-                        </p>
-                        {activeInvitesByRoom[room.code].map((invitation) => (
-                          <div key={invitation.id} className="flex items-center justify-between gap-2 border-2 border-outline-variant/40 bg-surface-container px-2 py-2">
-                            <div>
-                              <p className="font-headline text-[10px] font-bold uppercase tracking-widest text-on-surface">{invitation.invitee.displayName}</p>
-                              <p className="text-[10px] text-outline">{invitation.inviteCode}</p>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => void handleRevokeInvitation(room.code, invitation.id)}
-                              className="flex h-7 items-center justify-center border-2 border-outline-variant/50 bg-surface-container-highest px-2 text-[10px] font-headline font-bold uppercase tracking-widest text-outline hover:text-primary steps-bezel"
+                    {room.ownerId === sanctuary.currentUserId &&
+                      (activeInvitesByRoom[room.code]?.length ?? 0) > 0 && (
+                        <div className="mt-3 space-y-2 border-t border-outline-variant/30 pt-3">
+                          <p className="font-headline text-[10px] font-bold uppercase tracking-[0.2em] text-outline">
+                            Invitaciones activas (
+                            {activeInvitesByRoom[room.code].length})
+                          </p>
+                          {activeInvitesByRoom[room.code].map((invitation) => (
+                            <div
+                              key={invitation.id}
+                              className="flex items-center justify-between gap-2 border-2 border-outline-variant/40 bg-surface-container px-2 py-2"
                             >
-                              Revocar
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                              <div>
+                                <p className="font-headline text-[10px] font-bold uppercase tracking-widest text-on-surface">
+                                  {invitation.invitee.displayName}
+                                </p>
+                                <p className="text-[10px] text-outline">
+                                  {invitation.inviteCode}
+                                </p>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  void handleRevokeInvitation(
+                                    room.code,
+                                    invitation.id,
+                                  )
+                                }
+                                className="flex h-7 items-center justify-center border-2 border-outline-variant/50 bg-surface-container-highest px-2 text-[10px] font-headline font-bold uppercase tracking-widest text-outline hover:text-primary steps-bezel"
+                              >
+                                Revocar
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                   </div>
                 ))
               ) : (
@@ -1106,15 +1152,18 @@ export function ScribeGuild() {
             </div>
 
             <div className="space-y-0 divide-y divide-surface-container-highest">
-              {roomInvitations.length === 0 &&
-              incomingCount === 0 ? (
+              {roomInvitations.length === 0 && incomingCount === 0 ? (
                 <div className="p-6 text-center">
-                  <Mail size={24} className="mx-auto mb-2 text-outline-variant" />
+                  <Mail
+                    size={24}
+                    className="mx-auto mb-2 text-outline-variant"
+                  />
                   <p className="font-headline text-xs font-bold uppercase tracking-tight text-outline">
                     Sin novedades
                   </p>
                   <p className="mt-1 text-xs text-on-surface-variant font-body">
-                    Las invitaciones a salas y solicitudes de amistad apareceran aqui.
+                    Las invitaciones a salas y solicitudes de amistad apareceran
+                    aqui.
                   </p>
                 </div>
               ) : (

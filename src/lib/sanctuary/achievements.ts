@@ -34,7 +34,8 @@ export const achievementDefinitions: AchievementDefinition[] = [
   {
     id: "hora-consagrada",
     title: "Hora consagrada",
-    description: "Acumula al menos una hora completa de estudio con el Pomodoro.",
+    description:
+      "Acumula al menos una hora completa de estudio con el Pomodoro.",
   },
   {
     id: "maraton-del-archivo",
@@ -79,7 +80,9 @@ function toUtcDayKey(timestamp: number) {
 }
 
 export function getDistinctSessionDays(sessions: AchievementSessionLike[]) {
-  return new Set(sessions.map((session) => toUtcDayKey(toTimestamp(session.completedAt)))).size;
+  return new Set(
+    sessions.map((session) => toUtcDayKey(toTimestamp(session.completedAt))),
+  ).size;
 }
 
 export function getStreakDays(sessions: AchievementSessionLike[]) {
@@ -88,7 +91,9 @@ export function getStreakDays(sessions: AchievementSessionLike[]) {
   }
 
   const sortedDayKeys = Array.from(
-    new Set(sessions.map((session) => toUtcDayKey(toTimestamp(session.completedAt)))),
+    new Set(
+      sessions.map((session) => toUtcDayKey(toTimestamp(session.completedAt))),
+    ),
   ).sort((left, right) => right - left);
 
   let streak = 0;
@@ -110,7 +115,8 @@ export function computeAchievementUnlocks(
   sessions: AchievementSessionLike[],
 ): AchievementUnlockSnapshot[] {
   const orderedSessions = [...sessions].sort(
-    (left, right) => toTimestamp(left.completedAt) - toTimestamp(right.completedAt),
+    (left, right) =>
+      toTimestamp(left.completedAt) - toTimestamp(right.completedAt),
   );
 
   const unlocks = new Map<string, number>();
@@ -141,7 +147,10 @@ export function computeAchievementUnlocks(
       unlocks.set("hora-consagrada", completedAt);
     }
 
-    if (totalFocusSeconds >= 5 * 60 * 60 && !unlocks.has("maraton-del-archivo")) {
+    if (
+      totalFocusSeconds >= 5 * 60 * 60 &&
+      !unlocks.has("maraton-del-archivo")
+    ) {
       unlocks.set("maraton-del-archivo", completedAt);
     }
 
@@ -161,7 +170,9 @@ export function computeAchievementUnlocks(
     }
   });
 
-  const orderedDays = [...daySnapshots.entries()].sort((left, right) => left[0] - right[0]);
+  const orderedDays = [...daySnapshots.entries()].sort(
+    (left, right) => left[0] - right[0],
+  );
   let streak = 0;
   let previousDayKey: number | null = null;
 

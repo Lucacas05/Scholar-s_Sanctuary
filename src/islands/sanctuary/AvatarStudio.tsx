@@ -62,8 +62,13 @@ export function AvatarStudio() {
   const isAnonymous = sanctuary.sessionState === "anonymous";
   const [activeField, setActiveField] = useState<EditableAvatarField>("sex");
   const rootRef = useRef<HTMLDivElement | null>(null);
-  const currentOptions = useMemo(() => avatarOptions[activeField], [activeField]);
-  const activeColorField = isGarmentField(activeField) ? garmentColorFieldByField[activeField] : null;
+  const currentOptions = useMemo(
+    () => avatarOptions[activeField],
+    [activeField],
+  );
+  const activeColorField = isGarmentField(activeField)
+    ? garmentColorFieldByField[activeField]
+    : null;
   const colorOptions = activeColorField ? avatarOptions[activeColorField] : [];
 
   useGsapReveal(rootRef);
@@ -103,10 +108,13 @@ export function AvatarStudio() {
       <section className="space-y-6">
         {isAnonymous ? (
           <div className="gsap-rise border border-outline-variant bg-surface-container-low px-5 py-4">
-            <p className="font-headline text-[10px] font-bold uppercase tracking-[0.26em] text-outline">Avatar bloqueado</p>
+            <p className="font-headline text-[10px] font-bold uppercase tracking-[0.26em] text-outline">
+              Avatar bloqueado
+            </p>
             <div className="mt-3 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <p className="text-sm leading-relaxed text-on-surface-variant">
-                Puedes inspeccionar el editor, pero necesitas iniciar sesión para guardar cambios en tu avatar.
+                Puedes inspeccionar el editor, pero necesitas iniciar sesión
+                para guardar cambios en tu avatar.
               </p>
               <a
                 href="/api/auth/login"
@@ -177,12 +185,17 @@ export function AvatarStudio() {
                   } ${isAnonymous ? "cursor-not-allowed opacity-70" : ""}`}
                 >
                   <div className="flex justify-center">
-                    <ItemModelPreview field={activeField} value={option.value} avatar={avatar} />
+                    <ItemModelPreview
+                      field={activeField}
+                      value={option.value}
+                      avatar={avatar}
+                    />
                   </div>
                   {activeColorField ? (
                     <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
                       {colorOptions.map((colorOption) => {
-                        const selectedColor = avatar[activeColorField] === colorOption.value;
+                        const selectedColor =
+                          avatar[activeColorField] === colorOption.value;
                         return (
                           <button
                             key={colorOption.value}
@@ -209,7 +222,10 @@ export function AvatarStudio() {
                                 ? "scale-110 border-primary ring-2 ring-primary/40"
                                 : "border-outline-variant hover:scale-105 hover:border-secondary"
                             }`}
-                            style={{ backgroundColor: garmentColorMeta[colorOption.value].swatch }}
+                            style={{
+                              backgroundColor:
+                                garmentColorMeta[colorOption.value].swatch,
+                            }}
                           />
                         );
                       })}

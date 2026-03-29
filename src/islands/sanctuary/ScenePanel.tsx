@@ -36,7 +36,9 @@ const sceneSlots = {
 
 function getBubbleText(member: SceneMember) {
   if (member.presence.message) {
-    return member.presence.message.length > 18 ? `${member.presence.message.slice(0, 18)}…` : member.presence.message;
+    return member.presence.message.length > 18
+      ? `${member.presence.message.slice(0, 18)}…`
+      : member.presence.message;
   }
 
   if (member.presence.state === "studying") {
@@ -54,7 +56,14 @@ function getBubbleText(member: SceneMember) {
   return "Disponible";
 }
 
-export function ScenePanel({ title, subtitle, badge, backgroundUrl, members, space }: ScenePanelProps) {
+export function ScenePanel({
+  title,
+  subtitle,
+  badge,
+  backgroundUrl,
+  members,
+  space,
+}: ScenePanelProps) {
   const slots = sceneSlots[space];
   const visibleMembers = members.slice(0, slots.length);
   const rootRef = useRef<HTMLDivElement | null>(null);
@@ -62,18 +71,30 @@ export function ScenePanel({ title, subtitle, badge, backgroundUrl, members, spa
   useGsapReveal(rootRef);
 
   return (
-    <div ref={rootRef} className="relative overflow-hidden bg-surface-container-lowest pixel-border">
-      <div className="absolute inset-0 bg-cover bg-center opacity-28" style={{ backgroundImage: `url(${backgroundUrl})` }} />
+    <div
+      ref={rootRef}
+      className="relative overflow-hidden bg-surface-container-lowest pixel-border"
+    >
+      <div
+        className="absolute inset-0 bg-cover bg-center opacity-28"
+        style={{ backgroundImage: `url(${backgroundUrl})` }}
+      />
       <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(24,18,16,0.38)_0%,rgba(24,18,16,0.22)_26%,rgba(24,18,16,0.88)_100%)]" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_22%,rgba(255,185,97,0.16),transparent_28%),radial-gradient(circle_at_50%_88%,rgba(173,208,168,0.14),transparent_20%)]" />
 
       <div className="relative min-h-[28rem] p-6 md:min-h-[30rem] md:p-8">
         <div className="gsap-rise mb-6 max-w-lg">
           <div className="mb-3 inline-flex items-center gap-2 border-l-4 border-primary bg-secondary-container px-3 py-1">
-            <span className="font-headline text-[10px] font-bold uppercase tracking-[0.25em] text-primary-fixed">{badge}</span>
+            <span className="font-headline text-[10px] font-bold uppercase tracking-[0.25em] text-primary-fixed">
+              {badge}
+            </span>
           </div>
-          <h2 className="text-3xl font-headline font-black uppercase tracking-tighter text-on-surface md:text-4xl">{title}</h2>
-          <p className="mt-2 max-w-lg text-sm leading-relaxed text-on-surface-variant">{subtitle}</p>
+          <h2 className="text-3xl font-headline font-black uppercase tracking-tighter text-on-surface md:text-4xl">
+            {title}
+          </h2>
+          <p className="mt-2 max-w-lg text-sm leading-relaxed text-on-surface-variant">
+            {subtitle}
+          </p>
         </div>
 
         <div className="absolute inset-x-0 bottom-0 h-36 bg-gradient-to-t from-surface via-surface/70 to-transparent" />

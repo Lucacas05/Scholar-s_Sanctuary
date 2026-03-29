@@ -25,7 +25,11 @@ export async function GET({ locals }: APIContext) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const rows = selectFriendsStatement.all(locals.user.id, locals.user.id, locals.user.id) as {
+  const rows = selectFriendsStatement.all(
+    locals.user.id,
+    locals.user.id,
+    locals.user.id,
+  ) as {
     id: string;
     friendId: string;
     username: string;

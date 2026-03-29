@@ -1,4 +1,8 @@
-import type { AvatarAccessory, AvatarConfig, AvatarGarmentColor } from "@/lib/sanctuary/store";
+import type {
+  AvatarAccessory,
+  AvatarConfig,
+  AvatarGarmentColor,
+} from "@/lib/sanctuary/store";
 
 interface AvatarLayerAsset {
   src: string;
@@ -155,7 +159,10 @@ const garmentColorFolders: Record<AvatarGarmentColor, string> = {
   yellow: "Yellow",
 };
 
-const helmetFolders: Record<Exclude<AvatarAccessory, "ninguno" | "bigote" | "barba-corta">, string> = {
+const helmetFolders: Record<
+  Exclude<AvatarAccessory, "ninguno" | "bigote" | "barba-corta">,
+  string
+> = {
   barbarian: "barbarian",
   "barbarian-nasal": "barbarian_nasal",
   "barbarian-viking": "barbarian_viking",
@@ -245,11 +252,15 @@ function headFolder(sex: AvatarConfig["sex"]) {
 }
 
 function bodyLayer(avatar: AvatarConfig) {
-  return makeRevisedLayer(`${SPRITES_ROOT}/body/${sexFolder(avatar.sex)}/${avatar.skinTone}.png`);
+  return makeRevisedLayer(
+    `${SPRITES_ROOT}/body/${sexFolder(avatar.sex)}/${avatar.skinTone}.png`,
+  );
 }
 
 function headLayer(avatar: AvatarConfig) {
-  return makeRevisedLayer(`${SPRITES_ROOT}/head/${headFolder(avatar.sex)}/${avatar.skinTone}.png`);
+  return makeRevisedLayer(
+    `${SPRITES_ROOT}/head/${headFolder(avatar.sex)}/${avatar.skinTone}.png`,
+  );
 }
 
 function upperLayer(avatar: AvatarConfig) {
@@ -278,15 +289,24 @@ function hairLayers(avatar: AvatarConfig) {
     hairFront: makeRevisedLayer(`${SPRITES_ROOT}/hair/${folder}/${color}.png`),
   };
 
-  if (avatar.hairStyle === "medium-01-page" || avatar.hairStyle === "medium-02-curly") {
-    layers.hairBack = makeRevisedLayer(`${SPRITES_ROOT}/hair/${folder}/behind/${color}.png`);
+  if (
+    avatar.hairStyle === "medium-01-page" ||
+    avatar.hairStyle === "medium-02-curly"
+  ) {
+    layers.hairBack = makeRevisedLayer(
+      `${SPRITES_ROOT}/hair/${folder}/behind/${color}.png`,
+    );
   }
 
   return layers;
 }
 
 function accessoryLayer(avatar: AvatarConfig) {
-  if (avatar.accessory === "ninguno" || avatar.accessory === "bigote" || avatar.accessory === "barba-corta") {
+  if (
+    avatar.accessory === "ninguno" ||
+    avatar.accessory === "bigote" ||
+    avatar.accessory === "barba-corta"
+  ) {
     return undefined;
   }
 

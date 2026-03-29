@@ -1,8 +1,14 @@
 import type { AvatarConfig } from "@/lib/sanctuary/store";
-import { drawPixelAvatar, drawSpeechBubble } from "@/lib/sanctuary/canvas/avatarPainter";
+import {
+  drawPixelAvatar,
+  drawSpeechBubble,
+} from "@/lib/sanctuary/canvas/avatarPainter";
 import { sceneAtlasEntries } from "@/lib/sanctuary/canvas/atlasCatalog";
 import { getSceneMap } from "@/lib/sanctuary/canvas/sceneMaps";
-import { drawSceneBackground, drawSceneProp } from "@/lib/sanctuary/canvas/renderer";
+import {
+  drawSceneBackground,
+  drawSceneProp,
+} from "@/lib/sanctuary/canvas/renderer";
 import {
   sceneLayerOrder,
   type ActorPose,
@@ -57,7 +63,12 @@ function getLayerOrder(layer: SceneMap["props"][number]["layer"]) {
   return index === -1 ? 0 : index;
 }
 
-function chooseFacing(fromX: number, fromY: number, toX: number, toY: number): Facing {
+function chooseFacing(
+  fromX: number,
+  fromY: number,
+  toX: number,
+  toY: number,
+): Facing {
   const dx = toX - fromX;
   const dy = toY - fromY;
 
@@ -93,10 +104,17 @@ function getRotatedBounds(width: number, height: number, rotation = 0) {
 }
 
 function rectsOverlap(left: CollisionRect, right: CollisionRect) {
-  return left.x < right.x + right.w && left.x + left.w > right.x && left.y < right.y + right.h && left.y + left.h > right.y;
+  return (
+    left.x < right.x + right.w &&
+    left.x + left.w > right.x &&
+    left.y < right.y + right.h &&
+    left.y + left.h > right.y
+  );
 }
 
-function getPropCollisionRect(prop: SceneMap["props"][number]): CollisionRect | null {
+function getPropCollisionRect(
+  prop: SceneMap["props"][number],
+): CollisionRect | null {
   if (prop.shape === "path" || (prop.w <= 18 && prop.h <= 18)) {
     return null;
   }
@@ -104,8 +122,10 @@ function getPropCollisionRect(prop: SceneMap["props"][number]): CollisionRect | 
   const rotated = getRotatedBounds(prop.w, prop.h, prop.rotation ?? 0);
   const boundsX = prop.x + prop.w / 2 - rotated.width / 2;
   const boundsY = prop.y + prop.h / 2 - rotated.height / 2;
-  const wallLikeAtlas = prop.atlas?.includes("walls") || prop.atlas === "wall-puerta";
-  const topWallLike = wallLikeAtlas || (prop.y <= 18 && prop.w >= 72 && prop.h >= 44);
+  const wallLikeAtlas =
+    prop.atlas?.includes("walls") || prop.atlas === "wall-puerta";
+  const topWallLike =
+    wallLikeAtlas || (prop.y <= 18 && prop.w >= 72 && prop.h >= 44);
   const narrowTall = prop.h >= 44 && prop.w <= 34;
   const wideFurniture = prop.w >= 44 && prop.h >= 28;
 
@@ -164,7 +184,11 @@ export class SanctuaryCanvasEngine {
   private focusResolver: (() => void) | null = null;
   private focusPromise: Promise<void> | null = null;
 
-  constructor(canvas: HTMLCanvasElement, sceneKind: SceneKind, avatar: AvatarConfig) {
+  constructor(
+    canvas: HTMLCanvasElement,
+    sceneKind: SceneKind,
+    avatar: AvatarConfig,
+  ) {
     this.canvas = canvas;
     const context = canvas.getContext("2d");
 
@@ -325,7 +349,8 @@ export class SanctuaryCanvasEngine {
     return JSON.stringify(
       {
         scene: this.sceneKind,
-        coordinateSystem: "tile grid; origen arriba-izquierda, x hacia la derecha, y hacia abajo",
+        coordinateSystem:
+          "tile grid; origen arriba-izquierda, x hacia la derecha, y hacia abajo",
         local: {
           x: Number(this.localActor.x.toFixed(2)),
           y: Number(this.localActor.y.toFixed(2)),
@@ -361,7 +386,10 @@ export class SanctuaryCanvasEngine {
         return;
       }
 
-      const delta = this.lastTimestamp === 0 ? FIXED_STEP_MS : clamp(timestamp - this.lastTimestamp, 8, 48);
+      const delta =
+        this.lastTimestamp === 0
+          ? FIXED_STEP_MS
+          : clamp(timestamp - this.lastTimestamp, 8, 48);
       this.lastTimestamp = timestamp;
       this.step(delta);
       this.render();
@@ -374,7 +402,10 @@ export class SanctuaryCanvasEngine {
   private step(deltaMs: number) {
     this.tick += deltaMs;
     this.updateLocalActor(deltaMs / 1000);
-    if (this.localActor.temporaryBubble && this.tick >= this.localActor.temporaryBubbleUntil) {
+    if (
+      this.localActor.temporaryBubble &&
+      this.tick >= this.localActor.temporaryBubbleUntil
+    ) {
       this.localActor.temporaryBubble = "";
       this.localActor.temporaryBubbleUntil = 0;
     }
@@ -383,11 +414,18 @@ export class SanctuaryCanvasEngine {
   private updateLocalActor(deltaSeconds: number) {
     if (this.localActor.route.length > 0) {
       const [target] = this.localActor.route;
-      const arrived = this.moveLocalToward(target, deltaSeconds, this.localActor.state === "studying" ? 2.2 : 1.8);
+      const arrived = this.moveLocalToward(
+        target,
+        deltaSeconds,
+        this.localActor.state === "studying" ? 2.2 : 1.8,
+      );
 
       if (arrived) {
         this.localActor.route.shift();
-        if (this.localActor.route.length === 0 && this.localActor.state === "studying") {
+        if (
+          this.localActor.route.length === 0 &&
+          this.localActor.state === "studying"
+        ) {
           this.localActor.pose = "sitting";
           this.localActor.facing = "up";
           this.localActor.autoBubble = "Estudiando 📖";
@@ -400,7 +438,11 @@ export class SanctuaryCanvasEngine {
     }
 
     if (this.localActor.state !== "break") {
-      this.localActor.pose = this.localActor.state === "studying" && this.localActor.pose === "sitting" ? "sitting" : "idle";
+      this.localActor.pose =
+        this.localActor.state === "studying" &&
+        this.localActor.pose === "sitting"
+          ? "sitting"
+          : "idle";
       return;
     }
 
@@ -410,23 +452,38 @@ export class SanctuaryCanvasEngine {
     }
 
     if (this.localActor.wanderPauseMs > 0) {
-      this.localActor.wanderPauseMs = Math.max(0, this.localActor.wanderPauseMs - deltaSeconds * 1000);
+      this.localActor.wanderPauseMs = Math.max(
+        0,
+        this.localActor.wanderPauseMs - deltaSeconds * 1000,
+      );
       this.localActor.pose = "idle";
       return;
     }
 
-    const target = this.map.wanderNodes[this.localActor.wanderIndex % this.map.wanderNodes.length];
-    const arrived = this.moveLocalToward(target, deltaSeconds, this.sceneKind === "garden" ? 1.5 : 1.3);
+    const target =
+      this.map.wanderNodes[
+        this.localActor.wanderIndex % this.map.wanderNodes.length
+      ];
+    const arrived = this.moveLocalToward(
+      target,
+      deltaSeconds,
+      this.sceneKind === "garden" ? 1.5 : 1.3,
+    );
     this.localActor.pose = "walk";
 
     if (arrived) {
-      this.localActor.wanderIndex = (this.localActor.wanderIndex + 1) % this.map.wanderNodes.length;
+      this.localActor.wanderIndex =
+        (this.localActor.wanderIndex + 1) % this.map.wanderNodes.length;
       this.localActor.wanderPauseMs = 650;
       this.localActor.pose = "idle";
     }
   }
 
-  private moveLocalToward(target: TilePoint, deltaSeconds: number, speed: number) {
+  private moveLocalToward(
+    target: TilePoint,
+    deltaSeconds: number,
+    speed: number,
+  ) {
     const dx = target.x - this.localActor.x;
     const dy = target.y - this.localActor.y;
     const distance = Math.hypot(dx, dy);
@@ -437,7 +494,12 @@ export class SanctuaryCanvasEngine {
       return true;
     }
 
-    this.localActor.facing = chooseFacing(this.localActor.x, this.localActor.y, target.x, target.y);
+    this.localActor.facing = chooseFacing(
+      this.localActor.x,
+      this.localActor.y,
+      target.x,
+      target.y,
+    );
     const nextX = this.localActor.x + (dx / distance) * speed * deltaSeconds;
     const nextY = this.localActor.y + (dy / distance) * speed * deltaSeconds;
     const resolved = this.resolveLocalMovement(nextX, nextY, target);
@@ -452,7 +514,11 @@ export class SanctuaryCanvasEngine {
       .filter((rect): rect is CollisionRect => Boolean(rect));
   }
 
-  private resolveLocalMovement(nextX: number, nextY: number, target?: TilePoint) {
+  private resolveLocalMovement(
+    nextX: number,
+    nextY: number,
+    target?: TilePoint,
+  ) {
     const current = { x: this.localActor.x, y: this.localActor.y };
     const clamped = this.clampLocalPosition(nextX, nextY);
     const fullStep = { x: clamped.x, y: clamped.y };
@@ -468,8 +534,12 @@ export class SanctuaryCanvasEngine {
       current.y + (clamped.y - current.y) * 0.5,
     );
     const candidates = [
-      Math.abs(clamped.x - current.x) >= Math.abs(clamped.y - current.y) ? xOnly : yOnly,
-      Math.abs(clamped.x - current.x) >= Math.abs(clamped.y - current.y) ? yOnly : xOnly,
+      Math.abs(clamped.x - current.x) >= Math.abs(clamped.y - current.y)
+        ? xOnly
+        : yOnly,
+      Math.abs(clamped.x - current.x) >= Math.abs(clamped.y - current.y)
+        ? yOnly
+        : xOnly,
       halfStep,
       { x: halfStep.x, y: current.y },
       { x: current.x, y: halfStep.y },
@@ -497,7 +567,10 @@ export class SanctuaryCanvasEngine {
 
   private collidesAt(tileX: number, tileY: number, target?: TilePoint) {
     const targetRadius = this.localActor.state === "studying" ? 1.65 : 0.24;
-    if (target && Math.hypot(target.x - tileX, target.y - tileY) <= targetRadius) {
+    if (
+      target &&
+      Math.hypot(target.x - tileX, target.y - tileY) <= targetRadius
+    ) {
       return false;
     }
 
@@ -535,10 +608,14 @@ export class SanctuaryCanvasEngine {
 
     const behindActors = this.map.props
       .filter((prop) => prop.layer === "back" || prop.layer === "mid-back")
-      .sort((left, right) => getLayerOrder(left.layer) - getLayerOrder(right.layer));
+      .sort(
+        (left, right) => getLayerOrder(left.layer) - getLayerOrder(right.layer),
+      );
     const inFrontOfActors = this.map.props
       .filter((prop) => prop.layer === "mid-front" || prop.layer === "front")
-      .sort((left, right) => getLayerOrder(left.layer) - getLayerOrder(right.layer));
+      .sort(
+        (left, right) => getLayerOrder(left.layer) - getLayerOrder(right.layer),
+      );
     behindActors.forEach((prop) => drawSceneProp(ctx, prop, this.atlasImages));
 
     const actors = [
@@ -556,13 +633,23 @@ export class SanctuaryCanvasEngine {
       ...Array.from(this.remoteActors.values()).map((actor, index) => ({
         id: actor.id,
         x: actor.tileX,
-        y: actor.tileY + (actor.state === "break" ? Math.sin((this.tick + index * 90) / 420) * 0.08 : 0),
+        y:
+          actor.tileY +
+          (actor.state === "break"
+            ? Math.sin((this.tick + index * 90) / 420) * 0.08
+            : 0),
         avatar: actor.avatar,
         state: actor.state,
         pose: actor.pose,
         facing: actor.facing ?? "down",
         highlighted: false,
-        bubble: actor.message || (actor.state === "studying" ? "Estudiando 📖" : actor.state === "break" ? "En pausa" : ""),
+        bubble:
+          actor.message ||
+          (actor.state === "studying"
+            ? "Estudiando 📖"
+            : actor.state === "break"
+              ? "En pausa"
+              : ""),
       })),
     ].sort((left, right) => left.y - right.y);
 
@@ -582,9 +669,14 @@ export class SanctuaryCanvasEngine {
       drawSpeechBubble(ctx, actor.bubble, drawX, drawY - 8);
     });
 
-    inFrontOfActors.forEach((prop) => drawSceneProp(ctx, prop, this.atlasImages));
+    inFrontOfActors.forEach((prop) =>
+      drawSceneProp(ctx, prop, this.atlasImages),
+    );
 
-    if (Object.keys(this.atlasImages).length === 0 && this.sceneKind !== "garden") {
+    if (
+      Object.keys(this.atlasImages).length === 0 &&
+      this.sceneKind !== "garden"
+    ) {
       ctx.fillStyle = "#f0d6b0";
       ctx.font = "bold 10px monospace";
       ctx.fillText("Cargando atlas...", 12, pixelHeight - 12);

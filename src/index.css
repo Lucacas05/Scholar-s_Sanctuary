@@ -12,23 +12,23 @@
   --color-surface-container: #251e1c;
   --color-surface-container-high: #2f2826;
   --color-surface-container-highest: #3b3331;
-  
+
   --color-on-surface: #ede0dc;
   --color-on-surface-variant: #c3c8be;
-  
+
   --color-primary: #ffb961;
   --color-on-primary: #472a00;
   --color-primary-container: #623c00;
   --color-on-primary-container: #eca241;
   --color-primary-fixed: #ffcf93;
   --color-on-primary-fixed-variant: #6c4300;
-  
+
   --color-secondary: #e7bdb1;
   --color-on-secondary: #442a22;
   --color-secondary-container: #5d4037;
   --color-on-secondary-container: #d4aca0;
   --color-on-secondary-fixed-variant: #6d4c41;
-  
+
   --color-tertiary: #add0a8;
   --color-on-tertiary: #19371b;
   --color-tertiary-container: #2d4b2d;
@@ -38,7 +38,7 @@
   --color-outline: #8d9289;
   --color-outline-variant: #434841;
   --color-surface-variant: #2a2321;
-  
+
   --color-error: #ffb4ab;
   --color-on-error: #690005;
 }
@@ -60,7 +60,7 @@
 
 @layer utilities {
   .pixel-border {
-    box-shadow: 
+    box-shadow:
       0 -4px 0 0 var(--color-surface-container-highest),
       0 4px 0 0 var(--color-surface-container-highest),
       -4px 0 0 0 var(--color-surface-container-highest),
@@ -68,32 +68,35 @@
   }
 
   .pixel-border-inset {
-    box-shadow: 
-      inset 0 -4px 0 0 rgba(0,0,0,0.5),
-      inset 0 4px 0 0 rgba(255,255,255,0.1),
-      inset -4px 0 0 0 rgba(255,255,255,0.1),
-      inset 4px 0 0 0 rgba(0,0,0,0.5);
+    box-shadow:
+      inset 0 -4px 0 0 rgba(0, 0, 0, 0.5),
+      inset 0 4px 0 0 rgba(255, 255, 255, 0.1),
+      inset -4px 0 0 0 rgba(255, 255, 255, 0.1),
+      inset 4px 0 0 0 rgba(0, 0, 0, 0.5);
   }
 
   .pixel-shadow {
-    box-shadow: 4px 4px 0px 0px rgba(0,0,0,0.5);
+    box-shadow: 4px 4px 0px 0px rgba(0, 0, 0, 0.5);
   }
 
   .bezel-button {
-    box-shadow: 
+    box-shadow:
       inset -3px -3px 0px 0px #663e00,
       inset 3px 3px 0px 0px #ffddb8;
   }
 
   .bezel-button:active {
-    box-shadow: 
+    box-shadow:
       inset 3px 3px 0px 0px #663e00,
       inset -3px -3px 0px 0px #ffddb8;
     transform: translateY(2px);
   }
 
   .dither-bg {
-    background-image: radial-gradient(var(--color-surface-container-highest) 1px, transparent 1px);
+    background-image: radial-gradient(
+      var(--color-surface-container-highest) 1px,
+      transparent 1px
+    );
     background-size: 4px 4px;
   }
 

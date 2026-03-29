@@ -48,9 +48,10 @@ export async function POST({ locals, request }: APIContext) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = (await request.json().catch(() => null)) as
-    | { name?: string; privacy?: RoomPrivacy }
-    | null;
+  const body = (await request.json().catch(() => null)) as {
+    name?: string;
+    privacy?: RoomPrivacy;
+  } | null;
   if (!body?.name) {
     return Response.json({ error: "Name is required" }, { status: 400 });
   }
