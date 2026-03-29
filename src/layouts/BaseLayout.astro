@@ -10,12 +10,14 @@ interface Props {
   currentPath: string;
   showFab?: boolean;
   description?: string;
+  image?: string;
 }
 
-const { title, currentPath, showFab = false, description } = Astro.props as Props;
+const { title, currentPath, showFab = false, description, image } = Astro.props as Props;
 const pageTitle = `${title} | ${siteContent.brand}`;
 const pageDescription = description ?? siteContent.meta.description;
 const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin);
+const pageImageURL = new URL(image ?? siteContent.images.libraryHero, Astro.site ?? Astro.url.origin);
 const topItems = siteContent.navigation.topItems;
 const isActive = (href: string) => (href === "/" ? currentPath === "/" : currentPath.startsWith(href));
 const oauthAvailable = Boolean(import.meta.env.GITHUB_CLIENT_ID && import.meta.env.GITHUB_CLIENT_SECRET && import.meta.env.SITE_URL);
@@ -28,19 +30,22 @@ const oauthAvailable = Boolean(import.meta.env.GITHUB_CLIENT_ID && import.meta.e
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{pageTitle}</title>
     <meta name="description" content={pageDescription} />
-    <link rel="canonical" href={canonicalURL} />
+    <link rel="canonical" href={canonicalURL.href} />
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content={siteContent.meta.siteName} />
     <meta property="og:title" content={pageTitle} />
     <meta property="og:description" content={pageDescription} />
-    <meta property="og:url" content={canonicalURL} />
+    <meta property="og:url" content={canonicalURL.href} />
+    <meta property="og:image" content={pageImageURL.href} />
+    <meta property="og:image:alt" content={pageDescription} />
 
     <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={pageTitle} />
     <meta name="twitter:description" content={pageDescription} />
+    <meta name="twitter:image" content={pageImageURL.href} />
 
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   </head>
