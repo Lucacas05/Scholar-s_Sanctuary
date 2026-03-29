@@ -28,9 +28,9 @@ const CANVAS_AVATAR_FOOT_OFFSET = 34;
 const avatarImageCache = new Map<string, CachedAvatarImage>();
 
 const facingRowMap: Record<Facing, number> = {
-  down: 0,
+  down: 2,
   left: 1,
-  up: 2,
+  up: 0,
   right: 3,
 };
 

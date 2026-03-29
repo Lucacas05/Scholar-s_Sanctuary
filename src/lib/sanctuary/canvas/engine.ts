@@ -679,10 +679,15 @@ export class SanctuaryCanvasEngine {
       target.x,
       target.y,
     );
-    const resolved = this.clampLocalPosition(movement.x, movement.y);
+    const resolved = this.resolveLocalMovement(movement.x, movement.y, target);
+    const progressed =
+      Math.hypot(
+        resolved.x - this.localActor.x,
+        resolved.y - this.localActor.y,
+      ) > 0.01;
     this.localActor.x = resolved.x;
     this.localActor.y = resolved.y;
-    return false;
+    return !progressed;
   }
 
   private buildCollisionRects(map: SceneMap) {
