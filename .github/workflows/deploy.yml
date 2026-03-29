@@ -25,7 +25,7 @@ jobs:
 
           if [ -n "${{ secrets.VPS_PASSWORD }}" ]; then
             echo "mode=password_fallback" >> "$GITHUB_OUTPUT"
-            echo "::warning::VPS_SSH_KEY no está configurado. El deploy usará VPS_PASSWORD como compatibilidad temporal."
+            echo "::warning::VPS_SSH_KEY no está configurado. El deploy usará VPS_PASSWORD como compatibilidad temporal sin verificación por fingerprint."
             exit 0
           fi
 
@@ -62,7 +62,6 @@ jobs:
           host: ${{ secrets.VPS_IP }}
           username: ${{ secrets.VPS_USER }}
           password: ${{ secrets.VPS_PASSWORD }}
-          fingerprint: ${{ secrets.VPS_HOST_FINGERPRINT }}
           script: |
             set -e
             export PATH="/usr/local/bin:/usr/bin:/bin:$PATH"

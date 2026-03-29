@@ -61,9 +61,9 @@ The deploy workflow expects:
 
 - `VPS_IP`
 - `VPS_USER`
-- `VPS_HOST_FINGERPRINT`
 - `VPS_SSH_KEY` for the hardened final setup
 - `VPS_PASSWORD` as a temporary compatibility fallback until the SSH key is provisioned
+- `VPS_HOST_FINGERPRINT` once the real SSH host key has been verified against the same host used in `VPS_IP`
 
 To get the host fingerprint on the VPS:
 
@@ -76,7 +76,7 @@ Until that key exists in GitHub, the workflow can still deploy with `VPS_PASSWOR
 
 ## Deploys after setup
 
-The GitHub Action now prefers `VPS_SSH_KEY` and falls back to `VPS_PASSWORD` only while the migration is incomplete. In both cases it pulls, installs, builds, and restarts `lumina`:
+The GitHub Action now prefers `VPS_SSH_KEY` and falls back to `VPS_PASSWORD` only while the migration is incomplete. Fingerprint verification is enforced only in the key-based mode, once the host key has been confirmed against the real deploy host. In both cases it pulls, installs, builds, and restarts `lumina`:
 
 ```bash
 cd /var/www/Scholar-s_Sanctuary
