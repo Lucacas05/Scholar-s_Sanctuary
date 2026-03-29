@@ -4,6 +4,7 @@ import {
   getCurrentPresence,
   getCurrentTimer,
   getFullState,
+  hydrateFromServer,
   sanctuaryActions,
 } from "./store";
 
@@ -65,5 +66,26 @@ describe("store del santuario", () => {
     expect(timer.status).toBe("idle");
     expect(timer.phase).toBe("focus");
     expect(presence?.state).toBe("idle");
+  });
+
+  it("conserva el avatar local si el servidor hidrata un estado más viejo", () => {
+    sanctuaryActions.connectGitHubAccount({
+      id: "github-3",
+      displayName: "Inés",
+      username: "ines",
+    });
+
+    const staleServerState = getFullState();
+
+    sanctuaryActions.updateAvatar("upper", "shirt-05-vneck-tee");
+    sanctuaryActions.updateAvatar("upperColor", "cerise");
+    sanctuaryActions.updateAvatar("accessory", "bigote");
+
+    hydrateFromServer(staleServerState);
+
+    const state = getFullState();
+    expect(state.profiles["github-3"]?.avatar.upper).toBe("shirt-05-vneck-tee");
+    expect(state.profiles["github-3"]?.avatar.upperColor).toBe("cerise");
+    expect(state.profiles["github-3"]?.avatar.accessory).toBe("bigote");
   });
 });

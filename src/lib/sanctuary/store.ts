@@ -2231,6 +2231,17 @@ export function hydrateFromServer(value: unknown) {
     return false;
   }
 
+  const localCurrentUserId = currentState.currentUserId;
+  if (localCurrentUserId) {
+    const localProfile = currentState.profiles[localCurrentUserId];
+    if (localProfile) {
+      nextState.profiles[localCurrentUserId] = {
+        ...(nextState.profiles[localCurrentUserId] ?? localProfile),
+        avatar: cloneState(localProfile.avatar),
+      };
+    }
+  }
+
   currentState = nextState;
   persistState();
   emitChange();
