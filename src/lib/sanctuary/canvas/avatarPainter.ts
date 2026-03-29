@@ -1,3 +1,4 @@
+import { getAvatarArtManifest } from "@/lib/sanctuary/avatarArt";
 import type { AvatarConfig } from "@/lib/sanctuary/store";
 import type {
   ActorPose,
@@ -15,6 +16,25 @@ interface DrawAvatarOptions {
   tick: number;
   highlighted?: boolean;
 }
+
+interface CachedAvatarImage {
+  image: HTMLImageElement | null;
+  status: "loading" | "loaded" | "error";
+}
+
+const AVATAR_FRAME_SIZE = 64;
+const CANVAS_AVATAR_SIZE = 32;
+const CANVAS_AVATAR_FOOT_OFFSET = 28;
+const avatarImageCache = new Map<string, CachedAvatarImage>();
+
+const facingRowMap: Record<Facing, number> = {
+  down: 0,
+  left: 1,
+  up: 2,
+  right: 3,
+};
+
+const walkColumnPattern = [0, 1, 2, 1] as const;
 
 const skinTones = {
   amber: "#d8aa78",
@@ -154,6 +174,252 @@ function px(
   ctx.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h));
 }
 
+function getCachedAvatarImage(src: string) {
+  if (typeof Image === "undefined") {
+    return null;
+  }
+
+  const cached = avatarImageCache.get(src);
+
+  if (cached) {
+    return cached.status === "loaded" ? cached.image : null;
+  }
+
+  const image = new Image();
+  const record: CachedAvatarImage = {
+    image: null,
+    status: "loading",
+  };
+  avatarImageCache.set(src, record);
+  image.onload = () => {
+    record.image = image;
+    record.status = "loaded";
+  };
+  image.onerror = () => {
+    record.status = "error";
+  };
+  image.src = src;
+  return null;
+}
+
+function getAvatarFrame(pose: ActorPose, facing: Facing, tick: number) {
+  const column =
+    pose === "walk"
+      ? walkColumnPattern[Math.floor(tick / 110) % walkColumnPattern.length]
+      : 1;
+  const row = facingRowMap[pose === "sitting" ? "up" : facing];
+
+  return {
+    frameX: column * AVATAR_FRAME_SIZE,
+    frameY: row * AVATAR_FRAME_SIZE,
+  };
+}
+
+function drawAvatarLayer(
+  ctx: CanvasRenderingContext2D,
+  image: HTMLImageElement,
+  frameX: number,
+  frameY: number,
+  drawX: number,
+  drawY: number,
+) {
+  ctx.drawImage(
+    image,
+    frameX,
+    frameY,
+    AVATAR_FRAME_SIZE,
+    AVATAR_FRAME_SIZE,
+    drawX,
+    drawY,
+    CANVAS_AVATAR_SIZE,
+    CANVAS_AVATAR_SIZE,
+  );
+}
+
+function drawAvatarFaceOverlay(
+  ctx: CanvasRenderingContext2D,
+  avatar: AvatarConfig,
+  facing: Facing,
+  drawX: number,
+  drawY: number,
+  size: number,
+) {
+  const unit = size / AVATAR_FRAME_SIZE;
+  const hairTone = hairTones[avatar.hairColor];
+
+  if (facing === "down") {
+    px(
+      ctx,
+      drawX + 24 * unit,
+      drawY + 17 * unit,
+      4 * unit,
+      2 * unit,
+      "#2a201d",
+    );
+    px(
+      ctx,
+      drawX + 36 * unit,
+      drawY + 17 * unit,
+      4 * unit,
+      2 * unit,
+      "#2a201d",
+    );
+    px(ctx, drawX + 29 * unit, drawY + 26 * unit, 6 * unit, unit, "#7b4d3e");
+
+    if (avatar.accessory === "bigote") {
+      px(
+        ctx,
+        drawX + 27 * unit,
+        drawY + 22 * unit,
+        10 * unit,
+        2 * unit,
+        hairTone,
+      );
+    }
+
+    if (avatar.accessory === "barba-corta") {
+      px(
+        ctx,
+        drawX + 26 * unit,
+        drawY + 22 * unit,
+        12 * unit,
+        7 * unit,
+        hairTone,
+      );
+    }
+
+    return;
+  }
+
+  if (facing === "left") {
+    px(
+      ctx,
+      drawX + 24 * unit,
+      drawY + 18 * unit,
+      3 * unit,
+      2 * unit,
+      "#2a201d",
+    );
+    px(ctx, drawX + 26 * unit, drawY + 26 * unit, 4 * unit, unit, "#7b4d3e");
+    return;
+  }
+
+  if (facing === "right") {
+    px(
+      ctx,
+      drawX + 37 * unit,
+      drawY + 18 * unit,
+      3 * unit,
+      2 * unit,
+      "#2a201d",
+    );
+    px(ctx, drawX + 34 * unit, drawY + 26 * unit, 4 * unit, unit, "#7b4d3e");
+  }
+}
+
+export function preloadCanvasAvatarArt(avatar: AvatarConfig) {
+  const manifest = getAvatarArtManifest(avatar);
+  const showHair = manifest.accessoryKind !== "helmet";
+  const sources = [
+    manifest.body.src,
+    manifest.head.src,
+    manifest.upper.src,
+    manifest.lower.src,
+    manifest.socks.src,
+    ...(showHair && manifest.hairBack ? [manifest.hairBack.src] : []),
+    ...(showHair && manifest.hairFront ? [manifest.hairFront.src] : []),
+    ...(manifest.accessoryLayer ? [manifest.accessoryLayer.src] : []),
+  ];
+
+  sources.forEach((src) => {
+    void getCachedAvatarImage(src);
+  });
+}
+
+function drawCanvasAvatarFromArt(
+  ctx: CanvasRenderingContext2D,
+  options: DrawAvatarOptions,
+) {
+  const { avatar, facing, pose, tick, x, y, highlighted = false } = options;
+  const manifest = getAvatarArtManifest(avatar);
+  const showHair = manifest.accessoryKind !== "helmet";
+  const { frameX, frameY } = getAvatarFrame(pose, facing, tick);
+  const drawX = Math.round(x - CANVAS_AVATAR_SIZE / 2);
+  const drawY = Math.round(
+    y - CANVAS_AVATAR_FOOT_OFFSET + (pose === "sitting" ? 3 : 0),
+  );
+  const requiredSources = [
+    manifest.body.src,
+    manifest.head.src,
+    manifest.upper.src,
+    manifest.lower.src,
+    manifest.socks.src,
+  ];
+  const optionalSources = [
+    ...(showHair && manifest.hairBack ? [manifest.hairBack.src] : []),
+    ...(showHair && manifest.hairFront ? [manifest.hairFront.src] : []),
+    ...(manifest.accessoryLayer ? [manifest.accessoryLayer.src] : []),
+  ];
+  const requiredImages = requiredSources.map((src) =>
+    getCachedAvatarImage(src),
+  );
+
+  if (requiredImages.some((image) => !image)) {
+    return false;
+  }
+
+  const optionalImageMap = new Map(
+    optionalSources.map((src) => [src, getCachedAvatarImage(src)]),
+  );
+
+  px(ctx, x - 7, y - 1, 14, 3, "rgba(0,0,0,0.32)");
+
+  if (highlighted) {
+    px(ctx, x - 9, y + 3, 18, 2, "#ffb961");
+  }
+
+  const hairBack =
+    showHair && manifest.hairBack
+      ? (optionalImageMap.get(manifest.hairBack.src) ?? null)
+      : null;
+  const hairFront =
+    showHair && manifest.hairFront
+      ? (optionalImageMap.get(manifest.hairFront.src) ?? null)
+      : null;
+  const accessoryLayer = manifest.accessoryLayer
+    ? (optionalImageMap.get(manifest.accessoryLayer.src) ?? null)
+    : null;
+
+  if (hairBack) {
+    drawAvatarLayer(ctx, hairBack, frameX, frameY, drawX, drawY);
+  }
+
+  requiredImages.forEach((image) => {
+    if (image) {
+      drawAvatarLayer(ctx, image, frameX, frameY, drawX, drawY);
+    }
+  });
+
+  drawAvatarFaceOverlay(
+    ctx,
+    avatar,
+    pose === "sitting" ? "up" : facing,
+    drawX,
+    drawY,
+    CANVAS_AVATAR_SIZE,
+  );
+
+  if (hairFront) {
+    drawAvatarLayer(ctx, hairFront, frameX, frameY, drawX, drawY);
+  }
+
+  if (accessoryLayer) {
+    drawAvatarLayer(ctx, accessoryLayer, frameX, frameY, drawX, drawY);
+  }
+
+  return true;
+}
+
 function drawAccessory(
   ctx: CanvasRenderingContext2D,
   avatar: AvatarConfig,
@@ -199,7 +465,7 @@ function drawAccessory(
   }
 }
 
-export function drawPixelAvatar(
+function drawFallbackAvatar(
   ctx: CanvasRenderingContext2D,
   options: DrawAvatarOptions,
 ) {
@@ -331,6 +597,19 @@ export function drawPixelAvatar(
     px(ctx, bodyX - 1, bodyY + bob + 5, 1, 5, upper.shadow);
     px(ctx, bodyX + bodyWidth, bodyY + bob + 5, 1, 5, upper.shadow);
   }
+}
+
+export function drawPixelAvatar(
+  ctx: CanvasRenderingContext2D,
+  options: DrawAvatarOptions,
+) {
+  preloadCanvasAvatarArt(options.avatar);
+
+  if (drawCanvasAvatarFromArt(ctx, options)) {
+    return;
+  }
+
+  drawFallbackAvatar(ctx, options);
 }
 
 export function drawSpeechBubble(

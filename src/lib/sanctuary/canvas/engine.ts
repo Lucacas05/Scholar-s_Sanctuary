@@ -2,6 +2,7 @@ import type { AvatarConfig } from "@/lib/sanctuary/store";
 import {
   drawPixelAvatar,
   drawSpeechBubble,
+  preloadCanvasAvatarArt,
 } from "@/lib/sanctuary/canvas/avatarPainter";
 import { sceneAtlasEntries } from "@/lib/sanctuary/canvas/atlasCatalog";
 import { getSceneMap } from "@/lib/sanctuary/canvas/sceneMaps";
@@ -246,6 +247,7 @@ export class SanctuaryCanvasEngine {
       temporaryBubble: "",
       temporaryBubbleUntil: 0,
     };
+    preloadCanvasAvatarArt(avatar);
 
     this.resizeToContainer();
     void this.loadAssets();
@@ -271,6 +273,7 @@ export class SanctuaryCanvasEngine {
 
   setAvatar(avatar: AvatarConfig) {
     this.localActor.avatar = avatar;
+    preloadCanvasAvatarArt(avatar);
     this.render();
   }
 
@@ -366,6 +369,7 @@ export class SanctuaryCanvasEngine {
     const next = new Map<string, RemoteActor>();
 
     datos.forEach((entry) => {
+      preloadCanvasAvatarArt(entry.avatar);
       const previous = this.remoteActors.get(entry.id);
       const currentX = previous?.x ?? entry.tileX;
       const currentY = previous?.y ?? entry.tileY;
