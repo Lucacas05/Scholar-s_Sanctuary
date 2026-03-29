@@ -14,7 +14,7 @@ export async function GET({ locals, url }: APIContext) {
 
   const query = url.searchParams.get("q");
   if (!query || query.trim().length === 0) {
-    return Response.json([]);
+    return Response.json({ users: [] });
   }
 
   const rows = searchUsersStatement.all(
@@ -27,5 +27,5 @@ export async function GET({ locals, url }: APIContext) {
     avatarUrl: string | null;
   }[];
 
-  return Response.json(rows);
+  return Response.json({ users: rows });
 }

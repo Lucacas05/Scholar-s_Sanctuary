@@ -28,6 +28,7 @@ function getPublicOrigin(request: Request) {
   const forwardedProto = request.headers.get("x-forwarded-proto");
   const forwardedHost = request.headers.get("x-forwarded-host");
   const host = request.headers.get("host");
+  const protocol = new URL(request.url).protocol;
 
   if (forwardedProto && forwardedHost) {
     return `${forwardedProto}://${forwardedHost}`;
@@ -35,6 +36,10 @@ function getPublicOrigin(request: Request) {
 
   if (forwardedProto && host) {
     return `${forwardedProto}://${host}`;
+  }
+
+  if (host) {
+    return `${protocol}//${host}`;
   }
 
   if (import.meta.env.SITE_URL) {

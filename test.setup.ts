@@ -1,3 +1,5 @@
+import { join } from "node:path";
+import { tmpdir } from "node:os";
 import { afterEach, beforeEach, vi } from "vitest";
 import { cleanup } from "@testing-library/react";
 
@@ -115,6 +117,11 @@ Object.defineProperty(window, "scrollTo", {
   value: () => {},
   writable: true,
 });
+
+process.env.LUMINA_DB_PATH ??= join(
+  tmpdir(),
+  `lumina-vitest-${process.env.VITEST_WORKER_ID ?? "0"}.db`,
+);
 
 beforeEach(() => {
   vi.stubGlobal(

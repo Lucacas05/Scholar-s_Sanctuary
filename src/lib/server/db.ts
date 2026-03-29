@@ -1,13 +1,24 @@
 import { mkdirSync } from "node:fs";
-import { dirname } from "node:path";
+import { dirname, isAbsolute, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import Database from "better-sqlite3";
 import schema from "./schema.sql?raw";
 
-const dbUrl = new URL("../../../data/sanctuary.db", import.meta.url);
 const globalForDb = globalThis as typeof globalThis & {
   __luminaDb?: Database.Database;
 };
+
+function resolveDatabasePath() {
+  const configuredPath = process.env.LUMINA_DB_PATH;
+
+  if (configuredPath) {
+    return isAbsolute(configuredPath)
+      ? configuredPath
+      : resolve(process.cwd(), configuredPath);
+  }
+
+  return fileURLToPath(new URL("../../../data/sanctuary.db", import.meta.url));
+}
 
 function getColumnNames(database: Database.Database, tableName: string) {
   return new Set(
@@ -111,11 +122,17 @@ function runMigrations(database: Database.Database) {
 }
 
 function createDatabase() {
-  const dbPath = fileURLToPath(dbUrl);
+  const dbPath = resolveDatabasePath();
   mkdirSync(dirname(dbPath), { recursive: true });
 
   const database = new Database(dbPath);
+  database.pragma("foreign_keys = ON");
   database.pragma("journal_mode = WAL");
+
+  if (database.pragma("foreign_keys", { simple: true }) !== 1) {
+    throw new Error("SQLite foreign_keys must be enabled for Lumina.");
+  }
+
   database.exec(schema);
   runMigrations(database);
 

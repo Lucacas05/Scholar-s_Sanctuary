@@ -29,8 +29,8 @@ import type { ServerMessage } from "@/lib/server/ws-types";
 /* ------------------------------------------------------------------ */
 
 interface Friend {
+  friendshipId: string;
   id: string;
-  friendId: string;
   username: string;
   displayName: string;
   avatarUrl: string | null;
@@ -143,6 +143,14 @@ function formatLastSeen(value: string | null) {
   }).format(timestamp)}`;
 }
 
+async function readActionError(response: Response, fallback: string) {
+  const payload = (await response.json().catch(() => null)) as {
+    error?: string;
+  } | null;
+
+  return typeof payload?.error === "string" ? payload.error : fallback;
+}
+
 /* ------------------------------------------------------------------ */
 /*  Component                                                          */
 /* ------------------------------------------------------------------ */
@@ -182,6 +190,10 @@ export function ScribeGuild() {
   const [inviteDropdownFor, setInviteDropdownFor] = useState<string | null>(
     null,
   );
+  const [feedback, setFeedback] = useState<string | null>(null);
+  const ownedRooms = rooms.filter(
+    (room) => room.ownerId === sanctuary.currentUserId,
+  );
 
   /* ================================================================ */
   /*  Data fetching                                                    */
@@ -196,11 +208,18 @@ export function ScribeGuild() {
         setFriends(
           rows.map(
             (row: {
-              id: string;
-              friend?: Omit<Friend, "id" | "friendId"> & { id: string };
+              friendshipId?: string;
+              id?: string;
+              friend?: {
+                id: string;
+                username: string;
+                displayName: string;
+                avatarUrl: string | null;
+                lastSeenAt: string | null;
+              };
             }) => ({
-              id: row.id,
-              friendId: row.friend?.id ?? "",
+              friendshipId: row.friendshipId ?? row.id ?? "",
+              id: row.friend?.id ?? "",
               username: row.friend?.username ?? "",
               displayName: row.friend?.displayName ?? "",
               avatarUrl: row.friend?.avatarUrl ?? null,
@@ -317,81 +336,123 @@ export function ScribeGuild() {
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
+
     setIsSearching(true);
+    setFeedback(null);
+
     try {
       const res = await fetch(
         `/api/users/search?q=${encodeURIComponent(searchQuery.trim())}`,
       );
+
       if (res.ok) {
         const data = await res.json();
-        setSearchResults(data.users ?? []);
+        setSearchResults(Array.isArray(data.users) ? data.users : []);
+      } else {
+        setSearchResults([]);
+        setFeedback(
+          await readActionError(res, "No se pudo completar la búsqueda."),
+        );
       }
     } catch {
-      /* network error */
+      setSearchResults([]);
+      setFeedback("No se pudo completar la búsqueda.");
     }
+
     setIsSearching(false);
   };
 
   const handleSendRequest = async (username: string) => {
+    setFeedback(null);
+
     try {
       const res = await fetch("/api/friends/request", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username }),
       });
+
       if (res.ok) {
-        fetchRequests();
+        void fetchRequests();
         setSearchResults((prev) => prev.filter((r) => r.username !== username));
+      } else {
+        setFeedback(
+          await readActionError(res, "No se pudo enviar la solicitud."),
+        );
       }
     } catch {
-      /* network error */
+      setFeedback("No se pudo enviar la solicitud.");
     }
   };
 
   const handleAcceptRequest = async (friendshipId: string) => {
+    setFeedback(null);
+
     try {
       const res = await fetch("/api/friends/accept", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ friendshipId }),
       });
+
       if (res.ok) {
-        fetchFriends();
-        fetchRequests();
+        void fetchFriends();
+        void fetchRequests();
+      } else {
+        setFeedback(
+          await readActionError(res, "No se pudo aceptar la solicitud."),
+        );
       }
     } catch {
-      /* network error */
+      setFeedback("No se pudo aceptar la solicitud.");
     }
   };
 
   const handleDeclineRequest = async (friendshipId: string) => {
+    setFeedback(null);
+
     try {
       const res = await fetch("/api/friends/decline", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ friendshipId }),
       });
+
       if (res.ok) {
-        fetchRequests();
+        void fetchRequests();
+      } else {
+        setFeedback(
+          await readActionError(res, "No se pudo rechazar la solicitud."),
+        );
       }
     } catch {
-      /* network error */
+      setFeedback("No se pudo rechazar la solicitud.");
     }
   };
 
   const handleRemoveFriend = async (friendId: string) => {
+    setFeedback(null);
+
     try {
       const res = await fetch(`/api/friends/${friendId}`, { method: "DELETE" });
+
       if (res.ok) {
-        fetchFriends();
+        void fetchFriends();
+      } else {
+        setFeedback(
+          await readActionError(res, "No se pudo eliminar el amigo."),
+        );
       }
     } catch {
-      /* network error */
+      setFeedback("No se pudo eliminar el amigo.");
     }
   };
 
   const handleCreateRoom = async () => {
     if (!newRoomName.trim()) return;
+
+    setFeedback(null);
+
     try {
       const res = await fetch("/api/rooms", {
         method: "POST",
@@ -401,18 +462,23 @@ export function ScribeGuild() {
           privacy: roomPrivacy,
         }),
       });
+
       if (res.ok) {
-        fetchRooms();
+        void fetchRooms();
         setNewRoomName("");
         setRoomPrivacy("private");
         setShowCreateRoom(false);
+      } else {
+        setFeedback(await readActionError(res, "No se pudo crear la sala."));
       }
     } catch {
-      /* network error */
+      setFeedback("No se pudo crear la sala.");
     }
   };
 
   const handleJoinRoom = async (code: string, inviteCodeValue?: string) => {
+    setFeedback(null);
+
     try {
       const payload = inviteCodeValue?.trim()
         ? { inviteCode: inviteCodeValue.trim().toUpperCase() }
@@ -423,60 +489,84 @@ export function ScribeGuild() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload ?? {}),
       });
+
       if (res.ok) {
-        fetchRooms();
-        fetchInvitations();
+        void fetchRooms();
+        void fetchInvitations();
         setJoinCode("");
         setInviteCode("");
+      } else {
+        setFeedback(await readActionError(res, "No se pudo entrar a la sala."));
       }
     } catch {
-      /* network error */
+      setFeedback("No se pudo entrar a la sala.");
     }
   };
 
   const handleAcceptInvitation = async (invitationId: string) => {
+    setFeedback(null);
+
     try {
       const res = await fetch("/api/rooms/invitations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ invitationId, action: "accept" }),
       });
+
       if (res.ok) {
-        fetchRooms();
-        fetchInvitations();
+        void fetchRooms();
+        void fetchInvitations();
+      } else {
+        setFeedback(
+          await readActionError(res, "No se pudo aceptar la invitación."),
+        );
       }
     } catch {
-      /* network error */
+      setFeedback("No se pudo aceptar la invitación.");
     }
   };
 
   const handleDeclineInvitation = async (invitationId: string) => {
+    setFeedback(null);
+
     try {
       const res = await fetch("/api/rooms/invitations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ invitationId, action: "decline" }),
       });
+
       if (res.ok) {
-        fetchInvitations();
+        void fetchInvitations();
+      } else {
+        setFeedback(
+          await readActionError(res, "No se pudo rechazar la invitación."),
+        );
       }
     } catch {
-      /* network error */
+      setFeedback("No se pudo rechazar la invitación.");
     }
   };
 
   const handleInviteToRoom = async (userId: string, roomCode: string) => {
+    setFeedback(null);
+
     try {
       const res = await fetch(`/api/rooms/${roomCode}/invite`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId, expiresInHours: 72 }),
       });
+
       if (res.ok) {
-        fetchActiveInvitations(roomCode);
+        void fetchActiveInvitations(roomCode);
+      } else {
+        setFeedback(
+          await readActionError(res, "No se pudo enviar la invitación."),
+        );
       }
     } catch {
-      /* network error */
+      setFeedback("No se pudo enviar la invitación.");
     }
     setInviteDropdownFor(null);
   };
@@ -485,17 +575,24 @@ export function ScribeGuild() {
     roomCode: string,
     invitationId: string,
   ) => {
+    setFeedback(null);
+
     try {
       const res = await fetch(`/api/rooms/${roomCode}/invite`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ invitationId }),
       });
+
       if (res.ok) {
-        fetchActiveInvitations(roomCode);
+        void fetchActiveInvitations(roomCode);
+      } else {
+        setFeedback(
+          await readActionError(res, "No se pudo revocar la invitación."),
+        );
       }
     } catch {
-      /* network error */
+      setFeedback("No se pudo revocar la invitación.");
     }
   };
 
@@ -597,6 +694,15 @@ export function ScribeGuild() {
           </button>
         </div>
       </section>
+
+      {feedback ? (
+        <div
+          role="alert"
+          className="gsap-rise border-2 border-error/40 bg-error/10 px-5 py-4 font-body text-sm text-on-surface"
+        >
+          {feedback}
+        </div>
+      ) : null}
 
       {/* ====== MAIN GRID ====== */}
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-12">
@@ -737,7 +843,7 @@ export function ScribeGuild() {
                 ) : (
                   friends.map((friend) => (
                     <div
-                      key={friend.id}
+                      key={friend.friendshipId}
                       className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between"
                     >
                       <div className="flex items-center gap-4">
@@ -760,15 +866,15 @@ export function ScribeGuild() {
 
                       <div className="flex items-center gap-2">
                         {/* Invite to room dropdown */}
-                        {rooms.length > 0 && (
+                        {ownedRooms.length > 0 && (
                           <div className="relative">
                             <button
                               type="button"
                               onClick={() =>
                                 setInviteDropdownFor(
-                                  inviteDropdownFor === friend.friendId
+                                  inviteDropdownFor === friend.id
                                     ? null
-                                    : friend.friendId,
+                                    : friend.id,
                                 )
                               }
                               className={`${btnBase} bg-primary text-on-primary border-b-[3px] border-on-primary-fixed-variant px-4 py-2 text-[10px] hover:brightness-105`}
@@ -777,15 +883,15 @@ export function ScribeGuild() {
                               {social.inviteCta}
                               <ChevronDown size={10} />
                             </button>
-                            {inviteDropdownFor === friend.friendId && (
+                            {inviteDropdownFor === friend.id && (
                               <div className="absolute right-0 top-full z-10 mt-1 min-w-48 border-2 border-outline-variant bg-surface-container shadow-lg">
-                                {rooms.map((room) => (
+                                {ownedRooms.map((room) => (
                                   <button
                                     key={room.code}
                                     type="button"
                                     onClick={() =>
                                       void handleInviteToRoom(
-                                        friend.friendId,
+                                        friend.id,
                                         room.code,
                                       )
                                     }
@@ -803,7 +909,7 @@ export function ScribeGuild() {
                           </div>
                         )}
 
-                        {rooms.length === 0 && (
+                        {ownedRooms.length === 0 && (
                           <span
                             className={`${btnBase} bg-surface-container-highest text-outline border-2 border-outline-variant/30 px-4 py-2 text-[10px] cursor-not-allowed opacity-60`}
                           >

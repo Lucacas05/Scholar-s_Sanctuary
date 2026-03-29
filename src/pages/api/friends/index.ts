@@ -39,7 +39,7 @@ export async function GET({ locals }: APIContext) {
   }[];
 
   const friends = rows.map((row) => ({
-    id: row.id,
+    friendshipId: row.id,
     friend: {
       id: row.friendId,
       username: row.username,
@@ -49,5 +49,5 @@ export async function GET({ locals }: APIContext) {
     },
   }));
 
-  return Response.json(friends);
+  return Response.json({ friends });
 }
