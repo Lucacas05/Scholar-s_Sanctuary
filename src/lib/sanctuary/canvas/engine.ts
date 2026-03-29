@@ -31,6 +31,8 @@ interface LocalActor {
   route: TilePoint[];
   wanderIndex: number;
   wanderPauseMs: number;
+  idleRoamCountdownMs: number;
+  autoRoamMode: "none" | "idle" | "break";
   autoBubble: string;
   temporaryBubble: string;
   temporaryBubbleUntil: number;
@@ -58,6 +60,9 @@ const FIXED_STEP_MS = 1000 / 60;
 const FLOOR_TOP_PX = 54;
 const ACTOR_COLLIDER_HALF_WIDTH = 4;
 const ACTOR_COLLIDER_HEIGHT = 8;
+const IDLE_AUTO_ROAM_DELAY_MS = 4200;
+const IDLE_AUTO_ROAM_PAUSE_MS = 900;
+const BREAK_AUTO_ROAM_PAUSE_MS = 650;
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
@@ -118,6 +123,26 @@ function getLocalSeatTarget(map: SceneMap) {
   }
 
   return map.seatLocal;
+}
+
+function getNearestWanderIndex(map: SceneMap, x: number, y: number) {
+  if (map.wanderNodes.length === 0) {
+    return 0;
+  }
+
+  let bestIndex = 0;
+  let bestDistance = Number.POSITIVE_INFINITY;
+
+  map.wanderNodes.forEach((node, index) => {
+    const distance = Math.hypot(node.x - x, node.y - y);
+
+    if (distance < bestDistance) {
+      bestDistance = distance;
+      bestIndex = index;
+    }
+  });
+
+  return bestIndex;
 }
 
 function normalizeRotation(rotation = 0) {
@@ -243,6 +268,8 @@ export class SanctuaryCanvasEngine {
       route: [],
       wanderIndex: 0,
       wanderPauseMs: 0,
+      idleRoamCountdownMs: IDLE_AUTO_ROAM_DELAY_MS,
+      autoRoamMode: "none",
       autoBubble: "",
       temporaryBubble: "",
       temporaryBubbleUntil: 0,
@@ -286,6 +313,8 @@ export class SanctuaryCanvasEngine {
     this.localActor.route = [];
     this.localActor.wanderIndex = 0;
     this.localActor.wanderPauseMs = 0;
+    this.localActor.idleRoamCountdownMs = IDLE_AUTO_ROAM_DELAY_MS;
+    this.localActor.autoRoamMode = "none";
     this.localActor.pose = "idle";
     this.localActor.state = "idle";
     this.localActor.autoBubble = "";
@@ -324,6 +353,8 @@ export class SanctuaryCanvasEngine {
     this.localActor.pose = "walk";
     this.localActor.autoBubble = "";
     this.localActor.temporaryBubble = "";
+    this.localActor.idleRoamCountdownMs = IDLE_AUTO_ROAM_DELAY_MS;
+    this.localActor.autoRoamMode = "none";
     this.localActor.route = seatTarget ? [seatTarget] : [];
 
     if (!seatTarget) {
@@ -349,6 +380,13 @@ export class SanctuaryCanvasEngine {
     this.localActor.autoBubble = "";
     this.localActor.route = [];
     this.localActor.wanderPauseMs = 0;
+    this.localActor.wanderIndex = getNearestWanderIndex(
+      this.map,
+      this.localActor.x,
+      this.localActor.y,
+    );
+    this.localActor.idleRoamCountdownMs = IDLE_AUTO_ROAM_DELAY_MS;
+    this.localActor.autoRoamMode = "break";
     this.localActor.temporaryBubble = "";
     this.localActor.temporaryBubbleUntil = 0;
     this.render();
@@ -370,6 +408,8 @@ export class SanctuaryCanvasEngine {
     this.localActor.route = [target];
     this.localActor.pose = "walk";
     this.localActor.wanderPauseMs = 0;
+    this.localActor.idleRoamCountdownMs = IDLE_AUTO_ROAM_DELAY_MS;
+    this.localActor.autoRoamMode = "none";
     this.render();
   }
 
@@ -532,20 +572,51 @@ export class SanctuaryCanvasEngine {
           this.focusResolver?.();
           this.focusResolver = null;
           this.focusPromise = null;
+        } else if (this.localActor.route.length === 0) {
+          this.localActor.idleRoamCountdownMs = IDLE_AUTO_ROAM_DELAY_MS;
         }
       }
       return;
     }
 
-    if (this.localActor.state !== "break") {
+    if (this.localActor.state === "studying") {
       this.localActor.pose =
-        this.localActor.state === "studying" &&
-        this.localActor.pose === "sitting"
-          ? "sitting"
-          : "idle";
+        this.localActor.pose === "sitting" ? "sitting" : "idle";
       return;
     }
 
+    if (this.localActor.state === "break") {
+      this.localActor.autoRoamMode = "break";
+      this.advanceAutoRoam(deltaSeconds);
+      return;
+    }
+
+    if (this.localActor.autoRoamMode === "idle") {
+      this.advanceAutoRoam(deltaSeconds);
+      return;
+    }
+
+    this.localActor.pose = "idle";
+    this.localActor.idleRoamCountdownMs = Math.max(
+      0,
+      this.localActor.idleRoamCountdownMs - deltaSeconds * 1000,
+    );
+
+    if (
+      this.localActor.idleRoamCountdownMs === 0 &&
+      this.map.wanderNodes.length > 0
+    ) {
+      this.localActor.autoRoamMode = "idle";
+      this.localActor.wanderIndex = getNearestWanderIndex(
+        this.map,
+        this.localActor.x,
+        this.localActor.y,
+      );
+      this.localActor.wanderPauseMs = 0;
+    }
+  }
+
+  private advanceAutoRoam(deltaSeconds: number) {
     if (this.map.wanderNodes.length === 0) {
       this.localActor.pose = "idle";
       return;
@@ -574,7 +645,10 @@ export class SanctuaryCanvasEngine {
     if (arrived) {
       this.localActor.wanderIndex =
         (this.localActor.wanderIndex + 1) % this.map.wanderNodes.length;
-      this.localActor.wanderPauseMs = 650;
+      this.localActor.wanderPauseMs =
+        this.localActor.autoRoamMode === "break"
+          ? BREAK_AUTO_ROAM_PAUSE_MS
+          : IDLE_AUTO_ROAM_PAUSE_MS;
       this.localActor.pose = "idle";
     }
   }
