@@ -16,8 +16,63 @@ function createDatabase() {
   const database = new Database(dbPath);
   database.pragma("journal_mode = WAL");
   database.exec(schema);
+  runMigrations(database);
 
   return database;
+}
+
+function getColumnNames(database: Database.Database, tableName: string) {
+  return new Set(
+    (database.prepare(`PRAGMA table_info(${tableName})`).all() as Array<{ name: string }>).map(
+      (column) => column.name,
+    ),
+  );
+}
+
+function ensureColumn(
+  database: Database.Database,
+  tableName: string,
+  columnName: string,
+  definition: string,
+) {
+  const columns = getColumnNames(database, tableName);
+  if (columns.has(columnName)) {
+    return;
+  }
+
+  database.exec(`ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${definition}`);
+}
+
+function runMigrations(database: Database.Database) {
+  ensureColumn(database, "rooms", "privacy", "TEXT NOT NULL DEFAULT 'private'");
+  ensureColumn(database, "room_invitations", "invite_code", "TEXT");
+  ensureColumn(database, "room_invitations", "expires_at", "TEXT");
+  ensureColumn(database, "room_invitations", "accepted_at", "TEXT");
+  ensureColumn(database, "room_invitations", "revoked_at", "TEXT");
+
+  database.exec(`
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_room_invitations_invite_code
+      ON room_invitations(invite_code)
+      WHERE invite_code IS NOT NULL;
+
+    CREATE INDEX IF NOT EXISTS idx_room_members_user
+      ON room_members(user_id);
+
+    CREATE INDEX IF NOT EXISTS idx_room_invitations_room_status
+      ON room_invitations(room_code, status);
+
+    CREATE INDEX IF NOT EXISTS idx_room_invitations_invitee_status
+      ON room_invitations(invitee_id, status);
+
+    CREATE INDEX IF NOT EXISTS idx_pomodoro_sessions_user_completed
+      ON pomodoro_sessions(user_id, completed_at DESC);
+
+    CREATE INDEX IF NOT EXISTS idx_pomodoro_sessions_room
+      ON pomodoro_sessions(room_code, completed_at DESC);
+
+    CREATE INDEX IF NOT EXISTS idx_achievement_unlocks_user
+      ON achievement_unlocks(user_id, unlocked_at DESC);
+  `);
 }
 
 export const db = globalForDb.__luminaDb ?? createDatabase();

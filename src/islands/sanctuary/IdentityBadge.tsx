@@ -36,6 +36,34 @@ export function IdentityBadge({ initialUser = null, oauthAvailable = true }: Ide
   const [authFeedback, setAuthFeedback] = useState<AuthFeedback>(null);
   const syncTimeoutRef = useRef<number | null>(null);
   const lastSyncedStateRef = useRef<string | null>(null);
+  const progressSyncInFlightRef = useRef(false);
+
+  async function hydrateArchiveFromServer() {
+    const response = await fetch("/api/pomodoro/archive", {
+      cache: "no-store",
+      credentials: "include",
+    });
+
+    if (!response.ok) {
+      return;
+    }
+
+    const payload = (await response.json()) as {
+      sessions?: Array<{
+        clientSessionId: string;
+        serverId: string;
+        roomCode: string;
+        roomKind: "solo" | "public" | "private";
+        focusSeconds: number;
+        breakSeconds: number;
+        startedAt: number;
+        completedAt: number;
+        persistedAt: number;
+      }>;
+    };
+
+    sanctuaryActions.hydrateServerProgress(payload);
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -77,6 +105,7 @@ export function IdentityBadge({ initialUser = null, oauthAvailable = true }: Ide
 
         sanctuaryActions.connectGitHubAccount(payload.user);
         realtime.connect();
+        await hydrateArchiveFromServer();
 
         const snapshot = getFullState();
         const serializedSnapshot = JSON.stringify(snapshot);
@@ -141,8 +170,11 @@ export function IdentityBadge({ initialUser = null, oauthAvailable = true }: Ide
 
     const nextState = getFullState();
     const serializedState = JSON.stringify(nextState);
+    const unsyncedSessions = nextState.sessions.filter(
+      (session) => session.userId === sessionUser.id && !session.persistedAt,
+    );
 
-    if (serializedState === lastSyncedStateRef.current) {
+    if (serializedState === lastSyncedStateRef.current && unsyncedSessions.length === 0) {
       return;
     }
 
@@ -151,15 +183,72 @@ export function IdentityBadge({ initialUser = null, oauthAvailable = true }: Ide
     }
 
     syncTimeoutRef.current = window.setTimeout(() => {
-      void fetch("/api/me", {
-        body: JSON.stringify({ state: nextState }),
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        method: "POST",
-      })
-        .then((response) => {
+      if (progressSyncInFlightRef.current) {
+        return;
+      }
+
+      progressSyncInFlightRef.current = true;
+
+      void (async () => {
+        try {
+          for (const session of unsyncedSessions) {
+            const response = await fetch("/api/pomodoro/sessions", {
+              body: JSON.stringify({
+                clientSessionId: session.id,
+                roomCode: session.roomCode,
+                roomKind: session.roomKind,
+                focusSeconds: session.focusSeconds,
+                breakSeconds: session.breakSeconds ?? 5 * 60,
+                startedAt: session.startedAt ?? session.completedAt - session.focusSeconds * 1000,
+                completedAt: session.completedAt,
+              }),
+              credentials: "include",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              method: "POST",
+            });
+
+            if (response.status === 401) {
+              realtime.disconnect();
+              sanctuaryActions.returnToAnonymousState();
+              setSessionUser(null);
+              lastSyncedStateRef.current = null;
+              return;
+            }
+
+            if (!response.ok) {
+              continue;
+            }
+
+            const payload = (await response.json()) as {
+              session?: { serverId: string; clientSessionId: string; persistedAt: number };
+            };
+
+            if (payload.session) {
+              sanctuaryActions.markSessionPersisted(
+                payload.session.clientSessionId,
+                payload.session.serverId,
+                payload.session.persistedAt,
+              );
+            }
+          }
+
+          if (unsyncedSessions.length > 0) {
+            await hydrateArchiveFromServer();
+          }
+
+          const stateToPersist = getFullState();
+          const persistedSerializedState = JSON.stringify(stateToPersist);
+          const response = await fetch("/api/me", {
+            body: JSON.stringify({ state: stateToPersist }),
+            credentials: "include",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            method: "POST",
+          });
+
           if (response.status === 401) {
             realtime.disconnect();
             sanctuaryActions.returnToAnonymousState();
@@ -169,12 +258,14 @@ export function IdentityBadge({ initialUser = null, oauthAvailable = true }: Ide
           }
 
           if (response.ok) {
-            lastSyncedStateRef.current = serializedState;
+            lastSyncedStateRef.current = persistedSerializedState;
           }
-        })
-        .catch(() => {
+        } catch {
           // Keep local progress and try again on the next change.
-        });
+        } finally {
+          progressSyncInFlightRef.current = false;
+        }
+      })();
     }, 5000);
 
     return () => {

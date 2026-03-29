@@ -6,6 +6,7 @@ const selectRoomsStatement = db.prepare(`
     r.code,
     r.name,
     r.owner_id AS ownerId,
+    r.privacy,
     r.created_at AS createdAt,
     (SELECT COUNT(*) FROM room_members rm2 WHERE rm2.room_code = r.code) AS memberCount
   FROM rooms r
@@ -14,7 +15,7 @@ const selectRoomsStatement = db.prepare(`
 `);
 
 const insertRoomStatement = db.prepare(
-  "INSERT INTO rooms (code, name, owner_id) VALUES (?, ?, ?)",
+  "INSERT INTO rooms (code, name, owner_id, privacy) VALUES (?, ?, ?, ?)",
 );
 
 const insertRoomMemberStatement = db.prepare(
@@ -32,6 +33,7 @@ export async function GET({ locals }: APIContext) {
     code: string;
     name: string;
     ownerId: string;
+    privacy: "public" | "private";
     memberCount: number;
     createdAt: string;
   }[];
@@ -44,15 +46,19 @@ export async function POST({ locals, request }: APIContext) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = (await request.json().catch(() => null)) as { name?: string } | null;
+  const body = (await request.json().catch(() => null)) as
+    | { name?: string; privacy?: "public" | "private" }
+    | null;
   if (!body?.name) {
     return Response.json({ error: "Name is required" }, { status: 400 });
   }
 
+  const privacy = body.privacy === "public" ? "public" : "private";
+
   const code = crypto.randomUUID().slice(0, 8);
 
   const insertRoom = db.transaction(() => {
-    insertRoomStatement.run(code, body.name, locals.user!.id);
+    insertRoomStatement.run(code, body.name, locals.user!.id, privacy);
     insertRoomMemberStatement.run(code, locals.user!.id);
   });
   insertRoom();
@@ -62,6 +68,7 @@ export async function POST({ locals, request }: APIContext) {
       code,
       name: body.name,
       ownerId: locals.user.id,
+      privacy,
       createdAt: new Date().toISOString(),
     },
   });

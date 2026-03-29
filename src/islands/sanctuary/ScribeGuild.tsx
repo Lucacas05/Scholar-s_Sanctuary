@@ -55,6 +55,7 @@ interface RoomSummary {
   code: string;
   name: string;
   ownerId: string;
+  privacy: "public" | "private";
   memberCount: number;
   createdAt: string;
 }
@@ -63,6 +64,9 @@ interface RoomInvitation {
   id: string;
   roomCode: string;
   roomName: string;
+  roomPrivacy: "public" | "private";
+  inviteCode: string | null;
+  expiresAt: string | null;
   inviter: { id: string; username: string; displayName: string };
   createdAt: string;
 }
@@ -130,6 +134,7 @@ export function ScribeGuild() {
   const [rooms, setRooms] = useState<RoomSummary[]>([]);
   const [roomInvitations, setRoomInvitations] = useState<RoomInvitation[]>([]);
   const [newRoomName, setNewRoomName] = useState("");
+  const [newRoomPrivacy, setNewRoomPrivacy] = useState<"private" | "public">("private");
   const [joinCode, setJoinCode] = useState("");
   const [showCreateRoom, setShowCreateRoom] = useState(false);
 
@@ -298,11 +303,12 @@ export function ScribeGuild() {
       const res = await fetch("/api/rooms", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newRoomName.trim() }),
+        body: JSON.stringify({ name: newRoomName.trim(), privacy: newRoomPrivacy }),
       });
       if (res.ok) {
         fetchRooms();
         setNewRoomName("");
+        setNewRoomPrivacy("private");
         setShowCreateRoom(false);
       }
     } catch {
@@ -311,8 +317,18 @@ export function ScribeGuild() {
   };
 
   const handleJoinRoom = async (code: string) => {
+    const trimmed = code.trim();
+    if (!trimmed) {
+      return;
+    }
+
+    const [roomCode, inviteCode] = trimmed.split(/[:#]/).map((chunk) => chunk.trim()).filter(Boolean);
     try {
-      const res = await fetch(`/api/rooms/${code}/join`, { method: "POST" });
+      const res = await fetch(`/api/rooms/${roomCode}/join`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(inviteCode ? { inviteCode } : {}),
+      });
       if (res.ok) {
         fetchRooms();
         setJoinCode("");
@@ -826,6 +842,30 @@ export function ScribeGuild() {
                       placeholder="Nombre de la sala..."
                       className="w-full rounded-none border-2 border-outline-variant bg-surface-container px-4 py-3 text-sm text-on-surface outline-none focus:border-primary font-body"
                     />
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      <button
+                        type="button"
+                        onClick={() => setNewRoomPrivacy("private")}
+                        className={`border-2 px-4 py-3 text-left font-headline text-[10px] font-bold uppercase tracking-[0.2em] ${
+                          newRoomPrivacy === "private"
+                            ? "border-primary bg-primary/10 text-primary"
+                            : "border-outline-variant bg-surface-container text-outline"
+                        }`}
+                      >
+                        Sala privada
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setNewRoomPrivacy("public")}
+                        className={`border-2 px-4 py-3 text-left font-headline text-[10px] font-bold uppercase tracking-[0.2em] ${
+                          newRoomPrivacy === "public"
+                            ? "border-tertiary bg-tertiary/10 text-tertiary"
+                            : "border-outline-variant bg-surface-container text-outline"
+                        }`}
+                      >
+                        Sala pública
+                      </button>
+                    </div>
                     <div className="flex gap-2">
                       <button
                         type="button"
@@ -840,6 +880,7 @@ export function ScribeGuild() {
                         onClick={() => {
                           setShowCreateRoom(false);
                           setNewRoomName("");
+                          setNewRoomPrivacy("private");
                         }}
                         className="flex h-9 w-9 items-center justify-center border-2 border-outline-variant/50 bg-surface-container-highest text-outline hover:text-primary steps-bezel"
                       >
@@ -860,7 +901,7 @@ export function ScribeGuild() {
                     type="text"
                     value={joinCode}
                     onChange={(e) => setJoinCode(e.target.value)}
-                    placeholder="Codigo de sala..."
+                    placeholder="Sala o sala:CODIGO..."
                     className="w-full rounded-none border-2 border-outline-variant bg-surface-container px-3 py-2 text-sm text-on-surface outline-none focus:border-primary font-body"
                   />
                   <button
@@ -897,9 +938,14 @@ export function ScribeGuild() {
                           </p>
                         </div>
                       </div>
-                      <span className="shrink-0 border-2 border-outline-variant bg-surface-container px-2 py-1 font-headline text-[10px] font-bold uppercase tracking-widest text-primary">
-                        {room.code}
-                      </span>
+                      <div className="flex shrink-0 flex-col items-end gap-2">
+                        <span className="border-2 border-outline-variant bg-surface-container px-2 py-1 font-headline text-[10px] font-bold uppercase tracking-widest text-primary">
+                          {room.code}
+                        </span>
+                        <span className="border-2 border-outline-variant/50 bg-surface-container-low px-2 py-1 font-headline text-[9px] font-bold uppercase tracking-widest text-outline">
+                          {room.privacy === "private" ? "Privada" : "Pública"}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 ))
@@ -978,6 +1024,16 @@ export function ScribeGuild() {
                             {inv.roomName}
                           </span>
                         </p>
+                        {inv.inviteCode ? (
+                          <p className="mt-2 font-headline text-[10px] font-bold uppercase tracking-[0.2em] text-outline">
+                            Código: {inv.roomCode}:{inv.inviteCode}
+                          </p>
+                        ) : null}
+                        {inv.expiresAt ? (
+                          <p className="mt-1 text-[11px] text-on-surface-variant">
+                            Caduca el {new Date(inv.expiresAt).toLocaleDateString("es-ES")}
+                          </p>
+                        ) : null}
                         <div className="mt-3 flex gap-2">
                           <button
                             type="button"

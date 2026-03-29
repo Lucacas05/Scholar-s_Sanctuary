@@ -1,5 +1,11 @@
 import { useSyncExternalStore } from "react";
 import type { RoomMemberPresence } from "@/lib/server/ws-types";
+import {
+  achievementDefinitions,
+  computeAchievementUnlocks,
+  getDistinctSessionDays,
+  getStreakDays,
+} from "@/lib/sanctuary/achievements";
 
 export type SessionState = "anonymous" | "authenticated";
 export type RoomKind = "solo" | "public" | "private";
@@ -202,7 +208,11 @@ export interface StudySession {
   roomCode: string;
   roomKind: RoomKind;
   focusSeconds: number;
+  breakSeconds?: number;
+  startedAt?: number;
   completedAt: number;
+  serverId?: string | null;
+  persistedAt?: number | null;
 }
 
 export interface ChronicleEntry {
@@ -219,6 +229,7 @@ export interface AchievementUnlock {
   id: string;
   userId: string;
   unlockedAt: number;
+  persistedAt?: number | null;
 }
 
 export interface SanctuaryState {
@@ -239,12 +250,6 @@ export interface SanctuaryState {
 export interface AvatarOption<T extends string> {
   value: T;
   label: string;
-  description: string;
-}
-
-export interface AchievementDefinition {
-  id: string;
-  title: string;
   description: string;
 }
 
@@ -540,29 +545,6 @@ export function normalizeAvatarConfig(value: unknown): AvatarConfig {
   };
 }
 
-export const achievementDefinitions: AchievementDefinition[] = [
-  {
-    id: "primera-vigilia",
-    title: "Primera vigilia",
-    description: "Completa tu primera sesión de foco dentro del santuario.",
-  },
-  {
-    id: "ritmo-de-tres",
-    title: "Ritmo de tres",
-    description: "Cierra tres sesiones de foco sin abandonar el archivo.",
-  },
-  {
-    id: "hora-consagrada",
-    title: "Hora consagrada",
-    description: "Acumula al menos una hora completa de estudio con el Pomodoro.",
-  },
-  {
-    id: "llama-constante",
-    title: "Llama constante",
-    description: "Mantén una racha de tres días activos dentro del santuario.",
-  },
-];
-
 const STORAGE_KEY = "scholars-sanctuary-state-v3";
 const CHANNEL_NAME = "scholars-sanctuary-live";
 const DEFAULT_PRIVATE_DESCRIPTION = "Sala reservada para amistades invitadas y foco compartido.";
@@ -665,7 +647,7 @@ function createInitialState(): SanctuaryState {
   const profiles = Object.fromEntries(demoProfiles.map((profile) => [profile.id, profile]));
 
   return {
-    version: 6,
+    version: 7,
     sessionState: "anonymous",
     currentUserId: null,
     currentRoomCode: PUBLIC_ROOM_CODE,
@@ -773,11 +755,17 @@ function normalizeStoredState(value: unknown) {
     authMode?: "guest" | "account";
     sessionState?: SessionState;
   };
-  if (parsed.version !== 3 && parsed.version !== 4 && parsed.version !== 5 && parsed.version !== 6) {
+  if (
+    parsed.version !== 3 &&
+    parsed.version !== 4 &&
+    parsed.version !== 5 &&
+    parsed.version !== 6 &&
+    parsed.version !== 7
+  ) {
     return null;
   }
 
-  parsed.version = 6;
+  parsed.version = 7;
   parsed.sessionState =
     parsed.sessionState === "authenticated" || parsed.authMode === "account" ? "authenticated" : "anonymous";
   parsed.currentUserId = typeof parsed.currentUserId === "string" && parsed.currentUserId ? parsed.currentUserId : null;
@@ -807,15 +795,38 @@ function normalizeStoredState(value: unknown) {
     ...(parsed.presences ?? {}),
   };
   delete parsed.presences["guest-current"];
-  parsed.sessions = (Array.isArray(parsed.sessions) ? parsed.sessions : []).filter(
-    (session) => typeof session.userId === "string" && session.userId !== "guest-current",
-  );
+  parsed.sessions = (Array.isArray(parsed.sessions) ? parsed.sessions : [])
+    .filter((session) => typeof session.userId === "string" && session.userId !== "guest-current")
+    .map((session) => ({
+      ...session,
+      breakSeconds:
+        typeof session.breakSeconds === "number" && Number.isFinite(session.breakSeconds)
+          ? session.breakSeconds
+          : BREAK_SECONDS,
+      startedAt:
+        typeof session.startedAt === "number" && Number.isFinite(session.startedAt)
+          ? session.startedAt
+          : typeof session.completedAt === "number"
+            ? session.completedAt - session.focusSeconds * 1000
+            : Date.now() - session.focusSeconds * 1000,
+      serverId: typeof session.serverId === "string" ? session.serverId : null,
+      persistedAt:
+        typeof session.persistedAt === "number" && Number.isFinite(session.persistedAt)
+          ? session.persistedAt
+          : null,
+    }));
   parsed.chronicleEntries = (Array.isArray(parsed.chronicleEntries) ? parsed.chronicleEntries : []).filter(
     (entry) => typeof entry.userId === "string" && entry.userId !== "guest-current",
   );
-  parsed.achievementUnlocks = (Array.isArray(parsed.achievementUnlocks) ? parsed.achievementUnlocks : []).filter(
-    (entry) => typeof entry.userId === "string" && entry.userId !== "guest-current",
-  );
+  parsed.achievementUnlocks = (Array.isArray(parsed.achievementUnlocks) ? parsed.achievementUnlocks : [])
+    .filter((entry) => typeof entry.userId === "string" && entry.userId !== "guest-current")
+    .map((entry) => ({
+      ...entry,
+      persistedAt:
+        typeof entry.persistedAt === "number" && Number.isFinite(entry.persistedAt)
+          ? entry.persistedAt
+          : null,
+    }));
   parsed.friendIds = Array.isArray(parsed.friendIds) ? parsed.friendIds : fallback.friendIds;
   parsed.timer = {
     ...fallback.timer,
@@ -925,20 +936,26 @@ function setCurrentPresence(state: SanctuaryState, next: Partial<Presence>) {
 
 function recalculateAchievements(state: SanctuaryState, userId: string) {
   const sessions = state.sessions.filter((session) => session.userId === userId);
-  const totalFocusSeconds = sessions.reduce((total, session) => total + session.focusSeconds, 0);
-  const streakDays = getStreakDays(sessions);
-  const unlocked = new Set(state.achievementUnlocks.filter((entry) => entry.userId === userId).map((entry) => entry.id));
-  const maybeUnlock = (id: string) => {
-    if (!unlocked.has(id)) {
-      state.achievementUnlocks.unshift({ id, userId, unlockedAt: Date.now() });
-      unlocked.add(id);
-    }
-  };
+  const existingById = new Map(
+    state.achievementUnlocks
+      .filter((entry) => entry.userId === userId)
+      .map((entry) => [entry.id, entry] as const),
+  );
+  const nextUnlocks = computeAchievementUnlocks(sessions).map(({ id, unlockedAt }) => {
+    const existing = existingById.get(id);
 
-  if (sessions.length >= 1) maybeUnlock("primera-vigilia");
-  if (sessions.length >= 3) maybeUnlock("ritmo-de-tres");
-  if (totalFocusSeconds >= 60 * 60) maybeUnlock("hora-consagrada");
-  if (streakDays >= 3) maybeUnlock("llama-constante");
+    return {
+      id,
+      userId,
+      unlockedAt: existing?.unlockedAt ?? unlockedAt,
+      persistedAt: existing?.persistedAt ?? null,
+    };
+  });
+
+  state.achievementUnlocks = [
+    ...state.achievementUnlocks.filter((entry) => entry.userId !== userId),
+    ...nextUnlocks,
+  ].sort((left, right) => right.unlockedAt - left.unlockedAt);
 }
 
 function pushChronicle(
@@ -966,13 +983,19 @@ function completeFocusSession(state: SanctuaryState) {
     return;
   }
 
+  const completedAt = Date.now();
+
   state.sessions.unshift({
     id: crypto.randomUUID(),
     userId,
     roomCode: state.timer.roomCode,
     roomKind: state.timer.roomKind,
     focusSeconds: state.timer.focusDurationSeconds,
-    completedAt: Date.now(),
+    breakSeconds: state.timer.breakDurationSeconds,
+    startedAt: completedAt - state.timer.focusDurationSeconds * 1000,
+    completedAt,
+    serverId: null,
+    persistedAt: null,
   });
 
   pushChronicle(
@@ -1058,47 +1081,6 @@ function getTimeLeft(state: SanctuaryState, now = Date.now()) {
   }
 
   return Math.max(0, Math.ceil((state.timer.endsAt - now) / 1000));
-}
-
-function getDistinctSessionDays(sessions: StudySession[]) {
-  const days = new Set(
-    sessions.map((session) => {
-      const date = new Date(session.completedAt);
-      return `${date.getUTCFullYear()}-${date.getUTCMonth()}-${date.getUTCDate()}`;
-    }),
-  );
-  return days.size;
-}
-
-function getStreakDays(sessions: StudySession[]) {
-  if (sessions.length === 0) {
-    return 0;
-  }
-
-  const dayKeys = Array.from(
-    new Set(
-      sessions
-        .map((session) => {
-          const date = new Date(session.completedAt);
-          return Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
-        })
-        .sort((a, b) => b - a),
-    ),
-  );
-
-  let streak = 0;
-  let cursor = dayKeys[0];
-
-  for (const day of dayKeys) {
-    if (day === cursor) {
-      streak += 1;
-      cursor -= 24 * 60 * 60 * 1000;
-      continue;
-    }
-    break;
-  }
-
-  return streak;
 }
 
 function remapUserReferences(state: SanctuaryState, fromUserId: string | null, toUserId: string) {
@@ -1674,6 +1656,85 @@ export const sanctuaryActions = {
       state.timer.remainingSeconds = nextDuration;
       state.timer.endsAt = null;
       state.timer.updatedAt = Date.now();
+    });
+  },
+
+  markSessionPersisted(sessionId: string, serverId: string, persistedAt: number) {
+    commit((state) => {
+      const session = state.sessions.find((entry) => entry.id === sessionId);
+      if (!session) {
+        return;
+      }
+
+      session.serverId = serverId;
+      session.persistedAt = persistedAt;
+    });
+  },
+
+  hydrateServerProgress(payload: {
+    sessions?: Array<{
+      clientSessionId: string;
+      serverId: string;
+      roomCode: string;
+      roomKind: RoomKind;
+      focusSeconds: number;
+      breakSeconds: number;
+      startedAt: number;
+      completedAt: number;
+      persistedAt: number;
+    }>;
+    chronicleEntries?: ChronicleEntry[];
+    achievementUnlocks?: AchievementUnlock[];
+  }) {
+    commit((state) => {
+      const userId = state.currentUserId;
+      if (!userId) {
+        return;
+      }
+
+      const byId = new Map(
+        state.sessions
+          .filter((session) => session.userId === userId)
+          .map((session) => [session.id, session] as const),
+      );
+
+      payload.sessions?.forEach((session) => {
+        byId.set(session.clientSessionId, {
+          id: session.clientSessionId,
+          userId,
+          roomCode: session.roomCode,
+          roomKind: session.roomKind,
+          focusSeconds: session.focusSeconds,
+          breakSeconds: session.breakSeconds,
+          startedAt: session.startedAt,
+          completedAt: session.completedAt,
+          serverId: session.serverId,
+          persistedAt: session.persistedAt,
+        });
+      });
+
+      state.sessions = [
+        ...state.sessions.filter((session) => session.userId !== userId),
+        ...[...byId.values()],
+      ].sort((left, right) => right.completedAt - left.completedAt);
+
+      if (payload.chronicleEntries) {
+        state.chronicleEntries = [
+          ...state.chronicleEntries.filter((entry) => !(entry.userId === userId && entry.origin === "timer")),
+          ...payload.chronicleEntries.map((entry) => ({ ...entry, userId })),
+        ].sort((left, right) => right.timestamp - left.timestamp);
+      }
+
+      if (payload.achievementUnlocks) {
+        state.achievementUnlocks = [
+          ...state.achievementUnlocks.filter((entry) => entry.userId !== userId),
+          ...payload.achievementUnlocks.map((entry) => ({
+            ...entry,
+            userId,
+            persistedAt: entry.persistedAt ?? entry.unlockedAt,
+          })),
+        ].sort((left, right) => right.unlockedAt - left.unlockedAt);
+      }
     });
   },
 

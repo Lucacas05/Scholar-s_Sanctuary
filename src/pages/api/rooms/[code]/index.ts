@@ -2,7 +2,7 @@ import type { APIContext } from "astro";
 import { db } from "@/lib/server/db";
 
 const selectRoomStatement = db.prepare(
-  "SELECT code, name, owner_id AS ownerId, created_at AS createdAt FROM rooms WHERE code = ?",
+  "SELECT code, name, owner_id AS ownerId, privacy, created_at AS createdAt FROM rooms WHERE code = ?",
 );
 
 const checkMembershipStatement = db.prepare(
@@ -28,7 +28,7 @@ export async function GET({ locals, params }: APIContext) {
   }
 
   const room = selectRoomStatement.get(params.code) as
-    | { code: string; name: string; ownerId: string; createdAt: string }
+    | { code: string; name: string; ownerId: string; privacy: "public" | "private"; createdAt: string }
     | undefined;
 
   if (!room) {
