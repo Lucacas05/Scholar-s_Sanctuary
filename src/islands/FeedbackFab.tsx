@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  type SubmitEvent,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { MessageSquarePlus, Bug, Lightbulb, X, Send } from "lucide-react";
 
 type FeedbackType = "bug" | "idea";
@@ -66,7 +72,7 @@ export function FeedbackFab() {
     return () => dialog.removeEventListener("close", onClose);
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     const trimmed = comment.trim();
     if (!trimmed) return;

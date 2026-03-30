@@ -1,4 +1,11 @@
-import { useEffect, useRef, useState } from "react";
+import {
+  type Dispatch,
+  type RefObject,
+  type SetStateAction,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import gsap from "gsap";
 import {
   Copy,
@@ -1380,6 +1387,10 @@ export function SceneEditor() {
   const copyButtonFillRef = useRef<HTMLSpanElement | null>(null);
   const copyButtonLabelRef = useRef<HTMLSpanElement | null>(null);
   const copyButtonTimelineRef = useRef<gsap.core.Timeline | null>(null);
+  const applyButtonRef = useRef<HTMLButtonElement | null>(null);
+  const applyButtonFillRef = useRef<HTMLSpanElement | null>(null);
+  const applyButtonLabelRef = useRef<HTMLSpanElement | null>(null);
+  const applyButtonTimelineRef = useRef<gsap.core.Timeline | null>(null);
   const undoStackRef = useRef<EditorDrafts[]>([]);
   const redoStackRef = useRef<EditorDrafts[]>([]);
   const draftsRef = useRef<EditorDrafts>(loadDrafts());
@@ -1410,6 +1421,7 @@ export function SceneEditor() {
   const [importBuffer, setImportBuffer] = useState("");
   const [flash, setFlash] = useState("");
   const [copyButtonText, setCopyButtonText] = useState("Copiar JSON");
+  const [applyButtonText, setApplyButtonText] = useState("Aplicar en la VPS");
   const [isAtlasInspectorOpen, setIsAtlasInspectorOpen] = useState(false);
   const [historyState, setHistoryState] = useState({ undo: 0, redo: 0 });
   const scene = drafts[sceneKind];
@@ -1591,6 +1603,7 @@ export function SceneEditor() {
   useEffect(() => {
     return () => {
       copyButtonTimelineRef.current?.kill();
+      applyButtonTimelineRef.current?.kill();
     };
   }, []);
 
@@ -1749,15 +1762,35 @@ export function SceneEditor() {
     selectedPropAtlasViewKey,
   ]);
 
-  function animateCopyButton(success: boolean) {
-    const button = copyButtonRef.current;
-    const fill = copyButtonFillRef.current;
-    const label = copyButtonLabelRef.current;
+  function animateActionButton({
+    buttonRef,
+    fillRef,
+    labelRef,
+    timelineRef,
+    setText,
+    idleText,
+    successText,
+    failureText,
+    success,
+  }: {
+    buttonRef: RefObject<HTMLButtonElement | null>;
+    fillRef: RefObject<HTMLSpanElement | null>;
+    labelRef: RefObject<HTMLSpanElement | null>;
+    timelineRef: RefObject<gsap.core.Timeline | null>;
+    setText: Dispatch<SetStateAction<string>>;
+    idleText: string;
+    successText: string;
+    failureText: string;
+    success: boolean;
+  }) {
+    const button = buttonRef.current;
+    const fill = fillRef.current;
+    const label = labelRef.current;
     if (!button || !fill || !label) {
       return;
     }
 
-    copyButtonTimelineRef.current?.kill();
+    timelineRef.current?.kill();
     const fillColor = success ? "#ffb961" : "#c46a6a";
     const textColor = success ? "#1b1412" : "#fff3f1";
 
@@ -1767,12 +1800,12 @@ export function SceneEditor() {
       backgroundColor: fillColor,
     });
     gsap.set(label, { color: "" });
-    setCopyButtonText(success ? "Copiado" : "No copiado");
+    setText(success ? successText : failureText);
 
-    copyButtonTimelineRef.current = gsap.timeline({
+    timelineRef.current = gsap.timeline({
       defaults: { ease: "power2.out" },
       onComplete: () => {
-        setCopyButtonText("Copiar JSON");
+        setText(idleText);
         gsap.set(fill, {
           scaleX: 0,
           clearProps: "transformOrigin,backgroundColor",
@@ -1781,13 +1814,41 @@ export function SceneEditor() {
       },
     });
 
-    copyButtonTimelineRef.current
+    timelineRef.current
       .to(fill, { scaleX: 1, duration: 0.28 })
       .to(label, { color: textColor, duration: 0.18 }, 0)
       .to({}, { duration: 0.45 })
       .set(fill, { transformOrigin: "right center" })
       .to(fill, { scaleX: 0, duration: 0.34, ease: "power2.inOut" })
       .to(label, { color: "", duration: 0.2 }, "<");
+  }
+
+  function animateCopyButton(success: boolean) {
+    animateActionButton({
+      buttonRef: copyButtonRef,
+      fillRef: copyButtonFillRef,
+      labelRef: copyButtonLabelRef,
+      timelineRef: copyButtonTimelineRef,
+      setText: setCopyButtonText,
+      idleText: "Copiar JSON",
+      successText: "Copiado",
+      failureText: "No copiado",
+      success,
+    });
+  }
+
+  function animateApplyButton(success: boolean) {
+    animateActionButton({
+      buttonRef: applyButtonRef,
+      fillRef: applyButtonFillRef,
+      labelRef: applyButtonLabelRef,
+      timelineRef: applyButtonTimelineRef,
+      setText: setApplyButtonText,
+      idleText: "Aplicar en la VPS",
+      successText: "Aplicado",
+      failureText: "No aplicado",
+      success,
+    });
   }
 
   function renderCanvas() {
@@ -2469,9 +2530,11 @@ export function SceneEditor() {
     try {
       await publishSceneMapsToServer(draftsRef.current);
       setFlash("Cambios aplicados en la web");
+      animateApplyButton(true);
     } catch {
       publishSceneMaps(draftsRef.current);
       setFlash("No se pudo guardar la escena en la VPS");
+      animateApplyButton(false);
     }
   }
 
@@ -2539,11 +2602,22 @@ export function SceneEditor() {
               <Redo2 size={14} /> Rehacer
             </button>
             <button
+              ref={applyButtonRef}
               type="button"
               onClick={applyToWeb}
-              className="inline-flex items-center gap-2 border-2 border-tertiary bg-tertiary/12 px-4 py-3 font-headline text-xs font-bold uppercase tracking-[0.18em] text-tertiary hover:border-tertiary"
+              className="relative inline-flex items-center gap-2 overflow-hidden border-2 border-tertiary bg-tertiary/12 px-4 py-3 font-headline text-xs font-bold uppercase tracking-[0.18em] text-tertiary hover:border-tertiary"
             >
-              <Save size={14} /> Aplicar en la VPS
+              <span
+                ref={applyButtonFillRef}
+                aria-hidden="true"
+                className="absolute inset-0 z-0 origin-left scale-x-0 bg-primary"
+              />
+              <span
+                ref={applyButtonLabelRef}
+                className="relative z-10 inline-flex items-center gap-2"
+              >
+                <Save size={14} /> {applyButtonText}
+              </span>
             </button>
             <button
               ref={copyButtonRef}
