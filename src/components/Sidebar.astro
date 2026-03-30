@@ -1,7 +1,6 @@
 ---
 import { siteContent } from "@/data/site";
 import { ICONS } from "@/lib/icons";
-import { SidebarSessionFooter } from "@/islands/sanctuary/SidebarSessionFooter";
 
 interface Props {
   currentPath: string;
@@ -70,7 +69,22 @@ const isActive = (href: string) =>
     <footer
       class="border-t-4 border-surface-container-highest p-2 bg-surface-container-low"
     >
-      <SidebarSessionFooter client:only="react" />
+      <div class="space-y-1">
+        <a
+          href="/refinar"
+          class="flex w-full items-center gap-3 p-2 text-left font-headline text-xs font-bold uppercase tracking-widest text-on-surface-variant transition hover:text-primary"
+        >
+          <ICONS.Settings size={16} />
+          <span>Perfil y avatar</span>
+        </a>
+        <a
+          href="/api/auth/login"
+          class="flex w-full items-center gap-3 p-2 font-headline text-xs font-bold uppercase tracking-widest text-outline transition hover:text-primary"
+        >
+          <ICONS.LogOut size={16} />
+          <span>Acceso con GitHub</span>
+        </a>
+      </div>
     </footer>
   </aside>
 

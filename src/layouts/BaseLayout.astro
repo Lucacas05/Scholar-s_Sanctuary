@@ -66,6 +66,8 @@ const bootstrapPayload = Astro.locals.user
         Astro.locals.userState?.preferredStartPath ?? "/biblioteca-compartida",
     }
   : null;
+const serializeInlineData = (value: unknown) =>
+  JSON.stringify(value).replace(/</g, "\\u003c");
 ---
 
 <!doctype html>
@@ -93,6 +95,7 @@ const bootstrapPayload = Astro.locals.user
     <meta name="twitter:image" content={pageImageURL.href} />
     <meta name="theme-color" content="#181210" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Lumina" />
 
     <link
@@ -141,7 +144,7 @@ const bootstrapPayload = Astro.locals.user
           </nav>
           <div class="min-w-[160px] min-h-[40px]">
             <IdentityBadge
-              client:only="react"
+              client:idle
               initialUser={Astro.locals.user ?? null}
               oauthAvailable={oauthAvailable}
             />
@@ -158,23 +161,29 @@ const bootstrapPayload = Astro.locals.user
 
     {
       (
-        <script is:inline define:vars={{ wardrobeConfig }}>
-          window.__luminaWardrobeConfig = wardrobeConfig;
-        </script>
+        <script
+          id="lumina-wardrobe-config"
+          type="application/json"
+          set:html={serializeInlineData(wardrobeConfig)}
+        />
       )
     }
     {
       (
-        <script is:inline define:vars={{ customWardrobeCatalog }}>
-          window.__luminaCustomWardrobeCatalog = customWardrobeCatalog;
-        </script>
+        <script
+          id="lumina-custom-wardrobe-catalog"
+          type="application/json"
+          set:html={serializeInlineData(customWardrobeCatalog)}
+        />
       )
     }
     {
       bootstrapPayload && (
-        <script is:inline define:vars={{ bootstrapPayload }}>
-          window.__luminaBootstrap = bootstrapPayload;
-        </script>
+        <script
+          id="lumina-bootstrap"
+          type="application/json"
+          set:html={serializeInlineData(bootstrapPayload)}
+        />
       )
     }
     <PwaBridge client:idle />
