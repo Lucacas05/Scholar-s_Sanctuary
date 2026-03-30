@@ -435,6 +435,72 @@ describe("contratos API del santuario", () => {
     );
   });
 
+  it("permite leer el armario publicado sin permisos de admin", async () => {
+    const adminUser = {
+      id: "github-1",
+      githubId: 1,
+      username: "faby",
+      displayName: "Faby",
+    };
+    const readerUser = {
+      id: "github-2",
+      githubId: 2,
+      username: "lucas",
+      displayName: "Lucas",
+    };
+
+    insertUser(adminUser);
+    insertUser(readerUser);
+
+    await saveEditorWardrobe(
+      createApiContext({
+        user: adminUser,
+        isAdmin: true,
+        method: "POST",
+        url: "https://lumina.test/api/editor/wardrobe",
+        body: {
+          config: {
+            levelStepFocusSeconds: 5400,
+            rules: [
+              {
+                id: "upper:shirt-04-tee",
+                field: "upper",
+                value: "shirt-04-tee",
+                label: "Camiseta base",
+                unlockLevel: 4,
+                enabled: true,
+              },
+            ],
+            milestones: [],
+          },
+        },
+      }),
+    );
+
+    const response = await getEditorWardrobe(
+      createApiContext({
+        user: readerUser,
+        url: "https://lumina.test/api/editor/wardrobe",
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    await expect(
+      toJson<{
+        config: { rules: Array<{ id: string; unlockLevel: number }> };
+      }>(response),
+    ).resolves.toMatchObject({
+      config: {
+        rules: expect.arrayContaining([
+          expect.objectContaining({
+            id: "upper:shirt-04-tee",
+            unlockLevel: 4,
+          }),
+        ]),
+      },
+    });
+  });
+
   it("sube una prenda personalizada a la VPS y permite borrarla", async () => {
     const currentUser = {
       id: "github-1",
@@ -649,6 +715,70 @@ describe("contratos API del santuario", () => {
     });
   });
 
+  it("permite leer las misiones publicadas sin permisos de admin", async () => {
+    const adminUser = {
+      id: "github-1",
+      githubId: 1,
+      username: "faby",
+      displayName: "Faby",
+    };
+    const readerUser = {
+      id: "github-2",
+      githubId: 2,
+      username: "lucas",
+      displayName: "Lucas",
+    };
+
+    insertUser(adminUser);
+    insertUser(readerUser);
+
+    await saveEditorMissions(
+      createApiContext({
+        user: adminUser,
+        isAdmin: true,
+        method: "POST",
+        url: "https://lumina.test/api/editor/missions",
+        body: {
+          missions: [
+            {
+              id: "mision-prueba",
+              title: "Misión prueba",
+              description: "Valida la persistencia global.",
+              requiredFocusSeconds: 7200,
+              requiredSessions: 3,
+              roomKind: "public",
+              reward: {
+                type: "wardrobe",
+                field: "upper",
+                value: "shirt-05-vneck-tee",
+              },
+              enabled: true,
+            },
+          ],
+        },
+      }),
+    );
+
+    const response = await getEditorMissions(
+      createApiContext({
+        user: readerUser,
+        url: "https://lumina.test/api/editor/missions",
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    await expect(
+      toJson<{ missions: Array<{ id: string; enabled: boolean }> }>(response),
+    ).resolves.toMatchObject({
+      missions: [
+        expect.objectContaining({
+          id: "mision-prueba",
+          enabled: true,
+        }),
+      ],
+    });
+  });
+
   it("guarda los hitos globales en la VPS y respeta su regla visible", async () => {
     const currentUser = {
       id: "github-1",
@@ -717,6 +847,69 @@ describe("contratos API del santuario", () => {
         },
       ],
       updatedAt: expect.any(String),
+    });
+  });
+
+  it("permite leer los hitos publicados sin permisos de admin", async () => {
+    const adminUser = {
+      id: "github-1",
+      githubId: 1,
+      username: "faby",
+      displayName: "Faby",
+    };
+    const readerUser = {
+      id: "github-2",
+      githubId: 2,
+      username: "lucas",
+      displayName: "Lucas",
+    };
+
+    insertUser(adminUser);
+    insertUser(readerUser);
+
+    await saveEditorAchievements(
+      createApiContext({
+        user: adminUser,
+        isAdmin: true,
+        method: "POST",
+        url: "https://lumina.test/api/editor/achievements",
+        body: {
+          achievements: [
+            {
+              id: "hito-prueba",
+              title: "Hito prueba",
+              description: "Valida la persistencia global.",
+              rule: {
+                type: "archive-days",
+                value: 5,
+              },
+              enabled: true,
+            },
+          ],
+        },
+      }),
+    );
+
+    const response = await getEditorAchievements(
+      createApiContext({
+        user: readerUser,
+        url: "https://lumina.test/api/editor/achievements",
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    await expect(
+      toJson<{
+        achievements: Array<{ id: string; title: string; enabled: boolean }>;
+      }>(response),
+    ).resolves.toMatchObject({
+      achievements: [
+        expect.objectContaining({
+          id: "hito-prueba",
+          title: "Hito prueba",
+          enabled: true,
+        }),
+      ],
     });
   });
 

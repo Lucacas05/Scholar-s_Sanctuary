@@ -98,25 +98,25 @@ const hairColorFolders = {
 } as const;
 
 const upperFolders: Record<BuiltinAvatarUpper, string> = {
-  "shirt-01-longsleeve": "Shirt 01 - Longsleeve Shirt",
-  "shirt-02-vneck-longsleeve": "Shirt 02 - V-neck Longsleeve Shirt",
-  "shirt-03-scoop-longsleeve": "Shirt 03 - Scoop Longsleeve Shirt",
-  "shirt-04-tee": "Shirt 04 - T-shirt",
-  "shirt-05-vneck-tee": "Shirt 05 - V-neck T-shirt",
-  "shirt-06-scoop-tee": "Shirt 06 - Scoop T-shirt",
+  "shirt-01-longsleeve": "shirt-01-longsleeve",
+  "shirt-02-vneck-longsleeve": "shirt-02-vneck-longsleeve",
+  "shirt-03-scoop-longsleeve": "shirt-03-scoop-longsleeve",
+  "shirt-04-tee": "shirt-04-tee",
+  "shirt-05-vneck-tee": "shirt-05-vneck-tee",
+  "shirt-06-scoop-tee": "shirt-06-scoop-tee",
 } as const;
 
 const lowerFolders: Record<BuiltinAvatarLower, string> = {
-  "pants-01-hose": "Pants 01 - Hose",
-  "pants-02-leggings": "Pants 02 - Leggings",
-  "pants-03-pants": "Pants 03 - Pants",
-  "pants-04-cuffed": "Pants 04 - Cuffed Pants",
-  "pants-05-overalls": "Pants 05 - Overalls",
+  "pants-01-hose": "pants-01-hose",
+  "pants-02-leggings": "pants-02-leggings",
+  "pants-03-pants": "pants-03-pants",
+  "pants-04-cuffed": "pants-04-cuffed",
+  "pants-05-overalls": "pants-05-overalls",
 } as const;
 
 const socksFolders: Record<BuiltinAvatarSocks, string> = {
-  "socks-01-ankle": "Socks 01 - Ankle Socks",
-  "socks-02-high": "Socks 02 - High Socks",
+  "socks-01-ankle": "socks-01-ankle",
+  "socks-02-high": "socks-02-high",
 } as const;
 
 const garmentColorFolders: Record<AvatarGarmentColor, string> = {

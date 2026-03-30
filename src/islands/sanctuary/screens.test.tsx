@@ -11,6 +11,7 @@ import { HubSocialSpaces } from "@/islands/sanctuary/HubSocialSpaces";
 import { OnboardingFlow } from "@/islands/sanctuary/OnboardingFlow";
 import {
   __resetSanctuaryStoreForTests,
+  getFullState,
   sanctuaryActions,
 } from "@/lib/sanctuary/store";
 import { saveWardrobeConfig } from "@/lib/sanctuary/wardrobe";
@@ -105,6 +106,97 @@ describe("vistas principales del santuario", () => {
     authenticate();
     render(<AvatarStudio />);
     expect(screen.getByText("Parte superior")).toBeTruthy();
+  });
+
+  it("permite cambiar la prenda superior en refinar", async () => {
+    authenticate();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url =
+          typeof input === "string"
+            ? input
+            : input instanceof URL
+              ? input.toString()
+              : input.url;
+
+        if (url.includes("/api/editor/wardrobe")) {
+          return new Response(
+            JSON.stringify({
+              config: {
+                levelStepFocusSeconds: 3600,
+                rules: [
+                  {
+                    id: "upper:shirt-01-longsleeve",
+                    field: "upper",
+                    value: "shirt-01-longsleeve",
+                    label: "Camisa larga 01",
+                    unlockLevel: 1,
+                    enabled: true,
+                  },
+                  {
+                    id: "upper:shirt-04-tee",
+                    field: "upper",
+                    value: "shirt-04-tee",
+                    label: "Camiseta 01",
+                    unlockLevel: 1,
+                    enabled: true,
+                  },
+                ],
+                milestones: [],
+              },
+            }),
+            {
+              headers: {
+                "Content-Type": "application/json",
+              },
+            },
+          );
+        }
+
+        if (url.includes("/api/pomodoro/stats")) {
+          return new Response(
+            JSON.stringify({
+              totalFocusSeconds: 7200,
+            }),
+            {
+              headers: {
+                "Content-Type": "application/json",
+              },
+            },
+          );
+        }
+
+        if (url.includes("/api/avatar/catalog")) {
+          return new Response(JSON.stringify({ catalog: { items: [] } }), {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          });
+        }
+
+        return new Response(JSON.stringify({}), {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+      }),
+    );
+
+    render(<AvatarStudio />);
+    fireEvent.click(screen.getByText("Parte superior"));
+
+    await waitFor(() => {
+      expect(screen.getAllByText("Camiseta 01").length).toBeGreaterThan(0);
+    });
+
+    fireEvent.click(screen.getAllByText("Camiseta 01")[0]);
+
+    await waitFor(() => {
+      expect(getFullState().profiles["github-1"]?.avatar.upper).toBe(
+        "shirt-04-tee",
+      );
+    });
   });
 
   it("oculta en refinar los controles globales cuando no eres admin", () => {

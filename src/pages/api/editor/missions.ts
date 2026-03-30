@@ -24,12 +24,7 @@ function getMissionResponse() {
   });
 }
 
-export async function GET({ locals }: APIContext) {
-  const guard = requireAdminAccess(locals);
-  if (guard) {
-    return guard;
-  }
-
+export async function GET(_: APIContext) {
   return getMissionResponse();
 }
 
