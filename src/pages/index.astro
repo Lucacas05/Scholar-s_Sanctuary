@@ -125,6 +125,27 @@ const weeklyProgressValue = `${weeklyProgressPercent}% completado`;
       <div
         class="grid grid-cols-1 md:grid-cols-12 gap-6 min-h-[18rem] md:min-h-[28rem]"
       >
+        <!-- Skeleton placeholders reserve grid space until React hydrates HubSocialSpaces -->
+        <div class="md:col-span-8 hub-skeleton" aria-hidden="true">
+          <div
+            class="relative flex min-h-[18rem] md:min-h-[28rem] overflow-hidden border-4 border-surface-container-highest bg-surface-container-high p-1"
+          >
+            <div
+              class="flex-1 bg-surface-dim animate-pulse rounded-sm opacity-40"
+            >
+            </div>
+          </div>
+        </div>
+        <div class="md:col-span-4 hub-skeleton" aria-hidden="true">
+          <div
+            class="relative flex min-h-[18rem] md:min-h-[28rem] overflow-hidden border-4 border-surface-container-highest bg-surface-container-high p-1"
+          >
+            <div
+              class="flex-1 bg-surface-dim animate-pulse rounded-sm opacity-40"
+            >
+            </div>
+          </div>
+        </div>
         <HubSocialSpaces client:only="react" />
 
         {
@@ -234,7 +255,41 @@ const weeklyProgressValue = `${weeklyProgressPercent}% completado`;
     </section>
 
     <section id="pulso-personal" class="min-h-[20rem]">
+      <!-- Skeleton placeholder for CurrentPulsePanel until React hydrates -->
+      <div class="pulse-skeleton" aria-hidden="true">
+        <div
+          class="relative overflow-hidden bg-surface-container-highest pixel-border min-h-[20rem]"
+        >
+          <div
+            class="flex flex-col gap-8 p-8 md:flex-row md:items-center animate-pulse opacity-40"
+          >
+            <div
+              class="h-48 w-48 mx-auto md:mx-0 bg-surface-container border-4 border-surface-container-highest rounded-sm"
+            >
+            </div>
+            <div class="flex-1 space-y-4">
+              <div class="h-6 w-40 bg-surface-container rounded-sm"></div>
+              <div class="h-8 w-56 bg-surface-container rounded-sm"></div>
+              <div class="h-4 w-64 bg-surface-container rounded-sm"></div>
+              <div class="mt-8 grid grid-cols-2 gap-4 md:grid-cols-4">
+                <div class="h-20 bg-surface-container-low rounded-sm"></div>
+                <div class="h-20 bg-surface-container-low rounded-sm"></div>
+                <div class="h-20 bg-surface-container-low rounded-sm"></div>
+                <div class="h-20 bg-surface-container-low rounded-sm"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
       <CurrentPulsePanel client:only="react" />
     </section>
   </div>
+
+  <!-- Hide skeleton placeholders once their adjacent React islands hydrate -->
+  <style>
+    .hub-skeleton:has(~ astro-island > *),
+    .pulse-skeleton:has(~ astro-island > *) {
+      display: none;
+    }
+  </style>
 </BaseLayout>

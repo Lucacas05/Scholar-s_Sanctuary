@@ -104,27 +104,6 @@ const bootstrapPayload = Astro.locals.user
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
-    {
-      (
-        <script is:inline define:vars={{ wardrobeConfig }}>
-          window.__luminaWardrobeConfig = wardrobeConfig;
-        </script>
-      )
-    }
-    {
-      (
-        <script is:inline define:vars={{ customWardrobeCatalog }}>
-          window.__luminaCustomWardrobeCatalog = customWardrobeCatalog;
-        </script>
-      )
-    }
-    {
-      bootstrapPayload && (
-        <script is:inline define:vars={{ bootstrapPayload }}>
-          window.__luminaBootstrap = bootstrapPayload;
-        </script>
-      )
-    }
   </head>
   <body class="min-h-screen bg-surface flex flex-col md:flex-row">
     <Sidebar currentPath={currentPath} />
@@ -160,11 +139,13 @@ const bootstrapPayload = Astro.locals.user
               ))
             }
           </nav>
-          <IdentityBadge
-            client:only="react"
-            initialUser={Astro.locals.user ?? null}
-            oauthAvailable={oauthAvailable}
-          />
+          <div class="min-w-[160px] min-h-[40px]">
+            <IdentityBadge
+              client:only="react"
+              initialUser={Astro.locals.user ?? null}
+              oauthAvailable={oauthAvailable}
+            />
+          </div>
         </div>
       </header>
 
@@ -175,6 +156,27 @@ const bootstrapPayload = Astro.locals.user
       <AppFooter />
     </div>
 
+    {
+      (
+        <script is:inline define:vars={{ wardrobeConfig }}>
+          window.__luminaWardrobeConfig = wardrobeConfig;
+        </script>
+      )
+    }
+    {
+      (
+        <script is:inline define:vars={{ customWardrobeCatalog }}>
+          window.__luminaCustomWardrobeCatalog = customWardrobeCatalog;
+        </script>
+      )
+    }
+    {
+      bootstrapPayload && (
+        <script is:inline define:vars={{ bootstrapPayload }}>
+          window.__luminaBootstrap = bootstrapPayload;
+        </script>
+      )
+    }
     <PwaBridge client:idle />
     <PlannerReminderBridge client:idle />
 
