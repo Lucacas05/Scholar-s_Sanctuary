@@ -41,8 +41,8 @@ export const SanctuaryCanvasScene = forwardRef<
         </div>
 
         <div className="relative flex-1 overflow-hidden border border-outline-variant/35 bg-surface shadow-[0_18px_40px_rgba(0,0,0,0.22)]">
-          <div className="flex h-full min-h-[20rem] bg-[radial-gradient(circle_at_50%_45%,rgba(255,185,97,0.08),transparent_42%),linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0))] p-4">
-            <div className="relative flex h-full w-full items-center justify-center border border-primary/25 bg-black/10 p-2 shadow-[0_12px_32px_rgba(0,0,0,0.22)]">
+          <div className="flex min-h-[20rem] items-center justify-center bg-[radial-gradient(circle_at_50%_45%,rgba(255,185,97,0.08),transparent_42%),linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0))] p-4 md:min-h-[24rem]">
+            <div className="relative mx-auto aspect-[5/3] w-full max-w-full overflow-hidden border border-primary/25 bg-black/10 p-2 shadow-[0_12px_32px_rgba(0,0,0,0.22)]">
               <SanctuaryCanvasViewport
                 ref={ref}
                 sceneKind={sceneKind}
