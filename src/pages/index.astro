@@ -49,6 +49,9 @@ const weeklyProgressValue = `${weeklyProgressPercent}% completado`;
         class="absolute inset-0 h-full w-full object-cover opacity-60"
         loading="eager"
         decoding="async"
+        fetchpriority="high"
+        width={512}
+        height={512}
       />
       <div
         class="absolute inset-0 bg-gradient-to-t from-surface via-transparent to-transparent"
@@ -119,7 +122,9 @@ const weeklyProgressValue = `${weeklyProgressPercent}% completado`;
         </a>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+      <div
+        class="grid grid-cols-1 md:grid-cols-12 gap-6 min-h-[18rem] md:min-h-[28rem]"
+      >
         <HubSocialSpaces client:only="react" />
 
         {
@@ -193,6 +198,8 @@ const weeklyProgressValue = `${weeklyProgressPercent}% completado`;
                     class="h-full w-full object-cover"
                     loading="lazy"
                     decoding="async"
+                    width={512}
+                    height={512}
                   />
                 </div>
               </div>
@@ -226,7 +233,7 @@ const weeklyProgressValue = `${weeklyProgressPercent}% completado`;
       </div>
     </section>
 
-    <section id="pulso-personal">
+    <section id="pulso-personal" class="min-h-[20rem]">
       <CurrentPulsePanel client:only="react" />
     </section>
   </div>

@@ -20,6 +20,8 @@ export function HubSocialSpaces() {
         style={{ objectPosition: "center 46%" }}
         loading="lazy"
         decoding="async"
+        width={512}
+        height={512}
       />
       <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(24,18,16,0.92)_0%,rgba(24,18,16,0.86)_28%,rgba(24,18,16,0.38)_56%,rgba(24,18,16,0.18)_100%)]" />
       <div className="absolute inset-0 bg-gradient-to-t from-black/72 via-transparent to-black/10" />
@@ -60,6 +62,8 @@ export function HubSocialSpaces() {
         alt={garden.alt}
         loading="lazy"
         decoding="async"
+        width={512}
+        height={512}
       />
       <div
         className={["absolute inset-0", isAnonymous ? "blur-[4px]" : ""].join(

@@ -1,12 +1,12 @@
 export const images = {
-  scholarPortrait: "/site/scholar-portrait.jpg",
-  libraryHero: "/site/library-hero.jpg",
-  silentWing: "/site/silent-wing.jpg",
-  gardenTerrace: "/site/garden-terrace.jpg",
-  questBadge: "/site/quest-badge.jpg",
-  ancientBook: "/site/ancient-book.jpg",
-  studyRoomIso: "/site/study-room-iso.jpg",
-  archivalScribe: "/site/archival-scribe.jpg",
+  scholarPortrait: "/site/scholar-portrait.webp",
+  libraryHero: "/site/library-hero.webp",
+  silentWing: "/site/silent-wing.webp",
+  gardenTerrace: "/site/garden-terrace.webp",
+  questBadge: "/site/quest-badge.webp",
+  ancientBook: "/site/ancient-book.webp",
+  studyRoomIso: "/site/study-room-iso.webp",
+  archivalScribe: "/site/archival-scribe.webp",
 } as const;
 
 export const siteContent = {

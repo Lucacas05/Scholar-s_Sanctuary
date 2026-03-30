@@ -10,6 +10,8 @@ export function SafeImage({
   fallbackSrc,
   alt,
   onError,
+  width,
+  height,
   ...props
 }: SafeImageProps) {
   const [failed, setFailed] = useState(
@@ -22,6 +24,8 @@ export function SafeImage({
       {...props}
       src={resolvedSrc}
       alt={alt}
+      width={width}
+      height={height}
       onError={(event) => {
         if (!failed) {
           setFailed(true);
