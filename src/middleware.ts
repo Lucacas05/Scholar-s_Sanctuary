@@ -1,4 +1,5 @@
 import type { MiddlewareHandler } from "astro";
+import { isAdminUser } from "@/lib/server/admin";
 import { getUserStateSnapshot } from "@/lib/server/user-state";
 import {
   cleanupExpiredSessions,
@@ -15,14 +16,26 @@ const ACCOUNT_ONLY_PATHS = [
   "/armario",
   "/editor-armario",
   "/editor-misiones",
+  "/editor-escenas",
   "/cronicas",
   "/social",
   "/ajustes",
+] as const;
+const ADMIN_ONLY_PATHS = [
+  "/editor-armario",
+  "/editor-misiones",
+  "/editor-escenas",
 ] as const;
 const ONBOARDING_PATH = "/bienvenida";
 
 function isAccountOnlyPath(pathname: string) {
   return ACCOUNT_ONLY_PATHS.some(
+    (path) => pathname === path || pathname.startsWith(`${path}/`),
+  );
+}
+
+function isAdminOnlyPath(pathname: string) {
+  return ADMIN_ONLY_PATHS.some(
     (path) => pathname === path || pathname.startsWith(`${path}/`),
   );
 }
@@ -72,6 +85,7 @@ export const onRequest: MiddlewareHandler = async (
   locals.sessionId = null;
   locals.userState = null;
   locals.onboardingCompleted = false;
+  locals.isAdmin = false;
 
   cleanupExpiredSessions();
 
@@ -83,6 +97,7 @@ export const onRequest: MiddlewareHandler = async (
       locals.sessionId = session.sessionId;
       locals.userState = getUserStateSnapshot(session.user.id);
       locals.onboardingCompleted = locals.userState.onboardingCompleted;
+      locals.isAdmin = isAdminUser(session.user);
     } else {
       clearSessionCookie(cookies, request);
     }
@@ -126,6 +141,10 @@ export const onRequest: MiddlewareHandler = async (
         302,
       );
     }
+  }
+
+  if (isAdminOnlyPath(pathname) && !locals.isAdmin) {
+    return Response.redirect(buildRedirectURL(request, "/ajustes"), 302);
   }
 
   return next();

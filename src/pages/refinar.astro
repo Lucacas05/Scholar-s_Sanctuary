@@ -5,6 +5,9 @@ import { AvatarStudio } from "@/islands/sanctuary/AvatarStudio";
 
 <BaseLayout title="Refinar" currentPath="/refinar">
   <div class="mx-auto max-w-[96rem] space-y-8">
-    <AvatarStudio client:only="react" />
+    <AvatarStudio
+      client:only="react"
+      canManageWardrobe={Astro.locals.isAdmin}
+    />
   </div>
 </BaseLayout>

@@ -107,6 +107,13 @@ describe("vistas principales del santuario", () => {
     expect(screen.getByText("Parte superior")).toBeTruthy();
   });
 
+  it("oculta en refinar los controles globales cuando no eres admin", () => {
+    authenticate();
+    render(<AvatarStudio />);
+    expect(screen.queryByText("Editar armario global")).toBeNull();
+    expect(screen.queryByText("Colores rápidos")).toBeNull();
+  });
+
   it("oculta en refinar las prendas desactivadas en el armario global", async () => {
     authenticate();
     saveWardrobeConfig({

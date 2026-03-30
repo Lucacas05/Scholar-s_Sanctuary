@@ -41,19 +41,24 @@ function createUserContext(user: TestUser) {
         displayName: user.displayName,
         avatarUrl: null,
       },
+      isAdmin: false,
     },
   };
 }
 
 function createApiContext(options: {
   user: TestUser;
+  isAdmin?: boolean;
   method?: string;
   url: string;
   params?: Record<string, string>;
   body?: unknown;
 }) {
   return {
-    ...createUserContext(options.user),
+    locals: {
+      ...createUserContext(options.user).locals,
+      isAdmin: options.isAdmin ?? false,
+    },
     params: options.params ?? {},
     url: new URL(options.url),
     request: new Request(options.url, {
@@ -335,6 +340,7 @@ describe("contratos API del santuario", () => {
     const saveResponse = await saveEditorWardrobe(
       createApiContext({
         user: currentUser,
+        isAdmin: true,
         method: "POST",
         url: "https://lumina.test/api/editor/wardrobe",
         body: {
@@ -369,6 +375,7 @@ describe("contratos API del santuario", () => {
     const getResponse = await getEditorWardrobe(
       createApiContext({
         user: currentUser,
+        isAdmin: true,
         url: "https://lumina.test/api/editor/wardrobe",
       }),
     );
@@ -411,6 +418,7 @@ describe("contratos API del santuario", () => {
     const saveResponse = await saveEditorMissions(
       createApiContext({
         user: currentUser,
+        isAdmin: true,
         method: "POST",
         url: "https://lumina.test/api/editor/missions",
         body: {
@@ -439,6 +447,7 @@ describe("contratos API del santuario", () => {
     const getResponse = await getEditorMissions(
       createApiContext({
         user: currentUser,
+        isAdmin: true,
         url: "https://lumina.test/api/editor/missions",
       }),
     );
@@ -491,6 +500,7 @@ describe("contratos API del santuario", () => {
     const saveResponse = await saveEditorAchievements(
       createApiContext({
         user: currentUser,
+        isAdmin: true,
         method: "POST",
         url: "https://lumina.test/api/editor/achievements",
         body: {
@@ -515,6 +525,7 @@ describe("contratos API del santuario", () => {
     const getResponse = await getEditorAchievements(
       createApiContext({
         user: currentUser,
+        isAdmin: true,
         url: "https://lumina.test/api/editor/achievements",
       }),
     );
@@ -618,6 +629,7 @@ describe("contratos API del santuario", () => {
     const saveResponse = await saveEditorScenes(
       createApiContext({
         user: currentUser,
+        isAdmin: true,
         method: "POST",
         url: "https://lumina.test/api/editor/scenes",
         body: {
@@ -649,6 +661,7 @@ describe("contratos API del santuario", () => {
     const getResponse = await getEditorScenes(
       createApiContext({
         user: currentUser,
+        isAdmin: true,
         url: "https://lumina.test/api/editor/scenes",
       }),
     );
@@ -665,6 +678,37 @@ describe("contratos API del santuario", () => {
           spawnLocal: { x: 3.5, y: 7.5 },
         },
       },
+    });
+  });
+
+  it("bloquea el editor global a usuarios autenticados que no son admin", async () => {
+    const currentUser = {
+      id: "github-1",
+      githubId: 1,
+      username: "faby",
+      displayName: "Faby",
+    };
+
+    insertUser(currentUser);
+
+    const response = await saveEditorWardrobe(
+      createApiContext({
+        user: currentUser,
+        method: "POST",
+        url: "https://lumina.test/api/editor/wardrobe",
+        body: {
+          config: {
+            levelStepFocusSeconds: 3600,
+            rules: [],
+            milestones: [],
+          },
+        },
+      }),
+    );
+
+    expect(response.status).toBe(403);
+    await expect(toJson<{ error: string }>(response)).resolves.toEqual({
+      error: "Forbidden",
     });
   });
 

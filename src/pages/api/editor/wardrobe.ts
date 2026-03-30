@@ -1,4 +1,5 @@
 import type { APIContext } from "astro";
+import { requireAdminAccess } from "@/lib/server/admin";
 import {
   deleteAppConfig,
   readAppConfig,
@@ -24,16 +25,18 @@ function getWardrobeConfigResponse() {
 }
 
 export async function GET({ locals }: APIContext) {
-  if (!locals.user) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  const guard = requireAdminAccess(locals);
+  if (guard) {
+    return guard;
   }
 
   return getWardrobeConfigResponse();
 }
 
 export async function POST({ locals, request }: APIContext) {
-  if (!locals.user) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  const guard = requireAdminAccess(locals);
+  if (guard) {
+    return guard;
   }
 
   const payload = (await request.json().catch(() => null)) as {
@@ -50,8 +53,9 @@ export async function POST({ locals, request }: APIContext) {
 }
 
 export async function DELETE({ locals }: APIContext) {
-  if (!locals.user) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  const guard = requireAdminAccess(locals);
+  if (guard) {
+    return guard;
   }
 
   deleteAppConfig("wardrobe-config");

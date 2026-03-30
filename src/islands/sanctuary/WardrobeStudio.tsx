@@ -70,7 +70,13 @@ function formatHoursStudied(totalFocusSeconds: number) {
   return (totalFocusSeconds / 3600).toFixed(1);
 }
 
-export function WardrobeStudio() {
+interface WardrobeStudioProps {
+  canManageEditors?: boolean;
+}
+
+export function WardrobeStudio({
+  canManageEditors = false,
+}: WardrobeStudioProps = {}) {
   const sanctuary = useSanctuaryStore();
   const profile = getRenderableCurrentProfile(sanctuary);
   const avatar = profile.avatar;
@@ -238,26 +244,28 @@ export function WardrobeStudio() {
           </div>
         </div>
 
-        <div className="mt-4 space-y-2">
-          <a
-            href="/editor-armario"
-            className="flex items-center justify-between gap-3 border border-outline-variant bg-surface-container-low px-4 py-3 text-on-surface transition hover:border-secondary hover:text-secondary"
-          >
-            <span className="font-headline text-xs font-black uppercase tracking-[0.18em]">
-              Editar desbloqueos
-            </span>
-            <Settings2 size={16} />
-          </a>
-          <a
-            href="/editor-misiones"
-            className="flex items-center justify-between gap-3 border border-outline-variant bg-surface-container-low px-4 py-3 text-on-surface transition hover:border-secondary hover:text-secondary"
-          >
-            <span className="font-headline text-xs font-black uppercase tracking-[0.18em]">
-              Editar misiones
-            </span>
-            <Sparkles size={16} />
-          </a>
-        </div>
+        {canManageEditors ? (
+          <div className="mt-4 space-y-2">
+            <a
+              href="/editor-armario"
+              className="flex items-center justify-between gap-3 border border-outline-variant bg-surface-container-low px-4 py-3 text-on-surface transition hover:border-secondary hover:text-secondary"
+            >
+              <span className="font-headline text-xs font-black uppercase tracking-[0.18em]">
+                Editar desbloqueos
+              </span>
+              <Settings2 size={16} />
+            </a>
+            <a
+              href="/editor-misiones"
+              className="flex items-center justify-between gap-3 border border-outline-variant bg-surface-container-low px-4 py-3 text-on-surface transition hover:border-secondary hover:text-secondary"
+            >
+              <span className="font-headline text-xs font-black uppercase tracking-[0.18em]">
+                Editar misiones
+              </span>
+              <Sparkles size={16} />
+            </a>
+          </div>
+        ) : null}
       </aside>
 
       <section className="space-y-6">

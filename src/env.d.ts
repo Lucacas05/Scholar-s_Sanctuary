@@ -14,6 +14,7 @@ declare namespace App {
     sessionId: string | null;
     userState: UserStateSnapshot | null;
     onboardingCompleted: boolean;
+    isAdmin: boolean;
   }
 }
 
@@ -22,6 +23,7 @@ declare namespace NodeJS {
     GITHUB_CLIENT_ID?: string;
     GITHUB_CLIENT_SECRET?: string;
     SITE_URL?: string;
+    ADMIN_GITHUB_USERS?: string;
   }
 }
 
@@ -29,6 +31,7 @@ interface ImportMetaEnv {
   readonly GITHUB_CLIENT_ID?: string;
   readonly GITHUB_CLIENT_SECRET?: string;
   readonly SITE_URL?: string;
+  readonly ADMIN_GITHUB_USERS?: string;
 }
 
 interface ImportMeta {

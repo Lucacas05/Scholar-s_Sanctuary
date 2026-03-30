@@ -83,7 +83,13 @@ function isWardrobeManagedField(
   );
 }
 
-export function AvatarStudio() {
+interface AvatarStudioProps {
+  canManageWardrobe?: boolean;
+}
+
+export function AvatarStudio({
+  canManageWardrobe = false,
+}: AvatarStudioProps = {}) {
   const sanctuary = useSanctuaryStore();
   const profile = getRenderableCurrentProfile(sanctuary);
   const avatar = profile.avatar;
@@ -118,21 +124,6 @@ export function AvatarStudio() {
     ? garmentColorFieldByField[activeField]
     : null;
   const colorOptions = activeColorField ? avatarOptions[activeColorField] : [];
-  const activeRequirementLevel = wardrobeManaged
-    ? getWardrobeRequirementLevel(
-        activeField,
-        avatar[activeField] as AvatarConfig[typeof activeField],
-        wardrobeConfig,
-      )
-    : null;
-  const activeUnlocked = wardrobeManaged
-    ? isWardrobeItemUnlocked(
-        activeField,
-        avatar[activeField] as AvatarConfig[typeof activeField],
-        totalFocusSeconds,
-        wardrobeConfig,
-      )
-    : true;
 
   useGsapReveal(rootRef);
 
@@ -331,64 +322,13 @@ export function AvatarStudio() {
                   <span className="border border-outline-variant bg-surface-container-low px-3 py-2 font-headline text-[10px] font-bold uppercase tracking-[0.18em] text-outline">
                     Armario global activo
                   </span>
-                  <a
-                    href="/editor-armario"
-                    className="border border-outline-variant bg-surface-container-low px-3 py-2 font-headline text-[10px] font-bold uppercase tracking-[0.18em] text-on-surface hover:border-secondary hover:text-secondary"
-                  >
-                    Editar armario global
-                  </a>
-                </div>
-              ) : null}
-
-              {activeColorField ? (
-                <div className="mt-5 border-t border-outline-variant pt-4">
-                  <p className="font-headline text-[10px] font-bold uppercase tracking-[0.24em] text-outline">
-                    Colores rápidos
-                  </p>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {colorOptions.map((colorOption) => {
-                      const selectedColor =
-                        avatar[activeColorField] === colorOption.value;
-                      const disabled = isAnonymous || !activeUnlocked;
-
-                      return (
-                        <button
-                          key={colorOption.value}
-                          type="button"
-                          title={colorOption.label}
-                          aria-label={colorOption.label}
-                          onClick={() =>
-                            sanctuaryActions.updateAvatar(
-                              activeColorField,
-                              colorOption.value as AvatarConfig[typeof activeColorField],
-                            )
-                          }
-                          disabled={disabled}
-                          className={`flex items-center gap-2 border px-2 py-2 text-left ${
-                            selectedColor
-                              ? "border-primary bg-primary/10"
-                              : "border-outline-variant bg-surface-container-low hover:border-secondary"
-                          } ${disabled ? "cursor-not-allowed opacity-60" : ""}`}
-                        >
-                          <span
-                            className="h-4 w-4 rounded-full border border-outline-variant"
-                            style={{
-                              backgroundColor:
-                                garmentColorMeta[colorOption.value].swatch,
-                            }}
-                          />
-                          <span className="font-headline text-[10px] font-bold uppercase tracking-[0.16em] text-on-surface">
-                            {colorOption.label}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                  {wardrobeManaged && !activeUnlocked ? (
-                    <p className="mt-3 text-xs leading-relaxed text-on-surface-variant">
-                      El color no se puede cambiar hasta desbloquear esta prenda
-                      en el nivel {activeRequirementLevel}.
-                    </p>
+                  {canManageWardrobe ? (
+                    <a
+                      href="/editor-armario"
+                      className="border border-outline-variant bg-surface-container-low px-3 py-2 font-headline text-[10px] font-bold uppercase tracking-[0.18em] text-on-surface hover:border-secondary hover:text-secondary"
+                    >
+                      Editar armario global
+                    </a>
                   ) : null}
                 </div>
               ) : null}

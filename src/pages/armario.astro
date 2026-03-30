@@ -8,5 +8,5 @@ import { WardrobeStudio } from "@/islands/sanctuary/WardrobeStudio";
   currentPath="/armario"
   description="Desbloquea prendas y accesorios del avatar en función del tiempo real de estudio acumulado."
 >
-  <WardrobeStudio client:only="react" />
+  <WardrobeStudio client:only="react" canManageEditors={Astro.locals.isAdmin} />
 </BaseLayout>
