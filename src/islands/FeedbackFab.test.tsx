@@ -46,7 +46,7 @@ describe("FeedbackFab", () => {
   it("opens the modal on click", () => {
     render(<FeedbackFab />);
     fireEvent.click(screen.getByLabelText("Enviar feedback"));
-    expect(screen.getByText("Feedback")).toBeDefined();
+    expect(screen.getByRole("dialog")).toBeDefined();
     expect(
       screen.getByPlaceholderText("Describe tu feedback..."),
     ).toBeDefined();
@@ -99,7 +99,7 @@ describe("FeedbackFab", () => {
   it("closes modal on X button", () => {
     render(<FeedbackFab />);
     fireEvent.click(screen.getByLabelText("Enviar feedback"));
-    expect(screen.getByText("Feedback")).toBeDefined();
+    expect(screen.getByRole("dialog")).toBeDefined();
 
     fireEvent.click(screen.getByLabelText("Cerrar"));
   });

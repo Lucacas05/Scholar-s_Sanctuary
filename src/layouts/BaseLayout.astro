@@ -6,7 +6,7 @@ import { images, siteContent } from "@/data/site";
 import { IdentityBadge } from "@/islands/sanctuary/IdentityBadge";
 import { PwaBridge } from "@/islands/PwaBridge";
 import { PlannerReminderBridge } from "@/islands/sanctuary/PlannerReminderBridge";
-import { FeedbackFab } from "@/islands/FeedbackFab";
+import AppFooter from "@/components/AppFooter.astro";
 import { readAppConfig } from "@/lib/server/app-config";
 import { readCustomWardrobeCatalog } from "@/lib/server/custom-wardrobe";
 import {
@@ -162,9 +162,11 @@ const bootstrapPayload = Astro.locals.user
         </div>
       </header>
 
-      <main class="flex-1 px-4 pb-24 pt-8 md:px-8 md:pb-10 md:pt-12 xl:pt-14">
+      <main class="flex-1 px-4 pb-8 pt-8 md:px-8 md:pb-10 md:pt-12 xl:pt-14">
         <slot />
       </main>
+
+      <AppFooter />
     </div>
 
     <PwaBridge client:load />
@@ -182,7 +184,5 @@ const bootstrapPayload = Astro.locals.user
         </div>
       )
     }
-
-    <FeedbackFab client:only="react" />
   </body>
 </html>
