@@ -85,21 +85,21 @@ describe("vistas principales del santuario", () => {
 
   it("renderiza el santuario silencioso", () => {
     authenticate();
-    render(<SoloRoom backgroundUrl="/site/library-hero.jpg" />);
+    render(<SoloRoom backgroundUrl="/site/library-hero.webp" />);
     expect(screen.getAllByText(/Santuario silencioso/i).length).toBeGreaterThan(
       0,
     );
   });
 
   it("renderiza la biblioteca compartida", () => {
-    render(<SharedLibraryRoom backgroundUrl="/site/silent-wing.jpg" />);
+    render(<SharedLibraryRoom backgroundUrl="/site/silent-wing.webp" />);
     expect(
       screen.getAllByText(/Biblioteca compartida/i).length,
     ).toBeGreaterThan(0);
   });
 
   it("renderiza el jardín", () => {
-    render(<GardenRoom backgroundUrl="/site/garden-terrace.jpg" />);
+    render(<GardenRoom backgroundUrl="/site/garden-terrace.webp" />);
     expect(screen.getByText(/Jardín de descanso/i)).toBeTruthy();
   });
 

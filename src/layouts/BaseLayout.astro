@@ -95,6 +95,12 @@ const bootstrapPayload = Astro.locals.user
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Lumina" />
 
+    <link
+      rel="preload"
+      as="image"
+      type="image/webp"
+      href={images.libraryHero}
+    />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
@@ -169,8 +175,8 @@ const bootstrapPayload = Astro.locals.user
       <AppFooter />
     </div>
 
-    <PwaBridge client:load />
-    <PlannerReminderBridge client:load />
+    <PwaBridge client:idle />
+    <PlannerReminderBridge client:idle />
 
     {
       showFab && (
