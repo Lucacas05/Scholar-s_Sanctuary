@@ -1,6 +1,6 @@
 import type { SessionUser } from "@/lib/server/session";
 
-const DEFAULT_ADMIN_GITHUB_USERS = ["lucacas05"];
+const DEFAULT_ADMIN_GITHUB_USERS = ["lucacas05", "fabiannavarroo"];
 
 function parseAdminUsernames() {
   return Array.from(
