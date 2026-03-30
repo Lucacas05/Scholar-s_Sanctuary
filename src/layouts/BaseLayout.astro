@@ -160,11 +160,13 @@ const bootstrapPayload = Astro.locals.user
               ))
             }
           </nav>
-          <IdentityBadge
-            client:only="react"
-            initialUser={Astro.locals.user ?? null}
-            oauthAvailable={oauthAvailable}
-          />
+          <div class="min-h-[2.5rem] flex items-center">
+            <IdentityBadge
+              client:only="react"
+              initialUser={Astro.locals.user ?? null}
+              oauthAvailable={oauthAvailable}
+            />
+          </div>
         </div>
       </header>
 

@@ -122,10 +122,12 @@ const weeklyProgressValue = `${weeklyProgressPercent}% completado`;
         </a>
       </div>
 
-      <div
-        class="grid grid-cols-1 md:grid-cols-12 gap-6 min-h-[18rem] md:min-h-[28rem]"
-      >
-        <HubSocialSpaces client:only="react" />
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+        <div
+          class="md:col-span-12 grid grid-cols-1 md:grid-cols-12 gap-6 min-h-[18rem] md:min-h-[28rem]"
+        >
+          <HubSocialSpaces client:only="react" />
+        </div>
 
         {
           dashboard.spaces.secondaryLinks.map((item) => {
@@ -189,7 +191,7 @@ const weeklyProgressValue = `${weeklyProgressPercent}% completado`;
                   </p>
                 </div>
                 <div
-                  class="h-20 w-20 shrink-0 bg-surface-container-highest border-4 border-outline-variant flex items-center justify-center p-2 xl:h-24 xl:w-24"
+                  class="h-20 w-20 shrink-0 bg-surface-container-highest border-4 border-outline-variant flex items-center justify-center p-2 xl:h-24 xl:w-24 aspect-square"
                 >
                   <FallbackImage
                     src={images.questBadge}
@@ -218,11 +220,11 @@ const weeklyProgressValue = `${weeklyProgressPercent}% completado`;
                 </div>
                 <div class="flex justify-between mt-1">
                   <span
-                    class="text-[10px] font-headline font-bold uppercase text-outline"
+                    class="text-[10px] leading-4 font-headline font-bold uppercase text-outline whitespace-nowrap"
                     >{dashboard.progressPanel.progressLabel}</span
                   >
                   <span
-                    class="text-[10px] font-headline font-bold uppercase text-primary"
+                    class="text-[10px] leading-4 font-headline font-bold uppercase text-primary whitespace-nowrap"
                     >{weeklyProgressValue}</span
                   >
                 </div>
@@ -233,7 +235,10 @@ const weeklyProgressValue = `${weeklyProgressPercent}% completado`;
       </div>
     </section>
 
-    <section id="pulso-personal" class="min-h-[20rem]">
+    <section
+      id="pulso-personal"
+      class="min-h-[24rem] bg-surface-container-highest pixel-border"
+    >
       <CurrentPulsePanel client:only="react" />
     </section>
   </div>
