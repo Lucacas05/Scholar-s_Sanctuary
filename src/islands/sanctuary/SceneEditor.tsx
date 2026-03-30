@@ -1364,6 +1364,14 @@ export function SceneEditor() {
   const catalog = useRef(buildCatalog()).current;
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const viewportShellRef = useRef<HTMLDivElement | null>(null);
+  const applyDraftsRef = useRef(((_: EditorDrafts, __?: Selection) => {}) as (
+    nextDrafts: EditorDrafts,
+    nextSelection?: Selection,
+  ) => void);
+  const renderCanvasRef = useRef(() => {});
+  const undoRef = useRef(() => {});
+  const redoRef = useRef(() => {});
+  const removeSelectionRef = useRef(() => {});
   const dragRef = useRef<DragState | null>(null);
   const lastNonEmptySelectionRef = useRef<Exclude<Selection, null> | null>(
     null,
@@ -1375,6 +1383,8 @@ export function SceneEditor() {
   const undoStackRef = useRef<EditorDrafts[]>([]);
   const redoStackRef = useRef<EditorDrafts[]>([]);
   const draftsRef = useRef<EditorDrafts>(loadDrafts());
+  const sceneKindRef = useRef<SceneKind>("solo-library");
+  const selectionRef = useRef<Selection>(null);
   const dragHistorySnapshotRef = useRef<EditorDrafts | null>(null);
   const dragHistoryWasRecordedRef = useRef(false);
   const [atlasImages, setAtlasImages] = useState<
@@ -1425,6 +1435,14 @@ export function SceneEditor() {
   }, [drafts]);
 
   useEffect(() => {
+    sceneKindRef.current = sceneKind;
+  }, [sceneKind]);
+
+  useEffect(() => {
+    selectionRef.current = selection;
+  }, [selection]);
+
+  useEffect(() => {
     let cancelled = false;
 
     async function loadAtlases() {
@@ -1470,9 +1488,12 @@ export function SceneEditor() {
           }
         });
 
-        applyDrafts(
+        applyDraftsRef.current(
           nextDrafts,
-          sanitizeSelection(nextDrafts[sceneKind], selection),
+          sanitizeSelection(
+            nextDrafts[sceneKindRef.current],
+            selectionRef.current,
+          ),
         );
       } catch {
         if (!cancelled) {
@@ -1516,7 +1537,7 @@ export function SceneEditor() {
   }, [atlasPreviewZooms]);
 
   useEffect(() => {
-    renderCanvas();
+    renderCanvasRef.current();
   }, [
     drafts,
     sceneKind,
@@ -1633,6 +1654,8 @@ export function SceneEditor() {
     selectedPropAtlasViewKey,
     isAtlasInspectorOpen,
     selectedPropAtlasPreviewZoom,
+    historyState,
+    selectedProp,
   ]);
 
   useEffect(() => {
@@ -1650,16 +1673,16 @@ export function SceneEditor() {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "z") {
         event.preventDefault();
         if (event.shiftKey) {
-          redo();
+          redoRef.current();
         } else {
-          undo();
+          undoRef.current();
         }
         return;
       }
 
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "y") {
         event.preventDefault();
-        redo();
+        redoRef.current();
         return;
       }
 
@@ -1711,7 +1734,7 @@ export function SceneEditor() {
       }
 
       event.preventDefault();
-      removeSelection();
+      removeSelectionRef.current();
     };
 
     window.addEventListener("keydown", handleKeyDown);
@@ -1913,6 +1936,8 @@ export function SceneEditor() {
     }
   }
 
+  renderCanvasRef.current = renderCanvas;
+
   function syncHistoryState() {
     setHistoryState({
       undo: undoStackRef.current.length,
@@ -1945,6 +1970,8 @@ export function SceneEditor() {
     }
   }
 
+  applyDraftsRef.current = applyDrafts;
+
   function updateScene(
     mutator: (draft: SceneMap) => void,
     options?: { recordHistory?: boolean; snapshot?: EditorDrafts },
@@ -1969,6 +1996,8 @@ export function SceneEditor() {
     applyDrafts(cloneDrafts(previous));
   }
 
+  undoRef.current = undo;
+
   function redo() {
     const next = redoStackRef.current.pop();
     if (!next) {
@@ -1985,6 +2014,8 @@ export function SceneEditor() {
     syncHistoryState();
     applyDrafts(cloneDrafts(next));
   }
+
+  redoRef.current = redo;
 
   function toSceneCoordinates(
     event:
@@ -2116,6 +2147,8 @@ export function SceneEditor() {
 
     setSelection(null);
   }
+
+  removeSelectionRef.current = removeSelection;
 
   function handleCanvasPointerDown(
     event: React.PointerEvent<HTMLCanvasElement>,
@@ -2420,29 +2453,11 @@ export function SceneEditor() {
       // Fallback below
     }
 
-    const textarea = document.createElement("textarea");
-    textarea.value = payload;
-    textarea.setAttribute("readonly", "");
-    textarea.style.position = "fixed";
-    textarea.style.opacity = "0";
-    textarea.style.pointerEvents = "none";
-    textarea.style.left = "-9999px";
-    document.body.appendChild(textarea);
-    textarea.select();
-    textarea.setSelectionRange(0, textarea.value.length);
-
-    try {
-      const copied = document.execCommand("copy");
-      if (!copied) {
-        setFlash("No se pudo copiar el JSON");
-      }
-      animateCopyButton(copied);
-    } catch {
-      setFlash("No se pudo copiar el JSON");
-      animateCopyButton(false);
-    } finally {
-      document.body.removeChild(textarea);
-    }
+    window.prompt("Copia el JSON de la escena", payload);
+    setFlash(
+      "Tu navegador no permite copiarlo solo. Copialo desde la ventana.",
+    );
+    animateCopyButton(false);
   }
 
   function downloadJson() {

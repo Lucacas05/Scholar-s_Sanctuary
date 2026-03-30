@@ -38,6 +38,8 @@ export const SanctuaryCanvasViewport = forwardRef<
 >(function SanctuaryCanvasViewport({ sceneKind, avatar, className }, ref) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const engineRef = useRef<SanctuaryCanvasEngine | null>(null);
+  const initialSceneKindRef = useRef(sceneKind);
+  const initialAvatarRef = useRef(avatar);
 
   function handlePointerDown(event: ReactPointerEvent<HTMLCanvasElement>) {
     if (!canvasRef.current || !engineRef.current) {
@@ -64,8 +66,8 @@ export const SanctuaryCanvasViewport = forwardRef<
 
     const engine = new SanctuaryCanvasEngine(
       canvasRef.current,
-      sceneKind,
-      avatar,
+      initialSceneKindRef.current,
+      initialAvatarRef.current,
     );
     engineRef.current = engine;
     window.render_game_to_text = () => engine.getTextState();

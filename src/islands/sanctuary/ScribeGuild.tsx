@@ -414,7 +414,6 @@ export function ScribeGuild() {
     fetchInvitations();
     void fetchSocialMetrics();
   }, [
-    isAnonymous,
     fetchFriends,
     fetchInvitations,
     fetchRequests,

@@ -25,14 +25,26 @@ export function SharedLibraryRoom({
 }: SharedLibraryRoomProps) {
   const sanctuary = useSanctuaryStore();
   const currentRoom = getCurrentRoom(sanctuary);
+  const currentRoomCode = currentRoom?.code ?? null;
   const privateRooms = getPrivateRoomsForCurrentProfile(sanctuary);
   const friends = getFriendsForCurrentProfile(sanctuary);
-  const libraryMembers = currentRoom
-    ? getRoomMembers(sanctuary, currentRoom.code, "library")
-    : [];
-  const gardenMembers = currentRoom
-    ? getRoomMembers(sanctuary, currentRoom.code, "garden")
-    : [];
+  const timerPhase = sanctuary.timer.phase;
+  const timerStatus = sanctuary.timer.status;
+  const timerRemainingSeconds = sanctuary.timer.remainingSeconds;
+  const libraryMembers = useMemo(
+    () =>
+      currentRoomCode
+        ? getRoomMembers(sanctuary, currentRoomCode, "library")
+        : [],
+    [currentRoomCode, sanctuary],
+  );
+  const gardenMembers = useMemo(
+    () =>
+      currentRoomCode
+        ? getRoomMembers(sanctuary, currentRoomCode, "garden")
+        : [],
+    [currentRoomCode, sanctuary],
+  );
   const [roomName, setRoomName] = useState("Círculo de estudio");
   const [joinCode, setJoinCode] = useState("");
   const [inviteIds, setInviteIds] = useState<string[]>(
@@ -50,6 +62,8 @@ export function SharedLibraryRoom({
   const sceneKind =
     currentRoom?.kind === "public" ? "public-library" : "shared-library";
   const currentPresence = getCurrentPresence(sanctuary);
+  const currentPresenceState = currentPresence?.state ?? null;
+  const currentPresenceMessage = currentPresence?.message ?? "";
   const currentAvatar = getRenderableCurrentProfile(sanctuary).avatar;
   const isAnonymous = sanctuary.sessionState === "anonymous";
 
@@ -104,32 +118,33 @@ export function SharedLibraryRoom({
   }, [currentPresence?.message, currentPresence?.state]);
 
   useEffect(() => {
-    if (!currentRoom || isAnonymous) return;
+    if (!currentRoomCode || isAnonymous) return;
 
-    realtime.joinRoom(currentRoom.code);
+    realtime.joinRoom(currentRoomCode);
 
     return () => {
       realtime.leaveRoom();
     };
-  }, [currentRoom?.code, isAnonymous]);
+  }, [currentRoomCode, isAnonymous]);
 
   useEffect(() => {
-    if (!currentPresence || isAnonymous) return;
+    if (!currentPresenceState || !currentRoomCode || isAnonymous) return;
 
-    const timer = sanctuary.timer;
     realtime.sendPresenceUpdate(
-      currentPresence.state,
-      timer.phase,
-      timer.status,
-      timer.remainingSeconds,
-      currentPresence.message,
+      currentPresenceState,
+      timerPhase,
+      timerStatus,
+      timerRemainingSeconds,
+      currentPresenceMessage,
     );
   }, [
-    currentPresence?.state,
-    currentPresence?.message,
-    sanctuary.timer.status,
-    sanctuary.timer.phase,
-    sanctuary.timer.remainingSeconds,
+    currentPresenceMessage,
+    currentPresenceState,
+    currentRoomCode,
+    isAnonymous,
+    timerStatus,
+    timerPhase,
+    timerRemainingSeconds,
   ]);
 
   if (isAnonymous) {

@@ -45,6 +45,8 @@ export function IdentityBadge({
   const syncTimeoutRef = useRef<number | null>(null);
   const lastSyncedStateRef = useRef<string | null>(null);
   const progressSyncInFlightRef = useRef(false);
+  const sessionStateRef = useRef(sanctuary.sessionState);
+  sessionStateRef.current = sanctuary.sessionState;
 
   async function hydrateArchiveFromServer() {
     const response = await fetch("/api/pomodoro/archive", {
@@ -97,7 +99,7 @@ export function IdentityBadge({
         }
 
         if (!payload.user) {
-          if (sanctuary.sessionState === "authenticated") {
+          if (sessionStateRef.current === "authenticated") {
             sanctuaryActions.returnToAnonymousState();
           }
           setSessionUser(null);
