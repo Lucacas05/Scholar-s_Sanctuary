@@ -1,0 +1,23 @@
+---
+import { FeedbackFab } from "@/islands/FeedbackFab";
+---
+
+<footer
+  class="border-t-4 border-surface-container-highest bg-surface px-4 py-4 md:px-8"
+>
+  <div
+    class="flex flex-col items-center gap-3 sm:flex-row sm:justify-between sm:gap-4"
+  >
+    <p class="text-center text-xs text-outline sm:text-left">
+      Participamos en la
+      <a
+        href="https://github.com/midudev/hackaton-cubepath-2026"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="font-bold text-primary hover:underline">Midudev Hackaton</a
+      > con CubePath
+    </p>
+
+    <FeedbackFab client:only="react" />
+  </div>
+</footer>

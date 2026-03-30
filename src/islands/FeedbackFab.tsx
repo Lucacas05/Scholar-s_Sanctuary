@@ -86,9 +86,10 @@ export function FeedbackFab() {
         type="button"
         onClick={openModal}
         aria-label="Enviar feedback"
-        className="fixed left-4 bottom-4 z-40 md:left-auto md:right-6 md:bottom-20 flex h-12 w-12 items-center justify-center bg-secondary text-on-secondary border-b-[3px] border-on-secondary-fixed-variant bezel-button shadow-2xl hover:brightness-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
+        className="inline-flex items-center gap-2 bg-secondary text-on-secondary border-b-[3px] border-on-secondary-fixed-variant px-4 py-2 font-headline text-xs font-bold uppercase tracking-widest bezel-button hover:brightness-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
       >
-        <MessageSquarePlus size={20} />
+        <MessageSquarePlus size={16} />
+        <span className="hidden sm:inline">Feedback</span>
       </button>
 
       <dialog
