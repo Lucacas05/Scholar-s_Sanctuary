@@ -33,6 +33,7 @@ export interface CustomWardrobeCatalog {
 const STORAGE_KEY = "lumina:custom-wardrobe-catalog";
 export const CUSTOM_WARDROBE_CATALOG_EVENT =
   "lumina:custom-wardrobe-catalog-changed";
+const CUSTOM_WARDROBE_CATALOG_SCRIPT_ID = "lumina-custom-wardrobe-catalog";
 
 declare global {
   interface Window {
@@ -211,7 +212,20 @@ function readBootstrapCatalog() {
     return null;
   }
 
-  const value = window.__luminaCustomWardrobeCatalog;
+  let value = window.__luminaCustomWardrobeCatalog;
+  if (value === undefined) {
+    const script = document.getElementById(CUSTOM_WARDROBE_CATALOG_SCRIPT_ID);
+    const payload = script?.textContent;
+    if (payload) {
+      try {
+        value = JSON.parse(payload);
+        window.__luminaCustomWardrobeCatalog = value;
+      } catch {
+        value = undefined;
+      }
+    }
+  }
+
   if (value === undefined) {
     return null;
   }

@@ -66,6 +66,8 @@ const bootstrapPayload = Astro.locals.user
         Astro.locals.userState?.preferredStartPath ?? "/biblioteca-compartida",
     }
   : null;
+const serializeInlineData = (value: unknown) =>
+  JSON.stringify(value).replace(/</g, "\\u003c");
 ---
 
 <!doctype html>
@@ -93,6 +95,7 @@ const bootstrapPayload = Astro.locals.user
     <meta name="twitter:image" content={pageImageURL.href} />
     <meta name="theme-color" content="#181210" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Lumina" />
 
     <link
@@ -104,27 +107,6 @@ const bootstrapPayload = Astro.locals.user
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
-    {
-      (
-        <script is:inline define:vars={{ wardrobeConfig }}>
-          window.__luminaWardrobeConfig = wardrobeConfig;
-        </script>
-      )
-    }
-    {
-      (
-        <script is:inline define:vars={{ customWardrobeCatalog }}>
-          window.__luminaCustomWardrobeCatalog = customWardrobeCatalog;
-        </script>
-      )
-    }
-    {
-      bootstrapPayload && (
-        <script is:inline define:vars={{ bootstrapPayload }}>
-          window.__luminaBootstrap = bootstrapPayload;
-        </script>
-      )
-    }
   </head>
   <body class="min-h-screen bg-surface flex flex-col md:flex-row">
     <Sidebar currentPath={currentPath} />
@@ -160,11 +142,13 @@ const bootstrapPayload = Astro.locals.user
               ))
             }
           </nav>
-          <IdentityBadge
-            client:only="react"
-            initialUser={Astro.locals.user ?? null}
-            oauthAvailable={oauthAvailable}
-          />
+          <div class="min-w-[160px] min-h-[40px]">
+            <IdentityBadge
+              client:idle
+              initialUser={Astro.locals.user ?? null}
+              oauthAvailable={oauthAvailable}
+            />
+          </div>
         </div>
       </header>
 
@@ -175,6 +159,33 @@ const bootstrapPayload = Astro.locals.user
       <AppFooter />
     </div>
 
+    {
+      (
+        <script
+          id="lumina-wardrobe-config"
+          type="application/json"
+          set:html={serializeInlineData(wardrobeConfig)}
+        />
+      )
+    }
+    {
+      (
+        <script
+          id="lumina-custom-wardrobe-catalog"
+          type="application/json"
+          set:html={serializeInlineData(customWardrobeCatalog)}
+        />
+      )
+    }
+    {
+      bootstrapPayload && (
+        <script
+          id="lumina-bootstrap"
+          type="application/json"
+          set:html={serializeInlineData(bootstrapPayload)}
+        />
+      )
+    }
     <PwaBridge client:idle />
     <PlannerReminderBridge client:idle />
 

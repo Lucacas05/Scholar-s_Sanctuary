@@ -1115,9 +1115,35 @@ interface UserBootstrapPayload {
   preferredStartPath?: PreferredStartPath;
 }
 
+const USER_BOOTSTRAP_SCRIPT_ID = "lumina-bootstrap";
+
 declare global {
   interface Window {
     __luminaBootstrap?: UserBootstrapPayload;
+  }
+}
+
+function readBootstrapPayload() {
+  if (typeof window === "undefined") {
+    return undefined;
+  }
+
+  if (window.__luminaBootstrap !== undefined) {
+    return window.__luminaBootstrap;
+  }
+
+  const script = document.getElementById(USER_BOOTSTRAP_SCRIPT_ID);
+  const payload = script?.textContent;
+  if (!payload) {
+    return undefined;
+  }
+
+  try {
+    const parsed = JSON.parse(payload) as UserBootstrapPayload;
+    window.__luminaBootstrap = parsed;
+    return parsed;
+  } catch {
+    return undefined;
   }
 }
 
@@ -2097,7 +2123,7 @@ function ensureHydrated() {
 
   hydrated = true;
   currentState = readStoredState();
-  const bootstrap = window.__luminaBootstrap;
+  const bootstrap = readBootstrapPayload();
   if (bootstrap?.user) {
     attachAuthenticatedIdentity(currentState, bootstrap.user);
     currentState.onboardingCompleted = Boolean(bootstrap.onboardingCompleted);

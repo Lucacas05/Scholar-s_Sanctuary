@@ -47,6 +47,7 @@ const WARDROBE_CONFIG_STORAGE_KEY = "lumina:wardrobe-config";
 const WARDROBE_CONFIG_ENDPOINT = "/api/editor/wardrobe";
 export const WARDROBE_CONFIG_EVENT = "lumina:wardrobe-config-changed";
 const DEFAULT_LEVEL_STEP_FOCUS_SECONDS = 60 * 60;
+const WARDROBE_CONFIG_SCRIPT_ID = "lumina-wardrobe-config";
 
 declare global {
   interface Window {
@@ -216,6 +217,30 @@ function buildDefaultWardrobeMilestones(): WardrobeMilestone[] {
       "milestone-20",
     ),
   ];
+}
+
+function readBootstrapWardrobeConfig() {
+  if (typeof window === "undefined") {
+    return undefined;
+  }
+
+  if (window.__luminaWardrobeConfig !== undefined) {
+    return window.__luminaWardrobeConfig;
+  }
+
+  const script = document.getElementById(WARDROBE_CONFIG_SCRIPT_ID);
+  const payload = script?.textContent;
+  if (!payload) {
+    return undefined;
+  }
+
+  try {
+    const parsed = JSON.parse(payload);
+    window.__luminaWardrobeConfig = parsed;
+    return parsed;
+  } catch {
+    return undefined;
+  }
 }
 
 const defaultWardrobeConfig: WardrobeConfig = {
@@ -470,8 +495,9 @@ export function loadWardrobeConfig(): WardrobeConfig {
     return getDefaultWardrobeConfig();
   }
 
-  if (window.__luminaWardrobeConfig !== undefined) {
-    return normalizeWardrobeConfig(window.__luminaWardrobeConfig);
+  const bootstrapConfig = readBootstrapWardrobeConfig();
+  if (bootstrapConfig !== undefined) {
+    return normalizeWardrobeConfig(bootstrapConfig);
   }
 
   const raw = window.localStorage.getItem(WARDROBE_CONFIG_STORAGE_KEY);
@@ -492,7 +518,7 @@ export function hasCachedWardrobeConfig() {
   }
 
   return (
-    window.__luminaWardrobeConfig !== undefined ||
+    readBootstrapWardrobeConfig() !== undefined ||
     window.localStorage.getItem(WARDROBE_CONFIG_STORAGE_KEY) !== null
   );
 }
