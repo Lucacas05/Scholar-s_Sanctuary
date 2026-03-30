@@ -164,7 +164,9 @@ export const SanctuaryCanvasViewport = forwardRef<
   );
 
   return (
-    <div className={`relative ${className ?? ""}`}>
+    <div
+      className={`relative flex h-full w-full items-center justify-center ${className ?? ""}`}
+    >
       <canvas
         ref={canvasRef}
         onPointerDown={handlePointerDown}
