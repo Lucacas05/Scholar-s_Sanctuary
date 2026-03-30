@@ -7,8 +7,34 @@ import { siteContent, images } from "@/data/site";
 import { ICONS } from "@/lib/icons";
 import { CurrentPulsePanel } from "@/islands/sanctuary/CurrentPulsePanel";
 import { HubSocialSpaces } from "@/islands/sanctuary/HubSocialSpaces";
+import { db } from "@/lib/server/db";
 
 const { dashboard } = siteContent;
+
+const WEEKLY_GOAL_SESSIONS = 20;
+
+const weeklyCompletedSessions = Astro.locals.user
+  ? ((
+      db
+        .prepare(
+          `SELECT COUNT(*) as total
+           FROM pomodoro_sessions
+           WHERE user_id = ?
+             AND DATE(completed_at) >= DATE('now', '-6 days')`,
+        )
+        .get(Astro.locals.user.id) as { total: number }
+    ).total ?? 0)
+  : Math.round((65 / 100) * WEEKLY_GOAL_SESSIONS);
+
+const weeklyProgressPercent = Math.max(
+  0,
+  Math.min(
+    100,
+    Math.round((weeklyCompletedSessions / WEEKLY_GOAL_SESSIONS) * 100),
+  ),
+);
+
+const weeklyProgressValue = `${weeklyProgressPercent}% completado`;
 ---
 
 <BaseLayout title="Biblioteca" currentPath="/" showFab={true}>
@@ -173,7 +199,9 @@ const { dashboard } = siteContent;
               <div class="mt-auto pt-2">
                 <div class="w-full h-4 bg-tertiary-container relative">
                   <div
-                    class="absolute inset-y-0 left-0 bg-primary w-[65%] flex items-center justify-end pr-1"
+                    class="absolute inset-y-0 left-0 bg-primary flex items-center justify-end pr-1 transition-all"
+                    style={`width: ${weeklyProgressPercent}%`}
+                    aria-label={`Progreso semanal: ${weeklyProgressPercent}%`}
                   >
                     <ICONS.Flame
                       className="text-on-primary animate-pulse"
@@ -188,7 +216,7 @@ const { dashboard } = siteContent;
                   >
                   <span
                     class="text-[10px] font-headline font-bold uppercase text-primary"
-                    >{dashboard.progressPanel.progressValue}</span
+                    >{weeklyProgressValue}</span
                   >
                 </div>
               </div>

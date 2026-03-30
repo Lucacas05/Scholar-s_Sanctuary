@@ -1493,10 +1493,10 @@ function normalizeStoredState(value: unknown) {
         parsed.plannerPreferences.defaultLeadMinutes,
       ),
     )
-    .filter(
-      (session): session is PlannedSession =>
-        Boolean(session) && !isDemoProfileId(session.userId),
-    )
+    .filter((session): session is PlannedSession => {
+      if (!session) return false;
+      return !isDemoProfileId(session.userId);
+    })
     .sort((left, right) => left.scheduledFor - right.scheduledFor);
   parsed.chronicleEntries = (
     Array.isArray(parsed.chronicleEntries) ? parsed.chronicleEntries : []
