@@ -1,0 +1,24 @@
+<svg width="390" height="844" viewBox="0 0 390 844" xmlns="http://www.w3.org/2000/svg">
+  <rect width="390" height="844" fill="#120d0b"/>
+  <rect x="0" y="0" width="390" height="88" fill="#1b1412"/>
+  <text x="24" y="52" fill="#d8f3dc" font-family="Arial" font-size="30" font-weight="700">LUMINA</text>
+  <rect x="0" y="760" width="390" height="84" fill="#15100e"/>
+  <text x="20" y="810" fill="#ddd" font-family="Arial" font-size="16">BIBLIOTECA</text>
+  <text x="150" y="810" fill="#ddd" font-family="Arial" font-size="16">ESTUDIO</text>
+  <text x="285" y="810" fill="#86efac" font-family="Arial" font-size="16" font-weight="700">SOCIAL</text>
+
+  <!-- Feedback FAB preview -->
+  <circle cx="330" cy="690" r="34" fill="#000" opacity="0.35"/>
+  <circle cx="326" cy="684" r="34" fill="#f2b35f" stroke="#2a1f18" stroke-width="3"/>
+  <path d="M326 669 L326 699 M311 684 L341 684" stroke="#2a1f18" stroke-width="6" stroke-linecap="round"/>
+
+  <!-- Label -->
+  <rect x="34" y="642" width="250" height="76" rx="12" fill="#101010" opacity="0.88" stroke="#f2b35f" stroke-width="2"/>
+  <text x="48" y="670" fill="#fff" font-family="Arial" font-size="18" font-weight="700">Botón feedback</text>
+  <text x="48" y="696" fill="#ddd" font-family="Arial" font-size="16">Reportar bug / idea</text>
+  <path d="M284 680 L296 680 L314 684" stroke="#f2b35f" stroke-width="3" fill="none"/>
+
+  <rect x="24" y="110" width="342" height="120" rx="12" fill="#000" opacity="0.35"/>
+  <text x="40" y="155" fill="#fff" font-family="Arial" font-size="24" font-weight="700">Preview visual PR #40</text>
+  <text x="40" y="188" fill="#ddd" font-family="Arial" font-size="18">Así se vería el botón en mobile.</text>
+</svg>
