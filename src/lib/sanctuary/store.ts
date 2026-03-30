@@ -1148,77 +1148,12 @@ function createAnonymousPreviewProfile(createdAt: number): Profile {
 
 export const anonymousPreviewProfile = createAnonymousPreviewProfile(0);
 
-const demoProfiles: Profile[] = [
-  {
-    id: "demo-lyra",
-    displayName: "Lyra de las estanterías",
-    handle: "@lyra",
-    avatar: normalizeAvatarConfig({
-      sex: "femenino",
-      skinTone: "ivory",
-      hairStyle: "medium-07-bob-side-part",
-      hairColor: "ruby",
-      accessory: "ninguno",
-      upper: "shirt-04-tee",
-      upperColor: "cerise",
-      lower: "pants-02-leggings",
-      lowerColor: "plum",
-      socks: "socks-02-high",
-      socksColor: "cream",
-    }),
-    bio: "Lleva el pulso del archivo al amanecer.",
-    createdAt: Date.now(),
-    isDemo: true,
-  },
-  {
-    id: "demo-bruno",
-    displayName: "Bruno del campanario",
-    handle: "@bruno",
-    avatar: normalizeAvatarConfig({
-      sex: "masculino",
-      skinTone: "bronze",
-      hairStyle: "short-04-cowlick",
-      hairColor: "black",
-      accessory: "barbuta",
-      upper: "shirt-02-vneck-longsleeve",
-      upperColor: "blue-violet",
-      lower: "pants-04-cuffed",
-      lowerColor: "coffee",
-      socks: "socks-02-high",
-      socksColor: "cream",
-    }),
-    bio: "Prefiere estudiar en silencio y descansar entre setos.",
-    createdAt: Date.now(),
-    isDemo: true,
-  },
-  {
-    id: "demo-ines",
-    displayName: "Inés de la mesa larga",
-    handle: "@ines",
-    avatar: normalizeAvatarConfig({
-      sex: "femenino",
-      skinTone: "sepia",
-      hairStyle: "medium-05-cornrows",
-      hairColor: "white",
-      accessory: "ninguno",
-      upper: "shirt-03-scoop-longsleeve",
-      upperColor: "forest",
-      lower: "pants-05-overalls",
-      lowerColor: "brown",
-      socks: "socks-01-ankle",
-      socksColor: "cream",
-    }),
-    bio: "Siempre deja una cita marcada antes de dormir.",
-    createdAt: Date.now(),
-    isDemo: true,
-  },
-];
+function isDemoProfileId(userId: string) {
+  return userId.startsWith("demo-");
+}
 
 function createInitialState(): SanctuaryState {
   const createdAt = Date.now();
-  const profiles = Object.fromEntries(
-    demoProfiles.map((profile) => [profile.id, profile]),
-  );
 
   return {
     version: 9,
@@ -1228,7 +1163,7 @@ function createInitialState(): SanctuaryState {
     onboardingGoal: "",
     preferredStartPath: "/biblioteca-compartida",
     currentRoomCode: PUBLIC_ROOM_CODE,
-    profiles,
+    profiles: {},
     rooms: {
       [PUBLIC_ROOM_CODE]: {
         code: PUBLIC_ROOM_CODE,
@@ -1236,42 +1171,11 @@ function createInitialState(): SanctuaryState {
         name: "Gran lectorio compartido",
         description:
           "La sala pública del santuario donde se ve el pulso del resto.",
-        memberIds: demoProfiles.map((profile) => profile.id),
+        memberIds: [],
         createdAt,
       },
     },
-    presences: {
-      "demo-lyra": {
-        userId: "demo-lyra",
-        roomCode: PUBLIC_ROOM_CODE,
-        roomKind: "public",
-        state: "studying",
-        space: "library",
-        message: "Estudiando",
-        updatedAt: createdAt,
-        lastSeenAt: null,
-      },
-      "demo-bruno": {
-        userId: "demo-bruno",
-        roomCode: PUBLIC_ROOM_CODE,
-        roomKind: "public",
-        state: "break",
-        space: "garden",
-        message: "Vuelvo en cinco minutos",
-        updatedAt: createdAt,
-        lastSeenAt: null,
-      },
-      "demo-ines": {
-        userId: "demo-ines",
-        roomCode: PUBLIC_ROOM_CODE,
-        roomKind: "public",
-        state: "studying",
-        space: "library",
-        message: "Estudiando",
-        updatedAt: createdAt,
-        lastSeenAt: null,
-      },
-    },
+    presences: {},
     timer: {
       roomKind: "solo",
       roomCode: SOLO_ROOM_CODE,
@@ -1307,7 +1211,7 @@ function createInitialState(): SanctuaryState {
     activePlannedSessionId: null,
     chronicleEntries: [],
     achievementUnlocks: [],
-    friendIds: demoProfiles.map((profile) => profile.id),
+    friendIds: [],
   };
 }
 
@@ -1500,10 +1404,23 @@ function normalizeStoredState(value: unknown) {
     ),
   };
   delete parsed.profiles["guest-current"];
+  Object.keys(parsed.profiles).forEach((profileId) => {
+    if (isDemoProfileId(profileId)) {
+      delete parsed.profiles[profileId];
+    }
+  });
   parsed.rooms = {
     ...fallback.rooms,
     ...(parsed.rooms ?? {}),
   };
+  Object.values(parsed.rooms).forEach((room) => {
+    room.memberIds = Array.isArray(room.memberIds)
+      ? room.memberIds.filter(
+          (memberId) =>
+            typeof memberId === "string" && !isDemoProfileId(memberId),
+        )
+      : [];
+  });
   parsed.presences = {
     ...fallback.presences,
     ...(parsed.presences ?? {}),
@@ -1516,11 +1433,17 @@ function normalizeStoredState(value: unknown) {
         : null;
   });
   delete parsed.presences["guest-current"];
+  Object.keys(parsed.presences).forEach((userId) => {
+    if (isDemoProfileId(userId)) {
+      delete parsed.presences[userId];
+    }
+  });
   parsed.sessions = (Array.isArray(parsed.sessions) ? parsed.sessions : [])
     .filter(
       (session) =>
         typeof session.userId === "string" &&
-        session.userId !== "guest-current",
+        session.userId !== "guest-current" &&
+        !isDemoProfileId(session.userId),
     )
     .map((session) => ({
       ...session,
@@ -1570,20 +1493,27 @@ function normalizeStoredState(value: unknown) {
         parsed.plannerPreferences.defaultLeadMinutes,
       ),
     )
-    .filter((session): session is PlannedSession => Boolean(session))
+    .filter(
+      (session): session is PlannedSession =>
+        Boolean(session) && !isDemoProfileId(session.userId),
+    )
     .sort((left, right) => left.scheduledFor - right.scheduledFor);
   parsed.chronicleEntries = (
     Array.isArray(parsed.chronicleEntries) ? parsed.chronicleEntries : []
   ).filter(
     (entry) =>
-      typeof entry.userId === "string" && entry.userId !== "guest-current",
+      typeof entry.userId === "string" &&
+      entry.userId !== "guest-current" &&
+      !isDemoProfileId(entry.userId),
   );
   parsed.achievementUnlocks = (
     Array.isArray(parsed.achievementUnlocks) ? parsed.achievementUnlocks : []
   )
     .filter(
       (entry) =>
-        typeof entry.userId === "string" && entry.userId !== "guest-current",
+        typeof entry.userId === "string" &&
+        entry.userId !== "guest-current" &&
+        !isDemoProfileId(entry.userId),
     )
     .map((entry) => ({
       ...entry,
@@ -1594,7 +1524,9 @@ function normalizeStoredState(value: unknown) {
           : null,
     }));
   parsed.friendIds = Array.isArray(parsed.friendIds)
-    ? parsed.friendIds
+    ? parsed.friendIds.filter(
+        (userId) => typeof userId === "string" && !isDemoProfileId(userId),
+      )
     : fallback.friendIds;
   parsed.notificationPreferences = {
     ...fallback.notificationPreferences,
@@ -2407,7 +2339,7 @@ export function getRoomMembers(
     }))
     .filter((entry) => entry.profile);
 
-  if (room) {
+  if (room && room.kind !== "public") {
     room.memberIds.forEach((memberId) => {
       if (members.some((entry) => entry.profile.id === memberId)) {
         return;

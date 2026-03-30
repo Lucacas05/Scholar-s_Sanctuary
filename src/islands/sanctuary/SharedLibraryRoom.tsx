@@ -45,6 +45,16 @@ export function SharedLibraryRoom({
         : [],
     [currentRoomCode, sanctuary],
   );
+  const visibleLibraryMembers = useMemo(
+    () =>
+      libraryMembers.map((entry) => ({
+        memberId: entry.profile.id,
+        profile: entry.profile,
+        presence: entry.presence,
+        isCurrentUser: entry.isCurrentUser,
+      })),
+    [libraryMembers],
+  );
   const [roomName, setRoomName] = useState("Círculo de estudio");
   const [joinCode, setJoinCode] = useState("");
   const [inviteIds, setInviteIds] = useState<string[]>(
@@ -355,10 +365,8 @@ export function SharedLibraryRoom({
             </h3>
           </div>
           <div className="space-y-3">
-            {currentRoom &&
-              currentRoom.memberIds.map((memberId) => {
-                const profile = sanctuary.profiles[memberId];
-                const presence = sanctuary.presences[memberId];
+            {visibleLibraryMembers.map(
+              ({ memberId, profile, presence, isCurrentUser }) => {
                 const label =
                   presence?.state === "studying"
                     ? "Estudiando"
@@ -382,11 +390,12 @@ export function SharedLibraryRoom({
                       </p>
                     </div>
                     <span className="rounded-none border-2 border-outline-variant bg-surface-container-low px-2 py-1 font-headline text-[10px] font-bold uppercase tracking-widest text-primary">
-                      {memberId === sanctuary.currentUserId ? "Tú" : "Círculo"}
+                      {isCurrentUser ? "Tú" : "Círculo"}
                     </span>
                   </div>
                 );
-              })}
+              },
+            )}
           </div>
         </div>
 

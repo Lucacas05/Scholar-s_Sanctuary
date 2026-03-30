@@ -395,13 +395,13 @@ export function AvatarStudio({
                   </h2>
                 </div>
                 <div className="text-left sm:text-right">
-                  <p className="font-headline text-[10px] font-bold uppercase tracking-[0.22em] text-outline">
+                  <div className="font-headline text-[10px] font-bold uppercase tracking-[0.22em] text-outline">
                     {loadingWardrobe && wardrobeManaged ? (
                       <Spinner label="Sincronizando…" size="sm" />
                     ) : (
                       `${currentOptions.length} opciones`
                     )}
-                  </p>
+                  </div>
                   {wardrobeManaged ? (
                     <p className="mt-2 text-xs leading-relaxed text-on-surface-variant">
                       {formatWardrobeDuration(totalFocusSeconds)} de estudio
