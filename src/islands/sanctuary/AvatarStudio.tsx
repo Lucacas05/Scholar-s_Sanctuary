@@ -9,6 +9,7 @@ import {
   type AvatarConfig,
 } from "@/lib/sanctuary/store";
 import { ErrorBlock } from "@/islands/sanctuary/ErrorBlock";
+import { Spinner } from "@/islands/sanctuary/Spinner";
 import { ItemModelPreview } from "@/islands/sanctuary/ItemModelPreview";
 import { PixelAvatar } from "@/islands/sanctuary/PixelAvatar";
 import { useGsapReveal } from "@/islands/sanctuary/useGsapReveal";
@@ -395,9 +396,11 @@ export function AvatarStudio({
                 </div>
                 <div className="text-left sm:text-right">
                   <p className="font-headline text-[10px] font-bold uppercase tracking-[0.22em] text-outline">
-                    {loadingWardrobe && wardrobeManaged
-                      ? "Sincronizando..."
-                      : `${currentOptions.length} opciones`}
+                    {loadingWardrobe && wardrobeManaged ? (
+                      <Spinner label="Sincronizando…" size="sm" />
+                    ) : (
+                      `${currentOptions.length} opciones`
+                    )}
                   </p>
                   {wardrobeManaged ? (
                     <p className="mt-2 text-xs leading-relaxed text-on-surface-variant">

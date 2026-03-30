@@ -771,4 +771,67 @@ describe("vistas principales del santuario", () => {
     fireEvent.click(screen.getByText("Continuar"));
     expect(screen.getByText("Paso 2 de 3")).toBeTruthy();
   });
+
+  it("desactiva el botón de guardar en onboarding mientras se envía", async () => {
+    let resolveSubmit: () => void;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        () =>
+          new Promise<Response>((resolve) => {
+            resolveSubmit = () =>
+              resolve(new Response(JSON.stringify({ ok: true })));
+          }),
+      ),
+    );
+
+    render(
+      <OnboardingFlow
+        initialUser={{
+          id: "github-1",
+          displayName: "Faby",
+          username: "faby",
+        }}
+        nextPath="/biblioteca-compartida"
+      />,
+    );
+
+    // Navigate to last step
+    fireEvent.click(screen.getByText("Continuar"));
+    fireEvent.click(screen.getByText("Continuar"));
+
+    const submitButton = screen.getByText("Entrar al santuario");
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(screen.getByText("Guardando...")).toBeTruthy();
+    });
+
+    const savingButton = screen.getByText("Guardando...").closest("button")!;
+    expect(savingButton.disabled).toBe(true);
+
+    resolveSubmit!();
+  });
+
+  it("muestra spinner de carga inicial en el gremio de escribas", async () => {
+    authenticate();
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        () =>
+          new Promise<Response>(() => {
+            /* never resolves — simulates loading */
+          }),
+      ),
+    );
+
+    render(<ScribeGuild />);
+
+    await waitFor(() => {
+      expect(screen.getByRole("status")).toBeTruthy();
+    });
+
+    expect(screen.getByText("Cargando gremio…")).toBeTruthy();
+  });
 });

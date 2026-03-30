@@ -10,6 +10,7 @@ import {
   Trophy,
 } from "lucide-react";
 import { ItemModelPreview } from "@/islands/sanctuary/ItemModelPreview";
+import { Spinner } from "@/islands/sanctuary/Spinner";
 import { useGsapReveal } from "@/islands/sanctuary/useGsapReveal";
 import {
   createAchievementId,
@@ -447,12 +448,19 @@ export function MissionEditor() {
               <p className="font-headline text-[10px] font-bold uppercase tracking-[0.22em] text-outline">
                 Misiones publicadas
               </p>
-              <p className="mt-2 text-sm leading-relaxed text-on-surface-variant">
-                {missionMessage ||
-                  (loadingMissions
-                    ? "Leyendo misiones publicadas desde la VPS..."
-                    : "Aquí decides qué misión existe, qué recompensa entrega y si debe quedar visible en la web.")}
-              </p>
+              {loadingMissions && !missionMessage ? (
+                <div className="mt-2">
+                  <Spinner
+                    label="Leyendo misiones publicadas desde la VPS…"
+                    size="sm"
+                  />
+                </div>
+              ) : (
+                <p className="mt-2 text-sm leading-relaxed text-on-surface-variant">
+                  {missionMessage ||
+                    "Aquí decides qué misión existe, qué recompensa entrega y si debe quedar visible en la web."}
+                </p>
+              )}
             </div>
             <div className="flex flex-wrap gap-3">
               <button
@@ -774,12 +782,19 @@ export function MissionEditor() {
               <p className="font-headline text-[10px] font-bold uppercase tracking-[0.22em] text-outline">
                 Hitos del santuario
               </p>
-              <p className="mt-2 text-sm leading-relaxed text-on-surface-variant">
-                {achievementMessage ||
-                  (loadingAchievements
-                    ? "Leyendo hitos publicados desde la VPS..."
-                    : "Estos hitos son los que salen en Crónicas y se desbloquean automáticamente según el progreso real de estudio.")}
-              </p>
+              {loadingAchievements && !achievementMessage ? (
+                <div className="mt-2">
+                  <Spinner
+                    label="Leyendo hitos publicados desde la VPS…"
+                    size="sm"
+                  />
+                </div>
+              ) : (
+                <p className="mt-2 text-sm leading-relaxed text-on-surface-variant">
+                  {achievementMessage ||
+                    "Estos hitos son los que salen en Crónicas y se desbloquean automáticamente según el progreso real de estudio."}
+                </p>
+              )}
             </div>
             <div className="flex flex-wrap gap-3">
               <button
