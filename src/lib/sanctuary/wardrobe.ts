@@ -48,6 +48,12 @@ const WARDROBE_CONFIG_ENDPOINT = "/api/editor/wardrobe";
 export const WARDROBE_CONFIG_EVENT = "lumina:wardrobe-config-changed";
 const DEFAULT_LEVEL_STEP_FOCUS_SECONDS = 60 * 60;
 
+declare global {
+  interface Window {
+    __luminaWardrobeConfig?: unknown;
+  }
+}
+
 const ruleValueSets: Record<WardrobeField, Set<string>> = {
   accessory: new Set(avatarOptions.accessory.map((option) => option.value)),
   upper: new Set(avatarOptions.upper.map((option) => option.value)),
@@ -464,6 +470,10 @@ export function loadWardrobeConfig(): WardrobeConfig {
     return getDefaultWardrobeConfig();
   }
 
+  if (window.__luminaWardrobeConfig !== undefined) {
+    return normalizeWardrobeConfig(window.__luminaWardrobeConfig);
+  }
+
   const raw = window.localStorage.getItem(WARDROBE_CONFIG_STORAGE_KEY);
   if (!raw) {
     return getDefaultWardrobeConfig();
@@ -476,12 +486,24 @@ export function loadWardrobeConfig(): WardrobeConfig {
   }
 }
 
+export function hasCachedWardrobeConfig() {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  return (
+    window.__luminaWardrobeConfig !== undefined ||
+    window.localStorage.getItem(WARDROBE_CONFIG_STORAGE_KEY) !== null
+  );
+}
+
 export function saveWardrobeConfig(config: WardrobeConfig) {
   if (typeof window === "undefined") {
     return;
   }
 
   const normalized = normalizeWardrobeConfig(config);
+  window.__luminaWardrobeConfig = normalized;
   window.localStorage.setItem(
     WARDROBE_CONFIG_STORAGE_KEY,
     JSON.stringify(normalized),
@@ -494,6 +516,7 @@ export function resetWardrobeConfig() {
     return;
   }
 
+  delete window.__luminaWardrobeConfig;
   window.localStorage.removeItem(WARDROBE_CONFIG_STORAGE_KEY);
   dispatchWardrobeConfigEvent();
 }

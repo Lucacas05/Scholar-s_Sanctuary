@@ -24,6 +24,7 @@ import {
   WARDROBE_CONFIG_EVENT,
   formatWardrobeDuration,
   getWardrobeRequirementLevel,
+  hasCachedWardrobeConfig,
   isWardrobeItemUnlocked,
   listVisibleWardrobeOptionsByField,
   loadWardrobeConfig,
@@ -159,8 +160,9 @@ export function AvatarStudio({
         }
       } catch {
         if (!cancelled) {
-          setWardrobeError(true);
-          setWardrobeConfig(loadWardrobeConfig());
+          const fallbackConfig = loadWardrobeConfig();
+          setWardrobeConfig(fallbackConfig);
+          setWardrobeError(!hasCachedWardrobeConfig());
         }
       } finally {
         if (!cancelled) {

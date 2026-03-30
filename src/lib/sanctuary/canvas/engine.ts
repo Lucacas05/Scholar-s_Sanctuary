@@ -262,6 +262,8 @@ export class SanctuaryCanvasEngine {
   private tick = 0;
   private destroyed = false;
   private atlasImages: Partial<Record<string, HTMLImageElement>> = {};
+  private atlasReady = false;
+  private readonly assetsReadyPromise: Promise<void>;
   private collisionRects: CollisionRect[] = [];
   private localActor: LocalActor;
   private remoteActors = new Map<string, RemoteActor>();
@@ -305,7 +307,7 @@ export class SanctuaryCanvasEngine {
     preloadCanvasAvatarArt(avatar);
 
     this.resizeToContainer();
-    void this.loadAssets();
+    this.assetsReadyPromise = this.loadAssets();
     this.render();
     this.start();
   }
@@ -323,7 +325,16 @@ export class SanctuaryCanvasEngine {
       ),
     );
     this.atlasImages = Object.fromEntries(loadedEntries);
+    this.atlasReady = true;
     this.render();
+  }
+
+  isAtlasReady() {
+    return this.atlasReady;
+  }
+
+  waitUntilAtlasReady() {
+    return this.assetsReadyPromise;
   }
 
   setAvatar(avatar: AvatarConfig) {

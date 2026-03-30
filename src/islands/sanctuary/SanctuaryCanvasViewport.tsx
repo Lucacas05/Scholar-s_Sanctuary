@@ -4,6 +4,7 @@ import {
   useEffect,
   useImperativeHandle,
   useRef,
+  useState,
 } from "react";
 import {
   PUBLISHED_SCENE_EVENT,
@@ -40,6 +41,7 @@ export const SanctuaryCanvasViewport = forwardRef<
   const engineRef = useRef<SanctuaryCanvasEngine | null>(null);
   const initialSceneKindRef = useRef(sceneKind);
   const initialAvatarRef = useRef(avatar);
+  const [isAtlasLoading, setIsAtlasLoading] = useState(sceneKind !== "garden");
 
   function handlePointerDown(event: ReactPointerEvent<HTMLCanvasElement>) {
     if (!canvasRef.current || !engineRef.current) {
@@ -70,6 +72,10 @@ export const SanctuaryCanvasViewport = forwardRef<
       initialAvatarRef.current,
     );
     engineRef.current = engine;
+    setIsAtlasLoading(!engine.isAtlasReady());
+    void engine.waitUntilAtlasReady().finally(() => {
+      setIsAtlasLoading(false);
+    });
     window.render_game_to_text = () => engine.getTextState();
     window.advanceTime = (ms: number) => engine.advanceTime(ms);
 
@@ -93,6 +99,10 @@ export const SanctuaryCanvasViewport = forwardRef<
 
   useEffect(() => {
     engineRef.current?.setScene(sceneKind);
+    setIsAtlasLoading(!engineRef.current?.isAtlasReady());
+    void engineRef.current?.waitUntilAtlasReady().finally(() => {
+      setIsAtlasLoading(false);
+    });
   }, [sceneKind]);
 
   useEffect(() => {
@@ -154,11 +164,25 @@ export const SanctuaryCanvasViewport = forwardRef<
   );
 
   return (
-    <canvas
-      ref={canvasRef}
-      onPointerDown={handlePointerDown}
-      className={className ?? "block max-h-full max-w-full"}
-      style={{ imageRendering: "pixelated", cursor: "crosshair" }}
-    />
+    <div className={`relative ${className ?? ""}`}>
+      <canvas
+        ref={canvasRef}
+        onPointerDown={handlePointerDown}
+        className="block max-h-full max-w-full"
+        style={{ imageRendering: "pixelated", cursor: "crosshair" }}
+      />
+      {isAtlasLoading ? (
+        <div className="absolute inset-0 flex items-center justify-center bg-[radial-gradient(circle_at_50%_35%,rgba(255,188,108,0.16),transparent_32%),linear-gradient(180deg,rgba(12,9,8,0.24),rgba(12,9,8,0.72))] backdrop-blur-[1px]">
+          <div className="border border-primary/35 bg-surface/90 px-5 py-4 text-center shadow-[0_14px_30px_rgba(0,0,0,0.24)]">
+            <p className="font-headline text-[10px] font-bold uppercase tracking-[0.24em] text-primary">
+              Preparando sala
+            </p>
+            <p className="mt-2 text-sm leading-relaxed text-on-surface-variant">
+              Cargando muebles, paredes y atlas del santuario...
+            </p>
+          </div>
+        </div>
+      ) : null}
+    </div>
   );
 });

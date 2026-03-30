@@ -6,7 +6,12 @@ import { images, siteContent } from "@/data/site";
 import { IdentityBadge } from "@/islands/sanctuary/IdentityBadge";
 import { PwaBridge } from "@/islands/PwaBridge";
 import { PlannerReminderBridge } from "@/islands/sanctuary/PlannerReminderBridge";
+import { readAppConfig } from "@/lib/server/app-config";
 import { readCustomWardrobeCatalog } from "@/lib/server/custom-wardrobe";
+import {
+  getDefaultWardrobeConfig,
+  normalizeWardrobeConfig,
+} from "@/lib/sanctuary/wardrobe";
 
 interface Props {
   title: string;
@@ -42,6 +47,11 @@ const oauthAvailable = Boolean(
   import.meta.env.SITE_URL,
 );
 const customWardrobeCatalog = readCustomWardrobeCatalog();
+const storedWardrobeConfig = readAppConfig("wardrobe-config");
+const wardrobeConfig =
+  storedWardrobeConfig?.value != null
+    ? normalizeWardrobeConfig(storedWardrobeConfig.value)
+    : getDefaultWardrobeConfig();
 const bootstrapPayload = Astro.locals.user
   ? {
       user: {
@@ -87,6 +97,13 @@ const bootstrapPayload = Astro.locals.user
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
+    {
+      (
+        <script is:inline define:vars={{ wardrobeConfig }}>
+          window.__luminaWardrobeConfig = wardrobeConfig;
+        </script>
+      )
+    }
     {
       (
         <script is:inline define:vars={{ customWardrobeCatalog }}>

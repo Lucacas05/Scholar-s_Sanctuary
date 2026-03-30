@@ -3,9 +3,11 @@ import {
   formatWardrobeDuration,
   getDefaultWardrobeConfig,
   getWardrobeUnlockSummary,
+  hasCachedWardrobeConfig,
   isWardrobeItemUnlocked,
   listVisibleWardrobeOptionsByField,
   normalizeWardrobeConfig,
+  loadWardrobeConfig,
 } from "@/lib/sanctuary/wardrobe";
 
 describe("wardrobe unlocks", () => {
@@ -91,5 +93,34 @@ describe("wardrobe unlocks", () => {
       "shirt-05-vneck-tee",
       "shirt-06-scoop-tee",
     ]);
+  });
+
+  it("lee primero la configuración publicada en la ventana", () => {
+    window.__luminaWardrobeConfig = {
+      levelStepFocusSeconds: 7200,
+      rules: [
+        {
+          id: "upper:shirt-04-tee",
+          field: "upper",
+          value: "shirt-04-tee",
+          label: "Camiseta 01",
+          unlockLevel: 4,
+          enabled: true,
+        },
+      ],
+      milestones: [],
+    };
+
+    const config = loadWardrobeConfig();
+
+    expect(hasCachedWardrobeConfig()).toBe(true);
+    expect(config.levelStepFocusSeconds).toBe(7200);
+    expect(
+      config.rules.some(
+        (rule) => rule.id === "upper:shirt-04-tee" && rule.unlockLevel === 4,
+      ),
+    ).toBe(true);
+
+    delete window.__luminaWardrobeConfig;
   });
 });

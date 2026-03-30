@@ -75,6 +75,7 @@ describe("vistas principales del santuario", () => {
   beforeEach(() => {
     __resetSanctuaryStoreForTests();
     window.localStorage.clear();
+    delete window.__luminaWardrobeConfig;
   });
 
   it("renderiza el hub social de la biblioteca", () => {
@@ -303,6 +304,79 @@ describe("vistas principales del santuario", () => {
       expect(screen.getAllByText("Camisa larga 01").length).toBeGreaterThan(0);
     });
     expect(screen.queryAllByText("Camiseta 01")).toHaveLength(0);
+  });
+
+  it("no enseña error del armario si ya existe configuración publicada", async () => {
+    authenticate();
+    window.__luminaWardrobeConfig = {
+      levelStepFocusSeconds: 3600,
+      rules: [
+        {
+          id: "upper:shirt-01-longsleeve",
+          field: "upper",
+          value: "shirt-01-longsleeve",
+          label: "Camisa larga 01",
+          unlockLevel: 1,
+          enabled: true,
+        },
+      ],
+      milestones: [],
+    };
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url =
+          typeof input === "string"
+            ? input
+            : input instanceof URL
+              ? input.toString()
+              : input.url;
+
+        if (url.includes("/api/editor/wardrobe")) {
+          throw new Error("network");
+        }
+
+        if (url.includes("/api/avatar/catalog")) {
+          return new Response(JSON.stringify({ catalog: { items: [] } }), {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          });
+        }
+
+        if (url.includes("/api/pomodoro/stats")) {
+          return new Response(
+            JSON.stringify({
+              totalFocusSeconds: 0,
+            }),
+            {
+              headers: {
+                "Content-Type": "application/json",
+              },
+            },
+          );
+        }
+
+        return new Response(JSON.stringify({}), {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+      }),
+    );
+
+    render(<AvatarStudio />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Parte superior")).toBeTruthy();
+    });
+
+    expect(
+      screen.queryByText(
+        "No se pudo cargar la configuración global del armario.",
+      ),
+    ).toBeNull();
   });
 
   it("renderiza crónicas", async () => {

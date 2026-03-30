@@ -1,10 +1,18 @@
 import type { SessionUser } from "@/lib/server/session";
 
+const DEFAULT_ADMIN_GITHUB_USERS = ["lucacas05"];
+
 function parseAdminUsernames() {
-  return (process.env.ADMIN_GITHUB_USERS ?? "")
-    .split(",")
-    .map((value) => value.trim().toLowerCase())
-    .filter(Boolean);
+  return Array.from(
+    new Set(
+      [
+        ...DEFAULT_ADMIN_GITHUB_USERS,
+        ...(process.env.ADMIN_GITHUB_USERS ?? "").split(","),
+      ]
+        .map((value) => value.trim().toLowerCase())
+        .filter(Boolean),
+    ),
+  );
 }
 
 export function isAdminUser(
