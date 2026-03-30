@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { BarChart3, Clock, Flame, TrendingUp, Zap } from "lucide-react";
 import { ErrorBlock } from "@/islands/sanctuary/ErrorBlock";
+import { Spinner } from "@/islands/sanctuary/Spinner";
 
 interface DailyEntry {
   day: string;
@@ -188,7 +189,7 @@ export function PomodoroAnalytics() {
   if (loading && !stats) {
     return (
       <div className="bg-surface-container pixel-border p-6">
-        <p className="text-sm text-on-surface-variant">Cargando analíticas…</p>
+        <Spinner label="Cargando analíticas…" />
       </div>
     );
   }

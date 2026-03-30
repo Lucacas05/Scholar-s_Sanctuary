@@ -27,6 +27,7 @@ import {
   useSanctuaryStore,
 } from "@/lib/sanctuary/store";
 import { ErrorBlock } from "@/islands/sanctuary/ErrorBlock";
+import { Spinner } from "@/islands/sanctuary/Spinner";
 import * as realtime from "@/lib/sanctuary/realtime";
 import type { ServerMessage } from "@/lib/server/ws-types";
 
@@ -248,6 +249,8 @@ export function ScribeGuild() {
   const [feedback, setFeedback] = useState<string | null>(null);
   const [loadError, setLoadError] = useState(false);
   const [requestsError, setRequestsError] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [busyAction, setBusyAction] = useState<string | null>(null);
   const ownedRooms = rooms.filter(
     (room) => room.ownerId === sanctuary.currentUserId,
   );
@@ -423,8 +426,22 @@ export function ScribeGuild() {
 
   useEffect(() => {
     if (isAnonymous) return;
-    reloadAll();
-  }, [isAnonymous, reloadAll]);
+    setInitialLoading(true);
+    Promise.all([
+      fetchFriends(),
+      fetchRequests(),
+      fetchRooms(),
+      fetchInvitations(),
+      fetchSocialMetrics(),
+    ]).finally(() => setInitialLoading(false));
+  }, [
+    isAnonymous,
+    fetchFriends,
+    fetchRequests,
+    fetchRooms,
+    fetchInvitations,
+    fetchSocialMetrics,
+  ]);
 
   useEffect(() => {
     if (isAnonymous) return;
@@ -495,6 +512,8 @@ export function ScribeGuild() {
   };
 
   const handleSendRequest = async (username: string) => {
+    if (busyAction) return;
+    setBusyAction("send-request");
     setFeedback(null);
 
     try {
@@ -514,10 +533,14 @@ export function ScribeGuild() {
       }
     } catch {
       setFeedback("No se pudo enviar la solicitud.");
+    } finally {
+      setBusyAction(null);
     }
   };
 
   const handleAcceptRequest = async (friendshipId: string) => {
+    if (busyAction) return;
+    setBusyAction("accept-request");
     setFeedback(null);
 
     try {
@@ -537,10 +560,14 @@ export function ScribeGuild() {
       }
     } catch {
       setFeedback("No se pudo aceptar la solicitud.");
+    } finally {
+      setBusyAction(null);
     }
   };
 
   const handleDeclineRequest = async (friendshipId: string) => {
+    if (busyAction) return;
+    setBusyAction("decline-request");
     setFeedback(null);
 
     try {
@@ -559,10 +586,14 @@ export function ScribeGuild() {
       }
     } catch {
       setFeedback("No se pudo rechazar la solicitud.");
+    } finally {
+      setBusyAction(null);
     }
   };
 
   const handleRemoveFriend = async (friendId: string) => {
+    if (busyAction) return;
+    setBusyAction("remove-friend");
     setFeedback(null);
 
     try {
@@ -577,12 +608,14 @@ export function ScribeGuild() {
       }
     } catch {
       setFeedback("No se pudo eliminar el amigo.");
+    } finally {
+      setBusyAction(null);
     }
   };
 
   const handleCreateRoom = async () => {
-    if (!newRoomName.trim()) return;
-
+    if (!newRoomName.trim() || busyAction) return;
+    setBusyAction("create-room");
     setFeedback(null);
 
     try {
@@ -605,10 +638,14 @@ export function ScribeGuild() {
       }
     } catch {
       setFeedback("No se pudo crear la sala.");
+    } finally {
+      setBusyAction(null);
     }
   };
 
   const handleJoinRoom = async (code: string, inviteCodeValue?: string) => {
+    if (busyAction) return;
+    setBusyAction("join-room");
     setFeedback(null);
 
     try {
@@ -632,6 +669,8 @@ export function ScribeGuild() {
       }
     } catch {
       setFeedback("No se pudo entrar a la sala.");
+    } finally {
+      setBusyAction(null);
     }
   };
 
@@ -859,6 +898,12 @@ export function ScribeGuild() {
         </div>
       ) : null}
 
+      {initialLoading && !loadError ? (
+        <div className="gsap-rise bg-surface-container pixel-border p-8 flex justify-center">
+          <Spinner label="Cargando gremio…" />
+        </div>
+      ) : null}
+
       {/* ====== MAIN GRID ====== */}
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-12">
         {/* ---- LEFT: Friends Panel ---- */}
@@ -936,10 +981,13 @@ export function ScribeGuild() {
                       <button
                         type="button"
                         onClick={() => void handleSendRequest(user.username)}
-                        className={`${btnBase} bg-tertiary-container text-on-tertiary-container border-b-[3px] border-on-tertiary-fixed-variant px-4 py-2 text-[10px] hover:brightness-105`}
+                        disabled={!!busyAction}
+                        className={`${btnBase} bg-tertiary-container text-on-tertiary-container border-b-[3px] border-on-tertiary-fixed-variant px-4 py-2 text-[10px] hover:brightness-105 disabled:opacity-60 disabled:cursor-not-allowed`}
                       >
                         <UserPlus size={12} />
-                        Enviar solicitud
+                        {busyAction === "send-request"
+                          ? "Enviando…"
+                          : "Enviar solicitud"}
                       </button>
                     </div>
                   ))}
@@ -1076,7 +1124,8 @@ export function ScribeGuild() {
                         <button
                           type="button"
                           onClick={() => void handleRemoveFriend(friend.id)}
-                          className="flex h-9 w-9 items-center justify-center border-2 border-outline-variant/50 bg-surface-container-highest text-outline hover:border-primary/50 hover:text-primary steps-bezel"
+                          disabled={!!busyAction}
+                          className="flex h-9 w-9 items-center justify-center border-2 border-outline-variant/50 bg-surface-container-highest text-outline hover:border-primary/50 hover:text-primary steps-bezel disabled:opacity-60 disabled:cursor-not-allowed"
                           aria-label={`Eliminar a ${friend.displayName}`}
                         >
                           <Trash2 size={14} />
@@ -1128,15 +1177,19 @@ export function ScribeGuild() {
                           <button
                             type="button"
                             onClick={() => void handleAcceptRequest(req.id)}
-                            className={`${btnBase} bg-primary text-on-primary border-b-[3px] border-on-primary-fixed-variant px-4 py-2 text-[10px] hover:brightness-105`}
+                            disabled={!!busyAction}
+                            className={`${btnBase} bg-primary text-on-primary border-b-[3px] border-on-primary-fixed-variant px-4 py-2 text-[10px] hover:brightness-105 disabled:opacity-60 disabled:cursor-not-allowed`}
                           >
                             <Check size={12} />
-                            Aceptar
+                            {busyAction === "accept-request"
+                              ? "Aceptando…"
+                              : "Aceptar"}
                           </button>
                           <button
                             type="button"
                             onClick={() => void handleDeclineRequest(req.id)}
-                            className="flex h-9 w-9 items-center justify-center border-2 border-outline-variant/50 bg-surface-container-highest text-outline hover:border-primary/50 hover:text-primary steps-bezel"
+                            disabled={!!busyAction}
+                            className="flex h-9 w-9 items-center justify-center border-2 border-outline-variant/50 bg-surface-container-highest text-outline hover:border-primary/50 hover:text-primary steps-bezel disabled:opacity-60 disabled:cursor-not-allowed"
                             aria-label={`Rechazar a ${req.displayName}`}
                           >
                             <X size={14} />
@@ -1258,10 +1311,11 @@ export function ScribeGuild() {
                       <button
                         type="button"
                         onClick={() => void handleCreateRoom()}
-                        className={`${btnBase} flex-1 bg-primary text-on-primary border-b-[3px] border-on-primary-fixed-variant px-4 py-2 text-[10px] hover:brightness-105`}
+                        disabled={!!busyAction}
+                        className={`${btnBase} flex-1 bg-primary text-on-primary border-b-[3px] border-on-primary-fixed-variant px-4 py-2 text-[10px] hover:brightness-105 disabled:opacity-60 disabled:cursor-not-allowed`}
                       >
                         <Plus size={12} />
-                        Crear
+                        {busyAction === "create-room" ? "Creando…" : "Crear"}
                       </button>
                       <button
                         type="button"
@@ -1295,11 +1349,11 @@ export function ScribeGuild() {
                   <button
                     type="button"
                     onClick={() => void handleJoinRoom(joinCode, inviteCode)}
-                    disabled={!joinCode.trim()}
+                    disabled={!joinCode.trim() || !!busyAction}
                     className={`${btnBase} bg-surface-container-highest text-on-surface border-2 border-outline-variant px-3 py-2 text-[10px] hover:border-primary/50 hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed`}
                   >
                     <DoorOpen size={12} />
-                    Entrar
+                    {busyAction === "join-room" ? "Entrando…" : "Entrar"}
                   </button>
                 </div>
                 <input
@@ -1463,7 +1517,8 @@ export function ScribeGuild() {
                           <button
                             type="button"
                             onClick={() => void handleAcceptInvitation(inv.id)}
-                            className={`${btnBase} bg-primary text-on-primary border-b-[3px] border-on-primary-fixed-variant px-3 py-2 text-[10px] hover:brightness-105`}
+                            disabled={!!busyAction}
+                            className={`${btnBase} bg-primary text-on-primary border-b-[3px] border-on-primary-fixed-variant px-3 py-2 text-[10px] hover:brightness-105 disabled:opacity-60 disabled:cursor-not-allowed`}
                           >
                             <Check size={12} />
                             Aceptar
@@ -1471,7 +1526,8 @@ export function ScribeGuild() {
                           <button
                             type="button"
                             onClick={() => void handleDeclineInvitation(inv.id)}
-                            className="flex h-8 items-center justify-center border-2 border-outline-variant/50 bg-surface-container-highest px-3 text-[10px] font-headline font-bold uppercase tracking-widest text-outline hover:text-primary steps-bezel"
+                            disabled={!!busyAction}
+                            className="flex h-8 items-center justify-center border-2 border-outline-variant/50 bg-surface-container-highest px-3 text-[10px] font-headline font-bold uppercase tracking-widest text-outline hover:text-primary steps-bezel disabled:opacity-60 disabled:cursor-not-allowed"
                           >
                             Rechazar
                           </button>

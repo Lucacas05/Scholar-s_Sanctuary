@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Crown, Flame, Lock, Settings2, Shirt, Sparkles } from "lucide-react";
 import { ErrorBlock } from "@/islands/sanctuary/ErrorBlock";
+import { Spinner } from "@/islands/sanctuary/Spinner";
 import { ItemModelPreview } from "@/islands/sanctuary/ItemModelPreview";
 import { PixelAvatar } from "@/islands/sanctuary/PixelAvatar";
 import { useGsapReveal } from "@/islands/sanctuary/useGsapReveal";
@@ -541,9 +542,11 @@ export function WardrobeStudio({
               </h2>
             </div>
             <p className="font-headline text-[10px] font-bold uppercase tracking-[0.22em] text-outline">
-              {loading
-                ? "Leyendo progreso..."
-                : `${currentOptions.length} opciones`}
+              {loading ? (
+                <Spinner label="Leyendo progreso…" size="sm" />
+              ) : (
+                `${currentOptions.length} opciones`
+              )}
             </p>
           </div>
 

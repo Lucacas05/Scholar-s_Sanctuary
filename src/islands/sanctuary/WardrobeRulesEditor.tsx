@@ -10,6 +10,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { ItemModelPreview } from "@/islands/sanctuary/ItemModelPreview";
+import { Spinner } from "@/islands/sanctuary/Spinner";
 import { PixelAvatar } from "@/islands/sanctuary/PixelAvatar";
 import { useGsapReveal } from "@/islands/sanctuary/useGsapReveal";
 import {
@@ -592,12 +593,19 @@ export function WardrobeRulesEditor() {
                 <p className="font-headline text-[10px] font-bold uppercase tracking-[0.22em] text-outline">
                   Guardado global
                 </p>
-                <p className="mt-2 text-sm leading-relaxed text-on-surface-variant">
-                  {savedMessage ||
-                    (loading
-                      ? "Leyendo configuración publicada desde la VPS..."
-                      : "Los cambios no se aplican hasta guardarlos en la VPS.")}
-                </p>
+                {loading && !savedMessage ? (
+                  <div className="mt-2">
+                    <Spinner
+                      label="Leyendo configuración publicada desde la VPS…"
+                      size="sm"
+                    />
+                  </div>
+                ) : (
+                  <p className="mt-2 text-sm leading-relaxed text-on-surface-variant">
+                    {savedMessage ||
+                      "Los cambios no se aplican hasta guardarlos en la VPS."}
+                  </p>
+                )}
               </div>
               <div className="flex flex-wrap gap-3">
                 <button
