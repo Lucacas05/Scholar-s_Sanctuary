@@ -1,102 +1,146 @@
 # Lumina
 
-Lumina es una experiencia de estudio con estética de fantasía construida con Astro, Tailwind CSS v4 y islas de React para las partes interactivas. La propuesta actual funciona como un santuario social de estudio: una biblioteca central, una sala silenciosa privada, una biblioteca compartida, un jardín para descansos, un editor de personaje y crónicas que crecen a partir de sesiones reales de Pomodoro.
+**Estudiar solo es aburrido. Lumina convierte las sesiones de estudio en una aventura compartida dentro de un santuario de fantasía.**
 
-## Sitio web activo
+Lumina es una aplicación web que gamifica el estudio con temporizadores Pomodoro, presencia social en tiempo real, avatares personalizables y crónicas que crecen con cada sesión real. Pensada para hackathons y grupos de estudio que quieren mantenerse enfocados sin perder la diversión.
 
-La página web está actualmente activa en:
+> **Demo en vivo:** <https://luminalibrary.duckdns.org/>
 
-https://luminalibrary.duckdns.org/
+---
 
-## Características principales
+## Capturas de pantalla
 
-- Biblioteca como portal hacia los distintos espacios del santuario
-- Santuario silencioso con temporizador Pomodoro editable
-- Biblioteca compartida y jardín con presencia social en tiempo real
-- Refinar con editor modular de avatar
-- Crónicas e hitos impulsados por sesiones reales de Pomodoro persistidas en SQLite
-- Rutas responsivas en Astro con islas de React solo donde hace falta estado
+<!-- Sustituye estos placeholders por capturas reales o GIFs del proyecto -->
 
-## Tecnologías
+|               Biblioteca central               |             Santuario silencioso             |          Editor de personaje           |
+| :--------------------------------------------: | :------------------------------------------: | :------------------------------------: |
+| ![Biblioteca](docs/screenshots/biblioteca.png) | ![Santuario](docs/screenshots/santuario.png) | ![Editor](docs/screenshots/editor.png) |
 
-- Astro 5
-- React 19
-- TypeScript
-- Tailwind CSS 4
-- Lucide React
+---
 
-## Ejecutar en local
+## Tech stack
 
-### Requisitos
+| Capa          | Tecnología                            |
+| ------------- | ------------------------------------- |
+| Framework     | **Astro 5** (SSR + islas de React 19) |
+| Lenguaje      | **TypeScript**                        |
+| Estilos       | **Tailwind CSS 4**                    |
+| Base de datos | **better-sqlite3**                    |
+| Autenticación | **Arctic** (GitHub OAuth)             |
+| Tiempo real   | **WebSocket (ws)**                    |
+| Animaciones   | **GSAP**                              |
+| Iconos        | **Lucide React**                      |
+| Tests         | **Vitest**                            |
 
-- Node.js 22 o 24
-- npm
+---
 
-### Instalación
+## Inicio rápido (< 5 minutos)
 
-1. Instala las dependencias:
+### Requisitos previos
 
-   ```bash
-   npm ci
-   ```
+- **Node.js 22 o 24** (el proyecto incluye `.nvmrc`)
+- **npm**
+- Opcionalmente, credenciales de GitHub OAuth para login (ver `.env.example`)
 
-2. Inicia el servidor de desarrollo:
+### 1. Clona e instala
 
-   ```bash
-   npm run dev
-   ```
+```bash
+git clone https://github.com/Lucacas05/Lumina.git
+cd Lumina
+cp .env.example .env   # edita las variables si necesitas OAuth
+npm ci
+```
 
-3. Abre [http://localhost:3000](http://localhost:3000).
+### 2. Inicia el servidor de desarrollo
+
+```bash
+npm run dev
+```
+
+### 3. Abre el navegador
+
+Visita [http://localhost:3000](http://localhost:3000) y explora el santuario.
+
+---
+
+## Variables de entorno
+
+Copia `.env.example` a `.env` y completa según necesites:
+
+| Variable                      | Descripción                                           | Requerida  |
+| ----------------------------- | ----------------------------------------------------- | :--------: |
+| `GITHUB_CLIENT_ID`            | ID de la app OAuth de GitHub                          | Para login |
+| `GITHUB_CLIENT_SECRET`        | Secret de la app OAuth de GitHub                      | Para login |
+| `SITE_URL`                    | URL base del sitio (default: `http://localhost:3000`) |     No     |
+| `ADMIN_GITHUB_USERS`          | Usuarios GitHub con permisos de admin                 |     No     |
+| `CUSTOM_WARDROBE_UPLOAD_ROOT` | Ruta raíz para subir assets de armario                |     No     |
+
+---
 
 ## Scripts disponibles
 
-- `npm run dev` inicia el servidor de desarrollo de Astro en el puerto `3000`
-- `npm run build` genera la versión de producción
-- `npm run preview` sirve la versión de producción en local
-- `npm run db:check` valida integridad SQLite y claves foráneas antes de desplegar
-- `npm run lint` ejecuta `astro check` y ESLint
-- `npm run typecheck` ejecuta `tsc --noEmit`
-- `npm run test` ejecuta la base de tests con Vitest
-- `npm run clean` elimina el directorio `dist`
+| Comando             | Descripción                                |
+| ------------------- | ------------------------------------------ |
+| `npm run dev`       | Servidor de desarrollo en el puerto 3000   |
+| `npm run build`     | Build de producción                        |
+| `npm run start`     | Ejecuta el servidor de producción          |
+| `npm run preview`   | Sirve el build de producción en local      |
+| `npm run db:check`  | Valida integridad SQLite y claves foráneas |
+| `npm run lint`      | Ejecuta `astro check` + ESLint             |
+| `npm run lint:fix`  | ESLint con corrección automática           |
+| `npm run format`    | Formatea el código con Prettier            |
+| `npm run typecheck` | `tsc --noEmit`                             |
+| `npm run test`      | Ejecuta tests con Vitest                   |
+| `npm run clean`     | Elimina el directorio `dist`               |
 
-## Validación continua
+---
 
-- GitHub Actions ejecuta en `push` y `pull_request`:
-  - `npm ci`
-  - `npm run lint`
-  - `npm run typecheck`
-  - `npm run test`
-  - `npm run build`
+## Características principales
 
-## Deploy a VPS
+- **Biblioteca central** como portal hacia los distintos espacios del santuario
+- **Santuario silencioso** con temporizador Pomodoro editable
+- **Biblioteca compartida y jardín** con presencia social en tiempo real vía WebSocket
+- **Editor de personaje** modular para personalizar tu avatar
+- **Crónicas e hitos** que crecen con sesiones reales de Pomodoro persistidas en SQLite
+- **Rutas responsivas** en Astro con islas de React solo donde se necesita estado
 
-- El despliegue usa `.github/workflows/deploy.yml`.
-- La referencia de despliegue y CI sigue siendo Node 22 mediante `.nvmrc`.
-- Requiere estos secrets en GitHub:
-  - `VPS_IP`
-  - `VPS_USER`
-  - `VPS_SSH_KEY` para el modo endurecido definitivo
-  - `VPS_PASSWORD` solo como compatibilidad temporal mientras se provisiona la clave
-  - `VPS_HOST_FINGERPRINT` cuando se active el modo con clave SSH y se haya verificado contra el host real
-- El workflow:
-  - prioriza `VPS_SSH_KEY` y cae temporalmente a `VPS_PASSWORD` si la clave aún no existe
-  - hace `git pull`
-  - ejecuta `npm ci`
-  - valida SQLite con `npm run db:check`
-  - construye la app
-  - reinicia `lumina`
-  - valida `/api/me` como health check
+---
 
 ## Estructura del proyecto
 
 ```text
-docs/         Notas de flujo de trabajo e integración del repositorio
-references/   Referencias visuales locales que no deben convertirse en rutas de Astro
 src/
-  components/   Bloques de interfaz reutilizables en Astro
-  data/         Contenido centralizado en español y referencias de assets
-  islands/      Islas interactivas de React
-  layouts/      Layouts compartidos
-  pages/        Rutas de Astro
-  lib/          Utilidades compartidas en tiempo de ejecución, como el mapeo de iconos
+  components/     Bloques de interfaz reutilizables en Astro
+  data/           Contenido centralizado y referencias de assets
+  integrations/   Integraciones de Astro
+  islands/        Islas interactivas de React
+    sanctuary/    Componentes del santuario
+  layouts/        Layouts compartidos
+  lib/            Utilidades compartidas en runtime
+    sanctuary/    Lógica de negocio del santuario, logros y misiones
+    server/       Utilidades del servidor
+  pages/          Rutas de Astro (estáticas y dinámicas)
+    api/          Endpoints de la API
+docs/             Notas de flujo de trabajo e integración
+references/       Referencias visuales locales
+scripts/          Scripts de build y despliegue
+deploy/           Configuración de despliegue
 ```
+
+---
+
+## CI/CD
+
+GitHub Actions ejecuta en cada `push` y `pull_request`:
+
+```text
+npm ci → lint → typecheck → test → build
+```
+
+El despliegue a VPS se gestiona con `.github/workflows/deploy.yml` (ver detalles en el workflow).
+
+---
+
+## Licencia
+
+Consulta el archivo de licencia del repositorio.
