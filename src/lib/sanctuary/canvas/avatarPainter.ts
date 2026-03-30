@@ -504,8 +504,10 @@ function drawFallbackAvatar(
     tick,
     highlighted = false,
   } = options;
+  const upperToneKey =
+    avatar.upper in upperTones ? avatar.upper : "shirt-01-longsleeve";
   const upper = {
-    ...upperTones[avatar.upper],
+    ...upperTones[upperToneKey as keyof typeof upperTones],
     primary: garmentTones[avatar.upperColor],
   };
   const lower = garmentTones[avatar.lowerColor];

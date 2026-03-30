@@ -2,7 +2,14 @@ import type {
   AvatarAccessory,
   AvatarConfig,
   AvatarGarmentColor,
+  BuiltinAvatarLower,
+  BuiltinAvatarSocks,
+  BuiltinAvatarUpper,
 } from "@/lib/sanctuary/store";
+import {
+  resolveCustomWardrobeAsset,
+  listAvailableWardrobeColors,
+} from "@/lib/sanctuary/customWardrobe";
 
 interface AvatarLayerAsset {
   src: string;
@@ -90,7 +97,7 @@ const hairColorFolders = {
   white: "White",
 } as const;
 
-const upperFolders = {
+const upperFolders: Record<BuiltinAvatarUpper, string> = {
   "shirt-01-longsleeve": "Shirt 01 - Longsleeve Shirt",
   "shirt-02-vneck-longsleeve": "Shirt 02 - V-neck Longsleeve Shirt",
   "shirt-03-scoop-longsleeve": "Shirt 03 - Scoop Longsleeve Shirt",
@@ -99,7 +106,7 @@ const upperFolders = {
   "shirt-06-scoop-tee": "Shirt 06 - Scoop T-shirt",
 } as const;
 
-const lowerFolders = {
+const lowerFolders: Record<BuiltinAvatarLower, string> = {
   "pants-01-hose": "Pants 01 - Hose",
   "pants-02-leggings": "Pants 02 - Leggings",
   "pants-03-pants": "Pants 03 - Pants",
@@ -107,7 +114,7 @@ const lowerFolders = {
   "pants-05-overalls": "Pants 05 - Overalls",
 } as const;
 
-const socksFolders = {
+const socksFolders: Record<BuiltinAvatarSocks, string> = {
   "socks-01-ankle": "Socks 01 - Ankle Socks",
   "socks-02-high": "Socks 02 - High Socks",
 } as const;
@@ -264,20 +271,62 @@ function headLayer(avatar: AvatarConfig) {
 }
 
 function upperLayer(avatar: AvatarConfig) {
+  const customAsset = resolveCustomWardrobeAsset(
+    "upper",
+    avatar.upper,
+    avatar.sex,
+    avatar.upperColor,
+  );
+  if (customAsset) {
+    return makeRevisedLayer(customAsset);
+  }
+
+  const folder =
+    upperFolders[avatar.upper as BuiltinAvatarUpper] ??
+    upperFolders["shirt-01-longsleeve"];
+
   return makeRevisedLayer(
-    `${SPRITES_ROOT}/upper/${sexFolder(avatar.sex)}/${avatar.upper}/${avatar.upperColor}.png`,
+    `${SPRITES_ROOT}/upper/${sexFolder(avatar.sex)}/${folder}/${avatar.upperColor}.png`,
   );
 }
 
 function lowerLayer(avatar: AvatarConfig) {
+  const customAsset = resolveCustomWardrobeAsset(
+    "lower",
+    avatar.lower,
+    avatar.sex,
+    avatar.lowerColor,
+  );
+  if (customAsset) {
+    return makeRevisedLayer(customAsset);
+  }
+
+  const folder =
+    lowerFolders[avatar.lower as BuiltinAvatarLower] ??
+    lowerFolders["pants-03-pants"];
+
   return makeRevisedLayer(
-    `${SPRITES_ROOT}/lower/${sexFolder(avatar.sex)}/${avatar.lower}/${avatar.lowerColor}.png`,
+    `${SPRITES_ROOT}/lower/${sexFolder(avatar.sex)}/${folder}/${avatar.lowerColor}.png`,
   );
 }
 
 function socksLayer(avatar: AvatarConfig) {
+  const customAsset = resolveCustomWardrobeAsset(
+    "socks",
+    avatar.socks,
+    avatar.sex,
+    avatar.socksColor,
+  );
+  if (customAsset) {
+    return makeRevisedLayer(customAsset);
+  }
+
+  const folder =
+    socksFolders[avatar.socks as BuiltinAvatarSocks] ??
+    socksFolders["socks-01-ankle"];
+
   return makeRevisedLayer(
-    `${SPRITES_ROOT}/socks/${sexFolder(avatar.sex)}/${avatar.socks}/${avatar.socksColor}.png`,
+    `${SPRITES_ROOT}/socks/${sexFolder(avatar.sex)}/${folder}/${avatar.socksColor}.png`,
   );
 }
 
@@ -316,6 +365,14 @@ function accessoryLayer(avatar: AvatarConfig) {
 }
 
 export function getAvatarArtManifest(avatar: AvatarConfig): AvatarArtManifest {
+  const availableUpperColors = listAvailableWardrobeColors(
+    "upper",
+    avatar.upper,
+  );
+  const accentColor = availableUpperColors.includes(avatar.upperColor)
+    ? avatar.upperColor
+    : availableUpperColors[0];
+
   return {
     body: bodyLayer(avatar),
     head: headLayer(avatar),
@@ -330,7 +387,7 @@ export function getAvatarArtManifest(avatar: AvatarConfig): AvatarArtManifest {
         : avatar.accessory === "bigote" || avatar.accessory === "barba-corta"
           ? "facial-hair"
           : "helmet",
-    accent: upperAccents[avatar.upperColor],
+    accent: upperAccents[accentColor],
   };
 }
 

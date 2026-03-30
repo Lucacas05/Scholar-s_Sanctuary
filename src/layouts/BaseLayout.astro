@@ -6,6 +6,7 @@ import { images, siteContent } from "@/data/site";
 import { IdentityBadge } from "@/islands/sanctuary/IdentityBadge";
 import { PwaBridge } from "@/islands/PwaBridge";
 import { PlannerReminderBridge } from "@/islands/sanctuary/PlannerReminderBridge";
+import { readCustomWardrobeCatalog } from "@/lib/server/custom-wardrobe";
 
 interface Props {
   title: string;
@@ -40,6 +41,7 @@ const oauthAvailable = Boolean(
   import.meta.env.GITHUB_CLIENT_SECRET &&
   import.meta.env.SITE_URL,
 );
+const customWardrobeCatalog = readCustomWardrobeCatalog();
 const bootstrapPayload = Astro.locals.user
   ? {
       user: {
@@ -85,6 +87,13 @@ const bootstrapPayload = Astro.locals.user
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
+    {
+      (
+        <script is:inline define:vars={{ customWardrobeCatalog }}>
+          window.__luminaCustomWardrobeCatalog = customWardrobeCatalog;
+        </script>
+      )
+    }
     {
       bootstrapPayload && (
         <script is:inline define:vars={{ bootstrapPayload }}>

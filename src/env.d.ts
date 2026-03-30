@@ -24,6 +24,7 @@ declare namespace NodeJS {
     GITHUB_CLIENT_SECRET?: string;
     SITE_URL?: string;
     ADMIN_GITHUB_USERS?: string;
+    CUSTOM_WARDROBE_UPLOAD_ROOT?: string;
   }
 }
 
@@ -32,6 +33,7 @@ interface ImportMetaEnv {
   readonly GITHUB_CLIENT_SECRET?: string;
   readonly SITE_URL?: string;
   readonly ADMIN_GITHUB_USERS?: string;
+  readonly CUSTOM_WARDROBE_UPLOAD_ROOT?: string;
 }
 
 interface ImportMeta {

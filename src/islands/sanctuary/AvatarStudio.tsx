@@ -13,6 +13,14 @@ import { ItemModelPreview } from "@/islands/sanctuary/ItemModelPreview";
 import { PixelAvatar } from "@/islands/sanctuary/PixelAvatar";
 import { useGsapReveal } from "@/islands/sanctuary/useGsapReveal";
 import {
+  CUSTOM_WARDROBE_CATALOG_EVENT,
+  getPreferredWardrobeColor,
+  listAvailableWardrobeColors,
+  loadCustomWardrobeCatalog,
+  syncCustomWardrobeCatalogFromServer,
+  type CustomWardrobeCatalog,
+} from "@/lib/sanctuary/customWardrobe";
+import {
   WARDROBE_CONFIG_EVENT,
   formatWardrobeDuration,
   getWardrobeRequirementLevel,
@@ -99,6 +107,9 @@ export function AvatarStudio({
   const [wardrobeConfig, setWardrobeConfig] = useState<WardrobeConfig>(() =>
     loadWardrobeConfig(),
   );
+  const [customCatalog, setCustomCatalog] = useState<CustomWardrobeCatalog>(
+    () => loadCustomWardrobeCatalog(),
+  );
   const [loadingWardrobe, setLoadingWardrobe] = useState(false);
   const [wardrobeError, setWardrobeError] = useState(false);
   const rootRef = useRef<HTMLDivElement | null>(null);
@@ -113,8 +124,15 @@ export function AvatarStudio({
       activeField,
       totalFocusSeconds,
       wardrobeConfig,
+      customCatalog,
     );
-  }, [activeField, totalFocusSeconds, wardrobeConfig, wardrobeManaged]);
+  }, [
+    activeField,
+    customCatalog,
+    totalFocusSeconds,
+    wardrobeConfig,
+    wardrobeManaged,
+  ]);
 
   const activeColorField = isGarmentField(activeField)
     ? garmentColorFieldByField[activeField]
@@ -167,6 +185,37 @@ export function AvatarStudio({
   }, [isAnonymous, wardrobeManaged]);
 
   useEffect(() => {
+    let cancelled = false;
+
+    const syncFromCache = () => {
+      setCustomCatalog(loadCustomWardrobeCatalog());
+    };
+
+    async function syncCatalog() {
+      try {
+        const catalog = await syncCustomWardrobeCatalogFromServer();
+        if (!cancelled) {
+          setCustomCatalog(catalog);
+        }
+      } catch {
+        if (!cancelled) {
+          setCustomCatalog(loadCustomWardrobeCatalog());
+        }
+      }
+    }
+
+    void syncCatalog();
+    window.addEventListener("focus", syncCatalog);
+    window.addEventListener(CUSTOM_WARDROBE_CATALOG_EVENT, syncFromCache);
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener("focus", syncCatalog);
+      window.removeEventListener(CUSTOM_WARDROBE_CATALOG_EVENT, syncFromCache);
+    };
+  }, []);
+
+  useEffect(() => {
     if (isAnonymous || !wardrobeManaged) {
       return;
     }
@@ -192,6 +241,50 @@ export function AvatarStudio({
       cancelled = true;
     };
   }, [isAnonymous, wardrobeManaged]);
+
+  useEffect(() => {
+    const corrections = [
+      {
+        field: "upper" as const,
+        colorField: "upperColor" as const,
+        value: avatar.upper,
+        color: avatar.upperColor,
+      },
+      {
+        field: "lower" as const,
+        colorField: "lowerColor" as const,
+        value: avatar.lower,
+        color: avatar.lowerColor,
+      },
+      {
+        field: "socks" as const,
+        colorField: "socksColor" as const,
+        value: avatar.socks,
+        color: avatar.socksColor,
+      },
+    ];
+
+    corrections.forEach(({ field, colorField, value, color }) => {
+      const preferredColor = getPreferredWardrobeColor(
+        field,
+        value,
+        color,
+        customCatalog,
+      );
+
+      if (preferredColor !== color) {
+        sanctuaryActions.updateAvatar(colorField, preferredColor);
+      }
+    });
+  }, [
+    avatar.lower,
+    avatar.lowerColor,
+    avatar.socks,
+    avatar.socksColor,
+    avatar.upper,
+    avatar.upperColor,
+    customCatalog,
+  ]);
 
   return (
     <div
@@ -356,6 +449,23 @@ export function AvatarStudio({
                     const disabled =
                       isAnonymous || (wardrobeManaged && !unlocked);
 
+                    const optionColors =
+                      activeColorField && isGarmentField(activeField)
+                        ? (() => {
+                            const garmentField = activeField;
+                            const garmentValue =
+                              option.value as AvatarConfig[typeof garmentField];
+
+                            return colorOptions.filter((colorOption) =>
+                              listAvailableWardrobeColors(
+                                garmentField,
+                                garmentValue,
+                                customCatalog,
+                              ).includes(colorOption.value),
+                            );
+                          })()
+                        : [];
+
                     return (
                       <div
                         key={option.value}
@@ -363,10 +473,24 @@ export function AvatarStudio({
                           if (disabled) {
                             return;
                           }
+                          const typedValue =
+                            option.value as AvatarConfig[typeof activeField];
                           sanctuaryActions.updateAvatar(
                             activeField,
-                            option.value as AvatarConfig[typeof activeField],
+                            typedValue,
                           );
+                          if (activeColorField && isGarmentField(activeField)) {
+                            const garmentField = activeField;
+                            sanctuaryActions.updateAvatar(
+                              activeColorField,
+                              getPreferredWardrobeColor(
+                                garmentField,
+                                typedValue as AvatarConfig[typeof garmentField],
+                                avatar[activeColorField],
+                                customCatalog,
+                              ) as AvatarConfig[typeof activeColorField],
+                            );
+                          }
                         }}
                         onKeyDown={(event) => {
                           if (disabled) {
@@ -374,10 +498,27 @@ export function AvatarStudio({
                           }
                           if (event.key === "Enter" || event.key === " ") {
                             event.preventDefault();
+                            const typedValue =
+                              option.value as AvatarConfig[typeof activeField];
                             sanctuaryActions.updateAvatar(
                               activeField,
-                              option.value as AvatarConfig[typeof activeField],
+                              typedValue,
                             );
+                            if (
+                              activeColorField &&
+                              isGarmentField(activeField)
+                            ) {
+                              const garmentField = activeField;
+                              sanctuaryActions.updateAvatar(
+                                activeColorField,
+                                getPreferredWardrobeColor(
+                                  garmentField,
+                                  typedValue as AvatarConfig[typeof garmentField],
+                                  avatar[activeColorField],
+                                  customCatalog,
+                                ) as AvatarConfig[typeof activeColorField],
+                              );
+                            }
                           }
                         }}
                         role="button"
@@ -416,7 +557,7 @@ export function AvatarStudio({
                           </div>
                           {activeColorField ? (
                             <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
-                              {colorOptions.map((colorOption) => {
+                              {optionColors.map((colorOption) => {
                                 const selectedColor =
                                   avatar[activeColorField] ===
                                   colorOption.value;

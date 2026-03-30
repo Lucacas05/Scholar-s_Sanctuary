@@ -5,6 +5,14 @@ import { ItemModelPreview } from "@/islands/sanctuary/ItemModelPreview";
 import { PixelAvatar } from "@/islands/sanctuary/PixelAvatar";
 import { useGsapReveal } from "@/islands/sanctuary/useGsapReveal";
 import {
+  CUSTOM_WARDROBE_CATALOG_EVENT,
+  getPreferredWardrobeColor,
+  listAvailableWardrobeColors,
+  loadCustomWardrobeCatalog,
+  syncCustomWardrobeCatalogFromServer,
+  type CustomWardrobeCatalog,
+} from "@/lib/sanctuary/customWardrobe";
+import {
   avatarOptions,
   garmentColorMeta,
   getRenderableCurrentProfile,
@@ -88,6 +96,9 @@ export function WardrobeStudio({
   const [wardrobeConfig, setWardrobeConfig] = useState<WardrobeConfig>(() =>
     loadWardrobeConfig(),
   );
+  const [customCatalog, setCustomCatalog] = useState<CustomWardrobeCatalog>(
+    () => loadCustomWardrobeCatalog(),
+  );
   const rootRef = useRef<HTMLDivElement | null>(null);
 
   useGsapReveal(rootRef);
@@ -126,6 +137,43 @@ export function WardrobeStudio({
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
+
+    const syncCatalogFromCache = () => {
+      setCustomCatalog(loadCustomWardrobeCatalog());
+    };
+
+    async function syncCatalogFromServer() {
+      try {
+        const catalog = await syncCustomWardrobeCatalogFromServer();
+        if (!cancelled) {
+          setCustomCatalog(catalog);
+        }
+      } catch {
+        if (!cancelled) {
+          setCustomCatalog(loadCustomWardrobeCatalog());
+        }
+      }
+    }
+
+    void syncCatalogFromServer();
+    window.addEventListener("focus", syncCatalogFromServer);
+    window.addEventListener(
+      CUSTOM_WARDROBE_CATALOG_EVENT,
+      syncCatalogFromCache,
+    );
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener("focus", syncCatalogFromServer);
+      window.removeEventListener(
+        CUSTOM_WARDROBE_CATALOG_EVENT,
+        syncCatalogFromCache,
+      );
+    };
+  }, []);
+
+  useEffect(() => {
     if (isAnonymous) {
       return;
     }
@@ -159,6 +207,50 @@ export function WardrobeStudio({
     };
   }, [isAnonymous]);
 
+  useEffect(() => {
+    const corrections = [
+      {
+        field: "upper" as const,
+        colorField: "upperColor" as const,
+        value: avatar.upper,
+        color: avatar.upperColor,
+      },
+      {
+        field: "lower" as const,
+        colorField: "lowerColor" as const,
+        value: avatar.lower,
+        color: avatar.lowerColor,
+      },
+      {
+        field: "socks" as const,
+        colorField: "socksColor" as const,
+        value: avatar.socks,
+        color: avatar.socksColor,
+      },
+    ];
+
+    corrections.forEach(({ field, colorField, value, color }) => {
+      const preferredColor = getPreferredWardrobeColor(
+        field,
+        value,
+        color,
+        customCatalog,
+      );
+
+      if (preferredColor !== color) {
+        sanctuaryActions.updateAvatar(colorField, preferredColor);
+      }
+    });
+  }, [
+    avatar.lower,
+    avatar.lowerColor,
+    avatar.socks,
+    avatar.socksColor,
+    avatar.upper,
+    avatar.upperColor,
+    customCatalog,
+  ]);
+
   const totalFocusSeconds = stats?.totalFocusSeconds ?? 0;
   const unlockSummary = useMemo(
     () => getWardrobeUnlockSummary(totalFocusSeconds, wardrobeConfig),
@@ -169,8 +261,9 @@ export function WardrobeStudio({
       activeField,
       totalFocusSeconds,
       wardrobeConfig,
+      customCatalog,
     );
-  }, [activeField, totalFocusSeconds, wardrobeConfig]);
+  }, [activeField, customCatalog, totalFocusSeconds, wardrobeConfig]);
   const activeColorField = isGarmentField(activeField)
     ? garmentColorFieldByField[activeField]
     : null;
@@ -481,6 +574,22 @@ export function WardrobeStudio({
                   wardrobeConfig,
                 );
                 const active = avatar[activeField] === option.value;
+                const optionColors =
+                  activeColorField && isGarmentField(activeField)
+                    ? (() => {
+                        const garmentField = activeField;
+                        const garmentValue =
+                          typedValue as AvatarConfig[typeof garmentField];
+
+                        return colorOptions.filter((colorOption) =>
+                          listAvailableWardrobeColors(
+                            garmentField,
+                            garmentValue,
+                            customCatalog,
+                          ).includes(colorOption.value),
+                        );
+                      })()
+                    : [];
 
                 return (
                   <div
@@ -490,6 +599,18 @@ export function WardrobeStudio({
                         return;
                       }
                       sanctuaryActions.updateAvatar(activeField, typedValue);
+                      if (activeColorField && isGarmentField(activeField)) {
+                        const garmentField = activeField;
+                        sanctuaryActions.updateAvatar(
+                          activeColorField,
+                          getPreferredWardrobeColor(
+                            garmentField,
+                            typedValue as AvatarConfig[typeof garmentField],
+                            avatar[activeColorField],
+                            customCatalog,
+                          ) as AvatarConfig[typeof activeColorField],
+                        );
+                      }
                     }}
                     onKeyDown={(event) => {
                       if (isAnonymous || !unlocked) {
@@ -498,6 +619,18 @@ export function WardrobeStudio({
                       if (event.key === "Enter" || event.key === " ") {
                         event.preventDefault();
                         sanctuaryActions.updateAvatar(activeField, typedValue);
+                        if (activeColorField && isGarmentField(activeField)) {
+                          const garmentField = activeField;
+                          sanctuaryActions.updateAvatar(
+                            activeColorField,
+                            getPreferredWardrobeColor(
+                              garmentField,
+                              typedValue as AvatarConfig[typeof garmentField],
+                              avatar[activeColorField],
+                              customCatalog,
+                            ) as AvatarConfig[typeof activeColorField],
+                          );
+                        }
                       }
                     }}
                     role="button"
@@ -533,7 +666,7 @@ export function WardrobeStudio({
 
                       {activeColorField ? (
                         <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
-                          {colorOptions.map((colorOption) => {
+                          {optionColors.map((colorOption) => {
                             const selectedColor =
                               avatar[activeColorField] === colorOption.value;
 

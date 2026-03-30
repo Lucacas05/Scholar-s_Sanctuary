@@ -3,6 +3,7 @@ import { db } from "@/lib/server/db";
 export type AppConfigKey =
   | "published-scene-maps"
   | "wardrobe-config"
+  | "custom-wardrobe-catalog"
   | "mission-definitions"
   | "achievement-definitions";
 

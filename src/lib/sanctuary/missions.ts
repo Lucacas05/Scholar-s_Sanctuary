@@ -1,3 +1,4 @@
+import { isCustomWardrobeValue } from "@/lib/sanctuary/customWardrobe";
 import { avatarOptions } from "@/lib/sanctuary/store";
 import type { WardrobeField, WardrobeValueMap } from "@/lib/sanctuary/wardrobe";
 
@@ -30,14 +31,21 @@ const MISSION_STORAGE_KEY = "lumina:mission-definitions";
 const MISSION_DEFINITIONS_ENDPOINT = "/api/editor/missions";
 export const MISSION_DEFINITIONS_EVENT = "lumina:mission-definitions-changed";
 
-const wardrobeValueSets = {
+const wardrobeValueSets: Record<WardrobeField, Set<string>> = {
   accessory: new Set(avatarOptions.accessory.map((option) => option.value)),
   upper: new Set(avatarOptions.upper.map((option) => option.value)),
   lower: new Set(avatarOptions.lower.map((option) => option.value)),
   socks: new Set(avatarOptions.socks.map((option) => option.value)),
-} as const;
+};
 
 function hasWardrobeValue(field: WardrobeField, value: unknown) {
+  if (
+    (field === "upper" || field === "lower" || field === "socks") &&
+    isCustomWardrobeValue(field, value)
+  ) {
+    return true;
+  }
+
   switch (field) {
     case "accessory":
       return wardrobeValueSets.accessory.has(

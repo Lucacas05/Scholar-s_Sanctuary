@@ -131,20 +131,23 @@ export type AvatarAccessory =
   | "spangenhelm-viking"
   | "sugarloaf"
   | "sugarloaf-simple";
-export type AvatarUpper =
+export type BuiltinAvatarUpper =
   | "shirt-01-longsleeve"
   | "shirt-02-vneck-longsleeve"
   | "shirt-03-scoop-longsleeve"
   | "shirt-04-tee"
   | "shirt-05-vneck-tee"
   | "shirt-06-scoop-tee";
-export type AvatarLower =
+export type AvatarUpper = BuiltinAvatarUpper | `custom-upper-${string}`;
+export type BuiltinAvatarLower =
   | "pants-01-hose"
   | "pants-02-leggings"
   | "pants-03-pants"
   | "pants-04-cuffed"
   | "pants-05-overalls";
-export type AvatarSocks = "socks-01-ankle" | "socks-02-high";
+export type AvatarLower = BuiltinAvatarLower | `custom-lower-${string}`;
+export type BuiltinAvatarSocks = "socks-01-ankle" | "socks-02-high";
+export type AvatarSocks = BuiltinAvatarSocks | `custom-socks-${string}`;
 export type AvatarGarmentColor = (typeof GARMENT_COLOR_VALUES)[number];
 
 export interface AvatarConfig {
@@ -951,6 +954,34 @@ function normalizeAvatarValue<T extends string>(
   return fallback;
 }
 
+function isCustomWardrobeValue(
+  field: "upper" | "lower" | "socks",
+  value: unknown,
+) {
+  return (
+    typeof value === "string" &&
+    value.startsWith(`custom-${field}-`) &&
+    value.length > `custom-${field}-`.length
+  );
+}
+
+function normalizeWardrobeAvatarValue<
+  T extends AvatarUpper | AvatarLower | AvatarSocks,
+>(
+  field: "upper" | "lower" | "socks",
+  value: unknown,
+  allowed: Set<string>,
+  fallback: T,
+) {
+  if (typeof value === "string") {
+    if (allowed.has(value) || isCustomWardrobeValue(field, value)) {
+      return value as T;
+    }
+  }
+
+  return fallback;
+}
+
 export function normalizeAvatarConfig(value: unknown): AvatarConfig {
   const raw = isRecord(value) ? value : {};
   const legacyOutfit =
@@ -1015,7 +1046,8 @@ export function normalizeAvatarConfig(value: unknown): AvatarConfig {
               avatarOptionSets.accessory,
               "ninguno",
             ),
-    upper: normalizeAvatarValue(
+    upper: normalizeWardrobeAvatarValue(
+      "upper",
       raw.upper,
       avatarOptionSets.upper,
       legacyOutfit.upper,
@@ -1025,7 +1057,8 @@ export function normalizeAvatarConfig(value: unknown): AvatarConfig {
       avatarOptionSets.upperColor,
       "smoke",
     ),
-    lower: normalizeAvatarValue(
+    lower: normalizeWardrobeAvatarValue(
+      "lower",
       raw.lower,
       avatarOptionSets.lower,
       legacyOutfit.lower,
@@ -1035,7 +1068,8 @@ export function normalizeAvatarConfig(value: unknown): AvatarConfig {
       avatarOptionSets.lowerColor,
       "umber",
     ),
-    socks: normalizeAvatarValue(
+    socks: normalizeWardrobeAvatarValue(
+      "socks",
       raw.socks,
       avatarOptionSets.socks,
       legacyOutfit.socks,

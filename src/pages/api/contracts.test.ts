@@ -1,5 +1,10 @@
+import { existsSync } from "node:fs";
+import { mkdtemp, rm } from "node:fs/promises";
+import path from "node:path";
+import { tmpdir } from "node:os";
 import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/lib/server/db";
+import { GET as getAvatarCatalog } from "./avatar/catalog";
 import {
   GET as getEditorAchievements,
   POST as saveEditorAchievements,
@@ -16,6 +21,10 @@ import {
   GET as getEditorWardrobe,
   POST as saveEditorWardrobe,
 } from "./editor/wardrobe";
+import {
+  DELETE as deleteEditorWardrobeItem,
+  POST as saveEditorWardrobeItem,
+} from "./editor/wardrobe-items";
 import { GET as getFriends } from "./friends/index";
 import { DELETE as deleteFriend } from "./friends/[friendId]";
 import { GET as getPomodoroStats } from "./pomodoro/stats";
@@ -69,6 +78,27 @@ function createApiContext(options: {
       body:
         options.body === undefined ? undefined : JSON.stringify(options.body),
     }),
+  } as never;
+}
+
+function createFormApiContext(options: {
+  user: TestUser;
+  isAdmin?: boolean;
+  method?: string;
+  url: string;
+  body: FormData;
+}) {
+  return {
+    locals: {
+      ...createUserContext(options.user).locals,
+      isAdmin: options.isAdmin ?? false,
+    },
+    params: {},
+    url: new URL(options.url),
+    request: {
+      method: options.method ?? "POST",
+      formData: async () => options.body,
+    },
   } as never;
 }
 
@@ -403,6 +433,138 @@ describe("contratos API del santuario", () => {
         unlockLevel: 4,
       }),
     );
+  });
+
+  it("sube una prenda personalizada a la VPS y permite borrarla", async () => {
+    const currentUser = {
+      id: "github-1",
+      githubId: 1,
+      username: "faby",
+      displayName: "Faby",
+    };
+    const uploadRoot = await mkdtemp(
+      path.join(tmpdir(), "lumina-wardrobe-upload-"),
+    );
+    const previousUploadRoot = process.env.CUSTOM_WARDROBE_UPLOAD_ROOT;
+    process.env.CUSTOM_WARDROBE_UPLOAD_ROOT = uploadRoot;
+
+    insertUser(currentUser);
+
+    try {
+      const png = Buffer.from(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9s28yk8AAAAASUVORK5CYII=",
+        "base64",
+      );
+      const formData = new FormData();
+      formData.set("field", "upper");
+      formData.set("label", "Túnica de niebla");
+      formData.set("slug", "tunica-niebla");
+      formData.set("description", "Pieza subida desde la propia web.");
+      formData.set("unlockLevel", "6");
+      formData.set("enabled", "true");
+      formData.append("colors", "smoke");
+      formData.set(
+        "variant.smoke.masculino",
+        new File([png], "tunica-smoke-m.png", {
+          type: "image/png",
+        }),
+      );
+      formData.set(
+        "variant.smoke.femenino",
+        new File([png], "tunica-smoke-f.png", {
+          type: "image/png",
+        }),
+      );
+
+      const saveResponse = await saveEditorWardrobeItem(
+        createFormApiContext({
+          user: currentUser,
+          isAdmin: true,
+          method: "POST",
+          url: "https://lumina.test/api/editor/wardrobe-items",
+          body: formData,
+        }),
+      );
+
+      const savePayload = await toJson<{
+        error?: string;
+        item: { id: string };
+        catalog: { items: Array<{ id: string; label: string }> };
+        config: { rules: Array<{ id: string; unlockLevel: number }> };
+      }>(saveResponse);
+      expect(saveResponse.status).toBe(200);
+
+      expect(savePayload.catalog.items).toContainEqual(
+        expect.objectContaining({
+          id: "custom-upper-tunica-niebla",
+          label: "Túnica de niebla",
+        }),
+      );
+      expect(savePayload.config.rules).toContainEqual(
+        expect.objectContaining({
+          id: "upper:custom-upper-tunica-niebla",
+          unlockLevel: 6,
+        }),
+      );
+      expect(
+        existsSync(
+          path.join(
+            uploadRoot,
+            "upper",
+            "custom-upper-tunica-niebla",
+            "masculino",
+            "smoke.png",
+          ),
+        ),
+      ).toBe(true);
+
+      const catalogResponse = await getAvatarCatalog();
+      const catalogPayload = await toJson<{
+        catalog: { items: Array<{ id: string }> };
+      }>(catalogResponse);
+      expect(catalogPayload.catalog.items.map((item) => item.id)).toContain(
+        "custom-upper-tunica-niebla",
+      );
+
+      const deleteResponse = await deleteEditorWardrobeItem(
+        createApiContext({
+          user: currentUser,
+          isAdmin: true,
+          method: "DELETE",
+          url: "https://lumina.test/api/editor/wardrobe-items",
+          body: {
+            field: "upper",
+            itemId: "custom-upper-tunica-niebla",
+          },
+        }),
+      );
+
+      expect(deleteResponse.status).toBe(200);
+      const deletePayload = await toJson<{
+        catalog: { items: Array<{ id: string }> };
+        config: { rules: Array<{ id: string }> };
+      }>(deleteResponse);
+
+      expect(deletePayload.catalog.items).toHaveLength(0);
+      expect(
+        deletePayload.config.rules.some(
+          (rule) => rule.id === "upper:custom-upper-tunica-niebla",
+        ),
+      ).toBe(false);
+      expect(
+        existsSync(
+          path.join(uploadRoot, "upper", "custom-upper-tunica-niebla"),
+        ),
+      ).toBe(false);
+    } finally {
+      if (previousUploadRoot === undefined) {
+        delete process.env.CUSTOM_WARDROBE_UPLOAD_ROOT;
+      } else {
+        process.env.CUSTOM_WARDROBE_UPLOAD_ROOT = previousUploadRoot;
+      }
+
+      await rm(uploadRoot, { recursive: true, force: true });
+    }
   });
 
   it("guarda las misiones globales en la VPS y respeta su estado", async () => {

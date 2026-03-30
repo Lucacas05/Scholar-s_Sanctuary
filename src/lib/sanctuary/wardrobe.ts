@@ -1,4 +1,15 @@
-import { avatarOptions, type AvatarConfig } from "@/lib/sanctuary/store";
+import {
+  avatarOptions,
+  type AvatarConfig,
+  type AvatarOption,
+} from "@/lib/sanctuary/store";
+import {
+  getCustomWardrobeItem,
+  isCustomWardrobeValue,
+  listCustomWardrobeOptions,
+  loadCustomWardrobeCatalog,
+  type CustomWardrobeCatalog,
+} from "@/lib/sanctuary/customWardrobe";
 
 export type WardrobeField = "accessory" | "upper" | "lower" | "socks";
 
@@ -37,14 +48,21 @@ const WARDROBE_CONFIG_ENDPOINT = "/api/editor/wardrobe";
 export const WARDROBE_CONFIG_EVENT = "lumina:wardrobe-config-changed";
 const DEFAULT_LEVEL_STEP_FOCUS_SECONDS = 60 * 60;
 
-const ruleValueSets = {
+const ruleValueSets: Record<WardrobeField, Set<string>> = {
   accessory: new Set(avatarOptions.accessory.map((option) => option.value)),
   upper: new Set(avatarOptions.upper.map((option) => option.value)),
   lower: new Set(avatarOptions.lower.map((option) => option.value)),
   socks: new Set(avatarOptions.socks.map((option) => option.value)),
-} as const;
+};
 
 function hasWardrobeValue(field: WardrobeField, value: unknown) {
+  if (
+    (field === "upper" || field === "lower" || field === "socks") &&
+    isCustomWardrobeValue(field, value)
+  ) {
+    return true;
+  }
+
   switch (field) {
     case "accessory":
       return ruleValueSets.accessory.has(
@@ -105,10 +123,22 @@ function createMilestone(
   };
 }
 
-function getOptionLabel<T extends WardrobeField>(
-  field: T,
-  value: WardrobeValueMap[T],
+function getOptionLabel(
+  field: WardrobeField,
+  value: WardrobeValueMap[WardrobeField],
 ) {
+  if (field === "upper" || field === "lower" || field === "socks") {
+    const garmentField = field;
+    const customItem = getCustomWardrobeItem(
+      garmentField,
+      value as AvatarConfig[typeof garmentField],
+      loadCustomWardrobeCatalog(),
+    );
+    if (customItem) {
+      return customItem.label;
+    }
+  }
+
   return (
     avatarOptions[field].find((option) => option.value === value)?.label ??
     String(value)
@@ -630,6 +660,7 @@ export function listVisibleWardrobeOptionsByField<T extends WardrobeField>(
   field: T,
   totalFocusSeconds: number,
   config: WardrobeConfig = defaultWardrobeConfig,
+  catalog: CustomWardrobeCatalog = loadCustomWardrobeCatalog(),
 ) {
   const visibleRules = listVisibleWardrobeRulesByField(field, config);
   const orderMap = new Map(
@@ -648,7 +679,13 @@ export function listVisibleWardrobeOptionsByField<T extends WardrobeField>(
     ]),
   );
 
-  return avatarOptions[field]
+  const baseOptions = avatarOptions[field] as AvatarOption<AvatarConfig[T]>[];
+  const mergedOptions =
+    field === "upper" || field === "lower" || field === "socks"
+      ? [...baseOptions, ...listCustomWardrobeOptions(field, catalog)]
+      : baseOptions;
+
+  return mergedOptions
     .filter((option) => orderMap.has(String(option.value)))
     .sort((left, right) => {
       const leftMeta = orderMap.get(String(left.value));
@@ -667,13 +704,30 @@ export function listVisibleWardrobeOptionsByField<T extends WardrobeField>(
     });
 }
 
-export function listWardrobeCandidates(field: WardrobeField) {
-  return avatarOptions[field].map((option) => ({
+export function listWardrobeCandidates(
+  field: WardrobeField,
+  catalog: CustomWardrobeCatalog = loadCustomWardrobeCatalog(),
+) {
+  const baseOptions = avatarOptions[field].map((option) => ({
     field,
     value: option.value,
     label: option.label,
     description: option.description,
   }));
+
+  if (field === "accessory") {
+    return baseOptions;
+  }
+
+  return [
+    ...baseOptions,
+    ...listCustomWardrobeOptions(field, catalog).map((option) => ({
+      field,
+      value: option.value,
+      label: option.label,
+      description: option.description,
+    })),
+  ];
 }
 
 export function listWardrobeMilestones(
