@@ -17,7 +17,7 @@ import {
   formatWardrobeDuration,
   getWardrobeRequirementLevel,
   isWardrobeItemUnlocked,
-  listVisibleWardrobeRulesByField,
+  listVisibleWardrobeOptionsByField,
   loadWardrobeConfig,
   syncWardrobeConfigFromServer,
   type WardrobeConfig,
@@ -109,16 +109,12 @@ export function AvatarStudio({
       return avatarOptions[activeField];
     }
 
-    const visibleValues = new Set(
-      listVisibleWardrobeRulesByField(activeField, wardrobeConfig).map(
-        (rule) => rule.value,
-      ),
+    return listVisibleWardrobeOptionsByField(
+      activeField,
+      totalFocusSeconds,
+      wardrobeConfig,
     );
-
-    return avatarOptions[activeField].filter((option) =>
-      visibleValues.has(option.value as AvatarConfig[typeof activeField]),
-    );
-  }, [activeField, wardrobeConfig, wardrobeManaged]);
+  }, [activeField, totalFocusSeconds, wardrobeConfig, wardrobeManaged]);
 
   const activeColorField = isGarmentField(activeField)
     ? garmentColorFieldByField[activeField]

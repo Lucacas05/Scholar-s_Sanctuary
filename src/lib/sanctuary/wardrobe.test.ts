@@ -4,6 +4,7 @@ import {
   getDefaultWardrobeConfig,
   getWardrobeUnlockSummary,
   isWardrobeItemUnlocked,
+  listVisibleWardrobeOptionsByField,
   normalizeWardrobeConfig,
 } from "@/lib/sanctuary/wardrobe";
 
@@ -77,5 +78,18 @@ describe("wardrobe unlocks", () => {
 
   it("formatea duraciones largas de forma legible", () => {
     expect(formatWardrobeDuration(90 * 60)).toBe("1 h 30 min");
+  });
+
+  it("ordena primero las prendas desbloqueadas y luego por nivel", () => {
+    const options = listVisibleWardrobeOptionsByField("upper", 2 * 3600);
+
+    expect(options.map((option) => option.value)).toEqual([
+      "shirt-01-longsleeve",
+      "shirt-04-tee",
+      "shirt-02-vneck-longsleeve",
+      "shirt-03-scoop-longsleeve",
+      "shirt-05-vneck-tee",
+      "shirt-06-scoop-tee",
+    ]);
   });
 });

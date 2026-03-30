@@ -21,7 +21,7 @@ import {
   getWardrobeUnlockSummary,
   isWardrobeItemUnlocked,
   listEnabledWardrobeMilestones,
-  listVisibleWardrobeRulesByField,
+  listVisibleWardrobeOptionsByField,
   loadWardrobeConfig,
   syncWardrobeConfigFromServer,
   type WardrobeConfig,
@@ -165,16 +165,12 @@ export function WardrobeStudio({
     [totalFocusSeconds, wardrobeConfig],
   );
   const currentOptions = useMemo(() => {
-    const visibleValues = new Set(
-      listVisibleWardrobeRulesByField(activeField, wardrobeConfig).map(
-        (rule) => rule.value,
-      ),
+    return listVisibleWardrobeOptionsByField(
+      activeField,
+      totalFocusSeconds,
+      wardrobeConfig,
     );
-
-    return avatarOptions[activeField].filter((option) =>
-      visibleValues.has(option.value as AvatarConfig[typeof activeField]),
-    );
-  }, [activeField, wardrobeConfig]);
+  }, [activeField, totalFocusSeconds, wardrobeConfig]);
   const activeColorField = isGarmentField(activeField)
     ? garmentColorFieldByField[activeField]
     : null;

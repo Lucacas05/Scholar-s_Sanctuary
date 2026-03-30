@@ -626,6 +626,47 @@ export function listVisibleWardrobeRulesByField(
   return listWardrobeRulesByField(field, config).filter((rule) => rule.enabled);
 }
 
+export function listVisibleWardrobeOptionsByField<T extends WardrobeField>(
+  field: T,
+  totalFocusSeconds: number,
+  config: WardrobeConfig = defaultWardrobeConfig,
+) {
+  const visibleRules = listVisibleWardrobeRulesByField(field, config);
+  const orderMap = new Map(
+    visibleRules.map((rule, index) => [
+      String(rule.value),
+      {
+        unlockLevel: rule.unlockLevel,
+        index,
+        unlocked: isWardrobeItemUnlocked(
+          field,
+          rule.value as WardrobeValueMap[T],
+          totalFocusSeconds,
+          config,
+        ),
+      },
+    ]),
+  );
+
+  return avatarOptions[field]
+    .filter((option) => orderMap.has(String(option.value)))
+    .sort((left, right) => {
+      const leftMeta = orderMap.get(String(left.value));
+      const rightMeta = orderMap.get(String(right.value));
+
+      if (!leftMeta || !rightMeta) {
+        return left.label.localeCompare(right.label, "es");
+      }
+
+      return (
+        Number(rightMeta.unlocked) - Number(leftMeta.unlocked) ||
+        leftMeta.unlockLevel - rightMeta.unlockLevel ||
+        leftMeta.index - rightMeta.index ||
+        left.label.localeCompare(right.label, "es")
+      );
+    });
+}
+
 export function listWardrobeCandidates(field: WardrobeField) {
   return avatarOptions[field].map((option) => ({
     field,
