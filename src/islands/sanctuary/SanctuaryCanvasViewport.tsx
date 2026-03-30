@@ -170,16 +170,18 @@ export const SanctuaryCanvasViewport = forwardRef<
       <canvas
         ref={canvasRef}
         onPointerDown={handlePointerDown}
-        className="block max-h-full max-w-full"
+        className={`block max-h-full max-w-full transition-opacity duration-200 ${
+          isAtlasLoading ? "opacity-0" : "opacity-100"
+        }`}
         style={{ imageRendering: "pixelated", cursor: "crosshair" }}
       />
       {isAtlasLoading ? (
-        <div className="absolute inset-0 flex items-center justify-center bg-[radial-gradient(circle_at_50%_35%,rgba(255,188,108,0.16),transparent_32%),linear-gradient(180deg,rgba(12,9,8,0.24),rgba(12,9,8,0.72))] backdrop-blur-[1px]">
-          <div className="border border-primary/35 bg-surface/90 px-5 py-4 text-center shadow-[0_14px_30px_rgba(0,0,0,0.24)]">
+        <div className="absolute inset-0 flex items-center justify-center bg-black">
+          <div className="border border-primary/35 bg-black px-5 py-4 text-center shadow-[0_14px_30px_rgba(0,0,0,0.32)]">
             <p className="font-headline text-[10px] font-bold uppercase tracking-[0.24em] text-primary">
               Preparando sala
             </p>
-            <p className="mt-2 text-sm leading-relaxed text-on-surface-variant">
+            <p className="mt-2 text-sm leading-relaxed text-[#d5c6b3]">
               Cargando muebles, paredes y atlas del santuario...
             </p>
           </div>
