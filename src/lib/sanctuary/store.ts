@@ -3154,6 +3154,9 @@ export const sanctuaryActions = {
           bio: "",
           createdAt: Date.now(),
         };
+      } else {
+        state.profiles[member.userId].avatar = member.avatar;
+        state.profiles[member.userId].displayName = member.displayName;
       }
 
       state.presences[member.userId] = {

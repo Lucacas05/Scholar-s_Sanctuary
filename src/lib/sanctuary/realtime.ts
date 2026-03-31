@@ -137,12 +137,18 @@ function handleMessage(event: MessageEvent) {
 
   switch (msg.type) {
     case "room-state":
+      console.debug(
+        "[realtime] room-state received, members:",
+        msg.members.length,
+      );
       sanctuaryActions.setRemotePresences(msg.members);
       break;
     case "member-joined":
+      console.debug("[realtime] member-joined:", msg.member.userId);
       sanctuaryActions.addRemotePresence(msg.member);
       break;
     case "member-left":
+      console.debug("[realtime] member-left:", msg.userId);
       sanctuaryActions.removeRemotePresence(msg.userId);
       break;
     case "presence-changed":
@@ -237,7 +243,8 @@ export function send(msg: ClientMessage) {
 
 export function joinRoom(roomCode: string) {
   currentRoomCode = roomCode;
-  send({ type: "join-room", roomCode });
+  connect();
+  rawSend({ type: "join-room", roomCode });
 }
 
 export function leaveRoom() {
@@ -261,6 +268,7 @@ export function sendPresenceUpdate(
   };
 
   awayActive = false;
+  connect();
   rawSend({
     type: "presence-update",
     state,
