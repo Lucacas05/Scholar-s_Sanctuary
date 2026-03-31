@@ -344,31 +344,6 @@ export function IdentityBadge({
   return (
     <div className="flex flex-col items-end gap-2">
       <div className="flex items-center gap-3">
-        <div className="hidden text-right sm:block">
-          <p className="font-headline text-xs font-bold uppercase tracking-widest text-primary">
-            {label}
-          </p>
-          <p className="font-headline text-[10px] font-bold uppercase tracking-[0.25em] text-outline">
-            {detail}
-          </p>
-          {sessionUser ? (
-            <div className="mt-2 flex flex-wrap justify-end gap-2">
-              {unlockedAchievements.map((achievement) => (
-                <span
-                  key={achievement.id}
-                  className="border border-outline-variant bg-surface-container-high px-2 py-1 font-headline text-[9px] font-bold uppercase tracking-[0.2em] text-secondary"
-                  title={achievement.title}
-                >
-                  {achievement.title}
-                </span>
-              ))}
-              <span className="border border-outline-variant bg-surface-container-low px-2 py-1 font-headline text-[9px] font-bold uppercase tracking-[0.2em] text-outline">
-                {unlockedAchievements.length} insignias
-              </span>
-            </div>
-          ) : null}
-        </div>
-
         {sessionUser ? (
           <div className="flex items-center gap-2">
             <a
@@ -407,19 +382,43 @@ export function IdentityBadge({
           </button>
         )}
 
-        <div className="hidden h-10 w-10 items-center justify-center overflow-hidden border-2 border-outline-variant bg-surface-container-highest lg:flex">
-          {sessionUser?.avatarUrl ? (
-            <SafeImage
-              src={sessionUser.avatarUrl}
-              fallbackSrc="/site/placeholder-avatar.svg"
-              alt={sessionUser.displayName}
-              className="h-full w-full object-cover"
-              loading="lazy"
-              decoding="async"
-            />
-          ) : (
-            <UserCircle className="text-primary" size={22} />
-          )}
+        {/* Avatar with hover tooltip — click goes to social */}
+        <div className="group relative hidden lg:block">
+          <a
+            href="/social"
+            className="flex h-10 w-10 items-center justify-center overflow-hidden border-2 border-outline-variant bg-surface-container-highest transition-colors group-hover:border-primary"
+          >
+            {sessionUser?.avatarUrl ? (
+              <SafeImage
+                src={sessionUser.avatarUrl}
+                fallbackSrc="/site/placeholder-avatar.svg"
+                alt={sessionUser.displayName}
+                className="h-full w-full object-cover"
+                loading="lazy"
+                decoding="async"
+              />
+            ) : (
+              <UserCircle className="text-primary" size={22} />
+            )}
+          </a>
+
+          {sessionUser ? (
+            <div className="pointer-events-none absolute right-0 top-full z-50 mt-2 min-w-max opacity-0 transition-opacity duration-200 group-hover:pointer-events-auto group-hover:opacity-100">
+              <div className="border-2 border-outline-variant bg-surface-container-high px-4 py-3 text-right shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)]">
+                <p className="font-headline text-xs font-bold uppercase tracking-widest text-primary">
+                  {label}
+                </p>
+                <p className="font-headline text-[10px] font-bold uppercase tracking-[0.25em] text-outline">
+                  {detail}
+                </p>
+                {unlockedAchievements.length > 0 ? (
+                  <p className="mt-1 font-headline text-[9px] font-bold uppercase tracking-[0.2em] text-secondary">
+                    {unlockedAchievements.length} insignias
+                  </p>
+                ) : null}
+              </div>
+            </div>
+          ) : null}
         </div>
       </div>
 
