@@ -96,6 +96,12 @@ export const sceneAtlasCatalog = {
     defaultSlice: { w: 1536, h: 1024 },
     defaultRenderScale: 0.08,
   },
+  "fountain-large": {
+    id: "fountain-large",
+    label: "Fuente grande",
+    url: "/game/atlases/fountain-large.png",
+    defaultSlice: { w: 64, h: 64 },
+  },
   "tiny-garden-tiles": {
     id: "tiny-garden-tiles",
     label: "Tiny Garden Tiles",

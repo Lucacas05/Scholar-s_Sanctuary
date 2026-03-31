@@ -49,14 +49,31 @@ jobs:
             nvm use 22
             cd /var/www/Scholar-s_Sanctuary
             git config --global --add safe.directory /var/www/Scholar-s_Sanctuary
-            git pull origin main
+            git remote set-url origin https://github.com/Lucacas05/Lumina.git
+            git pull --ff-only origin main
             node --version
+            export npm_config_cache="$(mktemp -d)"
             npm ci
+            if ! node -e "import('css-tree/lib/data.js').then(() => console.log('[deploy] css-tree ok')).catch((error) => { console.error(error); process.exit(1); })"; then
+              echo "[deploy] css-tree salió roto tras npm ci. Reinstalando con una caché npm nueva."
+              rm -rf node_modules
+              export npm_config_cache="$(mktemp -d)"
+              npm ci
+              node -e "import('css-tree/lib/data.js').then(() => console.log('[deploy] css-tree ok tras reintento')).catch((error) => { console.error(error); process.exit(1); })"
+            fi
             npm run db:check
             npm run build
             sudo systemctl restart lumina
-            sleep 5
-            curl --fail --silent --show-error http://127.0.0.1:3000/api/me > /tmp/lumina-healthcheck.json
+            for attempt in 1 2 3 4 5; do
+              if curl --fail --silent --show-error http://127.0.0.1:3000/api/health > /tmp/lumina-healthcheck.json; then
+                break
+              fi
+              if [ "$attempt" -eq 5 ]; then
+                echo "[deploy] El healthcheck no respondió correctamente tras 5 intentos."
+                exit 1
+              fi
+              sleep 2
+            done
             sudo systemctl --no-pager --full status lumina
 
       - name: Conectando al VPS y actualizando con fallback temporal
@@ -75,12 +92,29 @@ jobs:
             nvm use 22
             cd /var/www/Scholar-s_Sanctuary
             git config --global --add safe.directory /var/www/Scholar-s_Sanctuary
-            git pull origin main
+            git remote set-url origin https://github.com/Lucacas05/Lumina.git
+            git pull --ff-only origin main
             node --version
+            export npm_config_cache="$(mktemp -d)"
             npm ci
+            if ! node -e "import('css-tree/lib/data.js').then(() => console.log('[deploy] css-tree ok')).catch((error) => { console.error(error); process.exit(1); })"; then
+              echo "[deploy] css-tree salió roto tras npm ci. Reinstalando con una caché npm nueva."
+              rm -rf node_modules
+              export npm_config_cache="$(mktemp -d)"
+              npm ci
+              node -e "import('css-tree/lib/data.js').then(() => console.log('[deploy] css-tree ok tras reintento')).catch((error) => { console.error(error); process.exit(1); })"
+            fi
             npm run db:check
             npm run build
             sudo systemctl restart lumina
-            sleep 5
-            curl --fail --silent --show-error http://127.0.0.1:3000/api/me > /tmp/lumina-healthcheck.json
+            for attempt in 1 2 3 4 5; do
+              if curl --fail --silent --show-error http://127.0.0.1:3000/api/health > /tmp/lumina-healthcheck.json; then
+                break
+              fi
+              if [ "$attempt" -eq 5 ]; then
+                echo "[deploy] El healthcheck no respondió correctamente tras 5 intentos."
+                exit 1
+              fi
+              sleep 2
+            done
             sudo systemctl --no-pager --full status lumina
