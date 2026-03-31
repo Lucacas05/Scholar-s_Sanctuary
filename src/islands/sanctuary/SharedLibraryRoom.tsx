@@ -66,7 +66,7 @@ export function SharedLibraryRoom({
   const shareUrl = useMemo(
     () =>
       currentRoom?.kind === "private"
-        ? `/biblioteca-compartida?codigo=${currentRoom.code}`
+        ? `${window.location.origin}/biblioteca-compartida?codigo=${currentRoom.code}`
         : "",
     [currentRoom],
   );
@@ -78,13 +78,23 @@ export function SharedLibraryRoom({
   const currentAvatar = getRenderableCurrentProfile(sanctuary).avatar;
   const isAnonymous = sanctuary.sessionState === "anonymous";
 
+  const [urlRoomCode] = useState(
+    () => new URLSearchParams(window.location.search).get("codigo") ?? "",
+  );
+
   useEffect(() => {
-    const code = new URLSearchParams(window.location.search).get("codigo");
-    if (code) {
-      setJoinCode(code);
-      void handleJoinPrivateRoom(code);
-    }
-  }, []);
+    if (!urlRoomCode) return;
+    setJoinCode(urlRoomCode);
+  }, [urlRoomCode]);
+
+  useEffect(() => {
+    if (!urlRoomCode || isAnonymous) return;
+
+    const cleanCode = urlRoomCode.trim().toUpperCase();
+    if (currentRoom?.code === cleanCode) return;
+
+    void handleJoinPrivateRoom(urlRoomCode);
+  }, [urlRoomCode, isAnonymous, isBusy, currentRoom?.code]);
 
   const handleCreatePrivateRoom = async () => {
     if (isBusy || !roomName.trim()) return;
@@ -413,15 +423,15 @@ export function SharedLibraryRoom({
                 className="inline-flex items-center justify-center gap-2 border-2 border-outline-variant bg-surface-container-low px-3 py-2 font-headline text-[10px] font-bold uppercase tracking-widest text-on-surface"
               >
                 <Copy size={14} />
-                Copiar ruta
+                Copiar enlace
               </button>
             </div>
             <p className="text-sm leading-relaxed text-on-surface-variant">
-              Usa{" "}
+              Copia el enlace o comparte el código{" "}
               <span className="font-headline font-bold text-tertiary">
-                {shareUrl}
+                {currentRoom?.code}
               </span>{" "}
-              para volver a esta sala o enviársela a otra pestaña local.
+              para que otra persona entre a esta sala.
             </p>
           </div>
         )}
