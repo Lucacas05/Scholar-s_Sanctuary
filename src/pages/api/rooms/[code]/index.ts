@@ -27,7 +27,9 @@ export async function GET({ locals, params }: APIContext) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const room = selectRoomStatement.get(params.code) as
+  const roomCode = params.code?.toUpperCase() ?? "";
+
+  const room = selectRoomStatement.get(roomCode) as
     | {
         code: string;
         name: string;
@@ -41,7 +43,7 @@ export async function GET({ locals, params }: APIContext) {
     return Response.json({ error: "Room not found" }, { status: 404 });
   }
 
-  const isMember = checkMembershipStatement.get(params.code, locals.user.id);
+  const isMember = checkMembershipStatement.get(roomCode, locals.user.id);
   if (!isMember) {
     return Response.json(
       { error: "Not a member of this room" },
@@ -49,7 +51,7 @@ export async function GET({ locals, params }: APIContext) {
     );
   }
 
-  const members = selectMembersStatement.all(params.code) as {
+  const members = selectMembersStatement.all(roomCode) as {
     id: string;
     username: string;
     displayName: string;

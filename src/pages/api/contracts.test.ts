@@ -1013,13 +1013,7 @@ describe("contratos API del santuario", () => {
 
     expect(saveResponse.status).toBe(200);
 
-    const getResponse = await getEditorScenes(
-      createApiContext({
-        user: currentUser,
-        isAdmin: true,
-        url: "https://lumina.test/api/editor/scenes",
-      }),
-    );
+    const getResponse = await getEditorScenes();
 
     await expect(
       toJson<{

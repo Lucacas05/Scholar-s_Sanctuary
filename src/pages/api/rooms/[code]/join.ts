@@ -32,14 +32,16 @@ export async function POST({ locals, params, request }: APIContext) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const room = selectRoomStatement.get(params.code) as
+  const roomCode = params.code?.toUpperCase() ?? "";
+
+  const room = selectRoomStatement.get(roomCode) as
     | { code: string; privacy: "public" | "private" }
     | undefined;
   if (!room) {
     return Response.json({ error: "Room not found" }, { status: 404 });
   }
 
-  const isMember = checkMembershipStatement.get(params.code, locals.user.id);
+  const isMember = checkMembershipStatement.get(roomCode, locals.user.id);
   if (isMember) {
     return Response.json(
       { error: "Already a member of this room" },
@@ -56,7 +58,7 @@ export async function POST({ locals, params, request }: APIContext) {
 
   if (room.privacy === "private") {
     const directInvitation = findPendingInvitationStatement.get(
-      params.code,
+      roomCode,
       locals.user.id,
     ) as { id: string } | undefined;
 
@@ -64,7 +66,7 @@ export async function POST({ locals, params, request }: APIContext) {
       invitationId = directInvitation.id;
     } else if (inviteCode) {
       const inviteByCode = findInvitationByCodeStatement.get(
-        params.code,
+        roomCode,
         inviteCode,
       ) as { id: string; inviteeId: string } | undefined;
 
@@ -88,7 +90,7 @@ export async function POST({ locals, params, request }: APIContext) {
     if (invitationId) {
       acceptInvitationStatement.run(invitationId);
     }
-    insertMemberStatement.run(params.code, locals.user!.id);
+    insertMemberStatement.run(roomCode, locals.user!.id);
   });
   joinRoom();
 

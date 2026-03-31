@@ -42,7 +42,9 @@ export async function POST({ locals, params }: APIContext) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const room = selectRoomStatement.get(params.code) as
+  const roomCode = params.code?.toUpperCase() ?? "";
+
+  const room = selectRoomStatement.get(roomCode) as
     | { code: string; ownerId: string }
     | undefined;
 
@@ -50,7 +52,7 @@ export async function POST({ locals, params }: APIContext) {
     return Response.json({ error: "Room not found" }, { status: 404 });
   }
 
-  const isMember = checkMembershipStatement.get(params.code, locals.user.id);
+  const isMember = checkMembershipStatement.get(roomCode, locals.user.id);
   if (!isMember) {
     return Response.json(
       { error: "Not a member of this room" },
@@ -59,24 +61,24 @@ export async function POST({ locals, params }: APIContext) {
   }
 
   const leaveRoom = db.transaction(() => {
-    deleteMemberStatement.run(params.code, locals.user!.id);
+    deleteMemberStatement.run(roomCode, locals.user!.id);
 
-    const { count } = countMembersStatement.get(params.code) as {
+    const { count } = countMembersStatement.get(roomCode) as {
       count: number;
     };
 
     if (count === 0) {
-      deleteRoomInvitationsStatement.run(params.code);
-      deleteRoomMembersStatement.run(params.code);
-      deleteRoomStatement.run(params.code);
+      deleteRoomInvitationsStatement.run(roomCode);
+      deleteRoomMembersStatement.run(roomCode);
+      deleteRoomStatement.run(roomCode);
       return;
     }
 
     if (room.ownerId === locals.user!.id) {
-      const nextMember = selectNextMemberStatement.get(params.code) as {
+      const nextMember = selectNextMemberStatement.get(roomCode) as {
         userId: string;
       };
-      transferOwnershipStatement.run(nextMember.userId, params.code);
+      transferOwnershipStatement.run(nextMember.userId, roomCode);
     }
   });
   leaveRoom();
