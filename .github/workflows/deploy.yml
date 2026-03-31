@@ -43,6 +43,10 @@ jobs:
           script: |
             set -e
             export PATH="/usr/local/bin:/usr/bin:/bin:$PATH"
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+            nvm install 22
+            nvm use 22
             cd /var/www/Scholar-s_Sanctuary
             git config --global --add safe.directory /var/www/Scholar-s_Sanctuary
             git pull origin main
@@ -65,6 +69,10 @@ jobs:
           script: |
             set -e
             export PATH="/usr/local/bin:/usr/bin:/bin:$PATH"
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+            nvm install 22
+            nvm use 22
             cd /var/www/Scholar-s_Sanctuary
             git config --global --add safe.directory /var/www/Scholar-s_Sanctuary
             git pull origin main
