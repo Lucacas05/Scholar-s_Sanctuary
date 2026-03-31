@@ -2840,7 +2840,8 @@ export function SceneEditor() {
                   </p>
                   <p className="mt-1 text-xs leading-relaxed text-on-surface-variant">
                     Aquí tienes `Top-Down_Retro_Interior`, `Interiors_free`,
-                    `lpc-walls`, `wall_puerta` y el atlas de biblioteca.
+                    `lpc-walls`, `wall_puerta`, el atlas de biblioteca y el
+                    nuevo pack `Tiny Garden`.
                   </p>
                 </div>
                 <span className="font-headline text-[10px] font-bold uppercase tracking-[0.16em] text-outline">

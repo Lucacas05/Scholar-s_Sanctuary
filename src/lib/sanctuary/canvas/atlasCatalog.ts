@@ -96,6 +96,36 @@ export const sceneAtlasCatalog = {
     defaultSlice: { w: 1536, h: 1024 },
     defaultRenderScale: 0.08,
   },
+  "tiny-garden-tiles": {
+    id: "tiny-garden-tiles",
+    label: "Tiny Garden Tiles",
+    url: "/game/atlases/tiny-garden-tiles.png",
+    defaultSlice: { w: 16, h: 16 },
+  },
+  "tiny-garden-objects": {
+    id: "tiny-garden-objects",
+    label: "Tiny Garden Objects",
+    url: "/game/atlases/tiny-garden-objects.png",
+    defaultSlice: { w: 16, h: 16 },
+  },
+  "tiny-garden-character-back": {
+    id: "tiny-garden-character-back",
+    label: "Tiny Garden Character Back",
+    url: "/game/atlases/tiny-garden-character-back.png",
+    defaultSlice: { w: 16, h: 16 },
+  },
+  "tiny-garden-character-front": {
+    id: "tiny-garden-character-front",
+    label: "Tiny Garden Character Front",
+    url: "/game/atlases/tiny-garden-character-front.png",
+    defaultSlice: { w: 16, h: 16 },
+  },
+  "tiny-garden-character-side": {
+    id: "tiny-garden-character-side",
+    label: "Tiny Garden Character Side",
+    url: "/game/atlases/tiny-garden-character-side.png",
+    defaultSlice: { w: 16, h: 16 },
+  },
 } as const;
 
 export type SceneAtlasId = keyof typeof sceneAtlasCatalog;
