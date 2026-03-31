@@ -57,6 +57,7 @@ export async function POST({ locals, params, request }: APIContext) {
   let invitationId: string | null = null;
 
   if (room.privacy === "private") {
+    // If the user has a pending invitation, accept it automatically
     const directInvitation = findPendingInvitationStatement.get(
       roomCode,
       locals.user.id,
@@ -70,20 +71,12 @@ export async function POST({ locals, params, request }: APIContext) {
         inviteCode,
       ) as { id: string; inviteeId: string } | undefined;
 
-      if (!inviteByCode || inviteByCode.inviteeId !== locals.user.id) {
-        return Response.json(
-          { error: "Invalid or expired invite code" },
-          { status: 403 },
-        );
+      if (inviteByCode && inviteByCode.inviteeId === locals.user.id) {
+        invitationId = inviteByCode.id;
       }
-
-      invitationId = inviteByCode.id;
-    } else {
-      return Response.json(
-        { error: "Private room requires a valid invitation" },
-        { status: 403 },
-      );
     }
+    // Allow joining with just the room code — private rooms are "unlisted",
+    // not "locked". Anyone who has the code can enter.
   }
 
   const joinRoom = db.transaction(() => {
