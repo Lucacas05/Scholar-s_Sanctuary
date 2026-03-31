@@ -127,8 +127,11 @@ function getSeatFacing(map: SceneMap, index: number, fallback: Facing = "up") {
 }
 
 function getLocalSeatAssignment(map: SceneMap) {
-  const seatSlots = map.seatSlots?.filter(Boolean) ?? [];
-  if (seatSlots.length > 0) {
+  if (map.seatSlots) {
+    const seatSlots = map.seatSlots.filter(Boolean);
+    if (seatSlots.length === 0) {
+      return null;
+    }
     const index = Math.floor(Math.random() * seatSlots.length);
     return {
       point: seatSlots[index],

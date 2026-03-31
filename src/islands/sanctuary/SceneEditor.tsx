@@ -201,7 +201,7 @@ function cloneSceneMap(map: SceneMap): SceneMap {
 }
 
 function getSeatPoints(scene: SceneMap) {
-  if (scene.seatSlots?.length) {
+  if (scene.seatSlots) {
     return scene.seatSlots;
   }
 
@@ -210,14 +210,11 @@ function getSeatPoints(scene: SceneMap) {
 
 function setSeatPoints(scene: SceneMap, points: TilePoint[]) {
   const nextPoints = points.map(clonePoint);
-  scene.seatSlots = nextPoints.length > 0 ? nextPoints : undefined;
+  scene.seatSlots = nextPoints;
   scene.seatLocal = nextPoints[0] ? clonePoint(nextPoints[0]) : undefined;
-  scene.seatFacings = nextPoints.length
-    ? nextPoints.map(
-        (_point, index) =>
-          scene.seatFacings?.[index] ?? scene.spawnFacing ?? "up",
-      )
-    : undefined;
+  scene.seatFacings = nextPoints.map(
+    (_point, index) => scene.seatFacings?.[index] ?? scene.spawnFacing ?? "up",
+  );
 }
 
 function setSeatFacing(scene: SceneMap, index: number, facing: Facing) {
