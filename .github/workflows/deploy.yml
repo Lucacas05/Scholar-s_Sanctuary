@@ -54,12 +54,12 @@ jobs:
             node --version
             export npm_config_cache="$(mktemp -d)"
             npm ci
-            if ! node -e "import('css-tree/lib/data.js').then(() => console.log('[deploy] css-tree ok')).catch((error) => { console.error(error); process.exit(1); })"; then
+            if ! node -e "import('css-tree/definition-syntax-data').then(() => console.log('[deploy] css-tree ok')).catch((error) => { console.error(error); process.exit(1); })"; then
               echo "[deploy] css-tree salió roto tras npm ci. Reinstalando con una caché npm nueva."
               rm -rf node_modules
               export npm_config_cache="$(mktemp -d)"
               npm ci
-              node -e "import('css-tree/lib/data.js').then(() => console.log('[deploy] css-tree ok tras reintento')).catch((error) => { console.error(error); process.exit(1); })"
+              node -e "import('css-tree/definition-syntax-data').then(() => console.log('[deploy] css-tree ok tras reintento')).catch((error) => { console.error(error); process.exit(1); })"
             fi
             npm run db:check
             npm run build
@@ -97,12 +97,12 @@ jobs:
             node --version
             export npm_config_cache="$(mktemp -d)"
             npm ci
-            if ! node -e "import('css-tree/lib/data.js').then(() => console.log('[deploy] css-tree ok')).catch((error) => { console.error(error); process.exit(1); })"; then
+            if ! node -e "import('css-tree/definition-syntax-data').then(() => console.log('[deploy] css-tree ok')).catch((error) => { console.error(error); process.exit(1); })"; then
               echo "[deploy] css-tree salió roto tras npm ci. Reinstalando con una caché npm nueva."
               rm -rf node_modules
               export npm_config_cache="$(mktemp -d)"
               npm ci
-              node -e "import('css-tree/lib/data.js').then(() => console.log('[deploy] css-tree ok tras reintento')).catch((error) => { console.error(error); process.exit(1); })"
+              node -e "import('css-tree/definition-syntax-data').then(() => console.log('[deploy] css-tree ok tras reintento')).catch((error) => { console.error(error); process.exit(1); })"
             fi
             npm run db:check
             npm run build
