@@ -17,8 +17,7 @@ export const siteContent = {
     siteName: "Lumina",
   },
   profile: {
-    role: "Archivo local",
-    libraryName: "La Gran Biblioteca",
+    libraryName: "Lumina",
   },
   navigation: {
     items: [
