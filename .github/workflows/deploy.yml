@@ -55,13 +55,19 @@ jobs:
             git remote set-url origin https://github.com/Lucacas05/Lumina.git
             git pull --ff-only origin main
             node --version
-            export npm_config_cache="$(mktemp -d)"
-            npm ci
+            run_clean_install() {
+              export npm_config_cache="$(mktemp -d)"
+              npm ci --registry=https://registry.npmjs.org/
+            }
+            if ! run_clean_install; then
+              echo "[deploy] npm ci falló. Limpiando node_modules y reintentando con caché nueva."
+              rm -rf node_modules
+              run_clean_install
+            fi
             if ! node -e "import('css-tree/definition-syntax-data').then(() => console.log('[deploy] css-tree ok')).catch((error) => { console.error(error); process.exit(1); })"; then
               echo "[deploy] css-tree salió roto tras npm ci. Reinstalando con una caché npm nueva."
               rm -rf node_modules
-              export npm_config_cache="$(mktemp -d)"
-              npm ci
+              run_clean_install
               node -e "import('css-tree/definition-syntax-data').then(() => console.log('[deploy] css-tree ok tras reintento')).catch((error) => { console.error(error); process.exit(1); })"
             fi
             npm run db:check
@@ -131,13 +137,19 @@ jobs:
             git remote set-url origin https://github.com/Lucacas05/Lumina.git
             git pull --ff-only origin main
             node --version
-            export npm_config_cache="$(mktemp -d)"
-            npm ci
+            run_clean_install() {
+              export npm_config_cache="$(mktemp -d)"
+              npm ci --registry=https://registry.npmjs.org/
+            }
+            if ! run_clean_install; then
+              echo "[deploy] npm ci falló. Limpiando node_modules y reintentando con caché nueva."
+              rm -rf node_modules
+              run_clean_install
+            fi
             if ! node -e "import('css-tree/definition-syntax-data').then(() => console.log('[deploy] css-tree ok')).catch((error) => { console.error(error); process.exit(1); })"; then
               echo "[deploy] css-tree salió roto tras npm ci. Reinstalando con una caché npm nueva."
               rm -rf node_modules
-              export npm_config_cache="$(mktemp -d)"
-              npm ci
+              run_clean_install
               node -e "import('css-tree/definition-syntax-data').then(() => console.log('[deploy] css-tree ok tras reintento')).catch((error) => { console.error(error); process.exit(1); })"
             fi
             npm run db:check
