@@ -60,6 +60,7 @@ export function SharedLibraryRoom({
   const [inviteIds, setInviteIds] = useState<string[]>(
     friends.slice(0, 2).map((friend) => friend.id),
   );
+  const [isBusy, setIsBusy] = useState(false);
   const sceneRef = useRef<SanctuaryCanvasHandle | null>(null);
   const previousStateRef = useRef("");
   const shareUrl = useMemo(
@@ -80,10 +81,79 @@ export function SharedLibraryRoom({
   useEffect(() => {
     const code = new URLSearchParams(window.location.search).get("codigo");
     if (code) {
-      sanctuaryActions.joinPrivateRoom(code);
       setJoinCode(code);
+      void handleJoinPrivateRoom(code);
     }
   }, []);
+
+  const handleCreatePrivateRoom = async () => {
+    if (isBusy || !roomName.trim()) return;
+    setIsBusy(true);
+    try {
+      const res = await fetch("/api/rooms", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: roomName.trim(), privacy: "private" }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        sanctuaryActions.injectRoom(
+          data.room.code,
+          data.room.name,
+          data.room.ownerId,
+          data.room.privacy === "public",
+        );
+        sanctuaryActions.joinPrivateRoom(data.room.code);
+
+        if (inviteIds.length > 0) {
+          await Promise.allSettled(
+            inviteIds.map((userId) =>
+              fetch(`/api/rooms/${data.room.code}/invite`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ userId }),
+              }),
+            ),
+          );
+        }
+      }
+    } catch {
+      // ignore
+    } finally {
+      setIsBusy(false);
+    }
+  };
+
+  const handleJoinPrivateRoom = async (codeToJoin: string) => {
+    if (isBusy || !codeToJoin.trim()) return;
+    setIsBusy(true);
+    try {
+      const cleanCode = codeToJoin.trim().toUpperCase();
+      const res = await fetch(`/api/rooms/${cleanCode}/join`, {
+        method: "POST",
+      });
+      if (res.ok) {
+        const infoRes = await fetch(`/api/rooms/${cleanCode}`);
+        if (infoRes.ok) {
+          const infoData = await infoRes.json();
+          sanctuaryActions.injectRoom(
+            infoData.room.code,
+            infoData.room.name,
+            infoData.room.ownerId,
+            infoData.room.privacy === "public",
+          );
+          sanctuaryActions.joinPrivateRoom(infoData.room.code);
+        }
+      } else {
+        // Fallback or error handling
+        sanctuaryActions.joinPrivateRoom(cleanCode);
+      }
+    } catch {
+      sanctuaryActions.joinPrivateRoom(codeToJoin.trim().toUpperCase());
+    } finally {
+      setIsBusy(false);
+    }
+  };
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
@@ -246,10 +316,9 @@ export function SharedLibraryRoom({
               />
               <button
                 type="button"
-                onClick={() =>
-                  sanctuaryActions.createPrivateRoom(roomName, inviteIds)
-                }
-                className="inline-flex items-center justify-center gap-2 border-b-[3px] border-on-primary-fixed-variant bg-primary px-5 py-3 font-headline text-xs font-bold uppercase tracking-widest text-on-primary"
+                disabled={isBusy}
+                onClick={handleCreatePrivateRoom}
+                className="inline-flex items-center justify-center gap-2 border-b-[3px] border-on-primary-fixed-variant bg-primary px-5 py-3 font-headline text-xs font-bold uppercase tracking-widest text-on-primary disabled:opacity-50"
               >
                 <Plus size={16} />
                 Crear sala
@@ -287,8 +356,9 @@ export function SharedLibraryRoom({
               />
               <button
                 type="button"
-                onClick={() => sanctuaryActions.joinPrivateRoom(joinCode)}
-                className="inline-flex items-center justify-center gap-2 border-2 border-outline-variant bg-surface-container-low px-5 py-3 font-headline text-xs font-bold uppercase tracking-widest text-on-surface"
+                disabled={isBusy}
+                onClick={() => void handleJoinPrivateRoom(joinCode)}
+                className="inline-flex items-center justify-center gap-2 border-2 border-outline-variant bg-surface-container-low px-5 py-3 font-headline text-xs font-bold uppercase tracking-widest text-on-surface disabled:opacity-50"
               >
                 <DoorOpen size={16} />
                 Entrar
@@ -426,7 +496,7 @@ export function SharedLibraryRoom({
                 <button
                   key={room.code}
                   type="button"
-                  onClick={() => sanctuaryActions.joinPrivateRoom(room.code)}
+                  onClick={() => void handleJoinPrivateRoom(room.code)}
                   className={`w-full rounded-none border-2 px-4 py-3 text-left ${currentRoom?.code === room.code ? "border-primary bg-primary/15" : "border-outline-variant bg-surface-container-low"}`}
                 >
                   <p className="font-headline text-sm font-black uppercase tracking-tight text-on-surface">

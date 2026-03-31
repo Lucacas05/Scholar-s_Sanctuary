@@ -2569,6 +2569,30 @@ export const sanctuaryActions = {
     });
   },
 
+  injectRoom(
+    roomCode: string,
+    name: string,
+    ownerId: string,
+    isPublic: boolean = false,
+  ) {
+    commit((state) => {
+      if (!isAuthenticated(state) || !state.currentUserId) {
+        return;
+      }
+      state.rooms[roomCode] = {
+        code: roomCode,
+        kind: isPublic ? "public" : "private",
+        name,
+        description: isPublic
+          ? "Sala pública sincronizada."
+          : DEFAULT_PRIVATE_DESCRIPTION,
+        ownerId,
+        memberIds: [state.currentUserId],
+        createdAt: Date.now(),
+      };
+    });
+  },
+
   joinPrivateRoom(code: string) {
     commit((state) => {
       if (!isAuthenticated(state) || !state.currentUserId) {
