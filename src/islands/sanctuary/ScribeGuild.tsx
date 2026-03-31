@@ -653,17 +653,18 @@ export function ScribeGuild() {
         ? { inviteCode: inviteCodeValue.trim().toUpperCase() }
         : undefined;
 
-      const res = await fetch(`/api/rooms/${code}/join`, {
+      const res = await fetch(`/api/rooms/${code.trim().toUpperCase()}/join`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload ?? {}),
       });
 
-      if (res.ok) {
+      if (res.ok || res.status === 409) {
         void fetchRooms();
         void fetchInvitations();
         setJoinCode("");
         setInviteCode("");
+        window.location.href = `/biblioteca-compartida?codigo=${encodeURIComponent(code.trim().toUpperCase())}`;
       } else {
         setFeedback(await readActionError(res, "No se pudo entrar a la sala."));
       }
@@ -687,6 +688,15 @@ export function ScribeGuild() {
       if (res.ok) {
         void fetchRooms();
         void fetchInvitations();
+
+        // Redirect to the room after accepting
+        const targetInvitation = roomInvitations.find(
+          (inv) => inv.id === invitationId,
+        );
+        if (targetInvitation) {
+          window.location.href = `/biblioteca-compartida?codigo=${encodeURIComponent(targetInvitation.roomCode)}`;
+          return;
+        }
       } else {
         setFeedback(
           await readActionError(res, "No se pudo aceptar la invitación."),
@@ -1392,6 +1402,13 @@ export function ScribeGuild() {
                         {room.code}
                       </span>
                     </div>
+                    <a
+                      href={`/biblioteca-compartida?codigo=${encodeURIComponent(room.code)}`}
+                      className="mt-3 flex items-center justify-center gap-2 border-b-[3px] border-on-primary-fixed-variant bg-primary px-4 py-2 font-headline text-[10px] font-bold uppercase tracking-widest text-on-primary hover:brightness-105"
+                    >
+                      <DoorOpen size={12} />
+                      Entrar a la sala
+                    </a>
                     {room.ownerId === sanctuary.currentUserId &&
                       (activeInvitesByRoom[room.code]?.length ?? 0) > 0 && (
                         <div className="mt-3 space-y-2 border-t border-outline-variant/30 pt-3">

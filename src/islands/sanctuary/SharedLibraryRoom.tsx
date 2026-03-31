@@ -132,7 +132,9 @@ export function SharedLibraryRoom({
       const res = await fetch(`/api/rooms/${cleanCode}/join`, {
         method: "POST",
       });
-      if (res.ok) {
+
+      // 200 = joined successfully, 409 = already a member — both are fine
+      if (res.ok || res.status === 409) {
         const infoRes = await fetch(`/api/rooms/${cleanCode}`);
         if (infoRes.ok) {
           const infoData = await infoRes.json();
@@ -144,12 +146,9 @@ export function SharedLibraryRoom({
           );
           sanctuaryActions.joinPrivateRoom(infoData.room.code);
         }
-      } else {
-        // Fallback or error handling
-        sanctuaryActions.joinPrivateRoom(cleanCode);
       }
     } catch {
-      sanctuaryActions.joinPrivateRoom(codeToJoin.trim().toUpperCase());
+      // silent fail
     } finally {
       setIsBusy(false);
     }
