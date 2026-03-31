@@ -46,6 +46,7 @@ jobs:
             export NVM_DIR="$HOME/.nvm"
             DEPLOY_USER="$(whoami)"
             DEPLOY_GROUP="$(id -gn "$DEPLOY_USER")"
+            DEPLOY_HOME="$(getent passwd "$DEPLOY_USER" | cut -d: -f6)"
             [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
             nvm install 22
             nvm use 22
@@ -78,11 +79,13 @@ jobs:
             User=$DEPLOY_USER
             Group=$DEPLOY_GROUP
             WorkingDirectory=/var/www/Scholar-s_Sanctuary
+            Environment=HOME=$DEPLOY_HOME
+            Environment=NVM_DIR=$DEPLOY_HOME/.nvm
             Environment=NODE_ENV=production
             Environment=HOST=127.0.0.1
             Environment=PORT=3000
             EnvironmentFile=/var/www/Scholar-s_Sanctuary/.env
-            ExecStart=/usr/bin/npm run start
+            ExecStart=/bin/bash -lc '. "$NVM_DIR/nvm.sh" && nvm use 22 >/dev/null && exec node dist/server/entry.mjs'
             Restart=always
             RestartSec=5
 
@@ -119,6 +122,7 @@ jobs:
             export NVM_DIR="$HOME/.nvm"
             DEPLOY_USER="$(whoami)"
             DEPLOY_GROUP="$(id -gn "$DEPLOY_USER")"
+            DEPLOY_HOME="$(getent passwd "$DEPLOY_USER" | cut -d: -f6)"
             [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
             nvm install 22
             nvm use 22
@@ -151,11 +155,13 @@ jobs:
             User=$DEPLOY_USER
             Group=$DEPLOY_GROUP
             WorkingDirectory=/var/www/Scholar-s_Sanctuary
+            Environment=HOME=$DEPLOY_HOME
+            Environment=NVM_DIR=$DEPLOY_HOME/.nvm
             Environment=NODE_ENV=production
             Environment=HOST=127.0.0.1
             Environment=PORT=3000
             EnvironmentFile=/var/www/Scholar-s_Sanctuary/.env
-            ExecStart=/usr/bin/npm run start
+            ExecStart=/bin/bash -lc '. "$NVM_DIR/nvm.sh" && nvm use 22 >/dev/null && exec node dist/server/entry.mjs'
             Restart=always
             RestartSec=5
 

@@ -38,7 +38,7 @@ npm run build
 Install `systemd`:
 
 ```bash
-# Edit deploy/lumina.service first and replace User/Group with your deploy user.
+# Edit deploy/lumina.service first and replace User/Group/HOME/NVM_DIR with your deploy user.
 sudo cp deploy/lumina.service /etc/systemd/system/lumina.service
 sudo systemctl daemon-reload
 sudo systemctl enable --now lumina
@@ -89,4 +89,4 @@ sudo systemctl restart lumina
 sudo systemctl status lumina --no-pager
 ```
 
-The workflow also rewrites `/etc/systemd/system/lumina.service` to use the SSH deploy user as `User` and `Group`, then keeps runtime-written files under `/var/www/Scholar-s_Sanctuary/data` and `/var/www/Scholar-s_Sanctuary/data/sessions`. This avoids the common failure mode where the build succeeds as one user but the live service returns `500` because another user cannot write SQLite or Astro session files.
+The workflow also rewrites `/etc/systemd/system/lumina.service` to use the SSH deploy user as `User` and `Group`, booting the server with that same user's `nvm` Node 22. It then keeps runtime-written files under `/var/www/Scholar-s_Sanctuary/data` and `/var/www/Scholar-s_Sanctuary/data/sessions`. This avoids two common failure modes: the build succeeding as one user while the live service cannot write SQLite or Astro session files, and `better-sqlite3` being compiled with Node 22 during deploy but executed later by an older system Node.

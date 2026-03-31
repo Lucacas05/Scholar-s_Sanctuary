@@ -8,11 +8,13 @@ Type=simple
 User=deploy
 Group=deploy
 WorkingDirectory=/var/www/Scholar-s_Sanctuary
+Environment=HOME=/home/deploy
+Environment=NVM_DIR=/home/deploy/.nvm
 Environment=NODE_ENV=production
 Environment=HOST=127.0.0.1
 Environment=PORT=3000
 EnvironmentFile=/var/www/Scholar-s_Sanctuary/.env
-ExecStart=/usr/bin/npm run start
+ExecStart=/bin/bash -lc '. "$NVM_DIR/nvm.sh" && nvm use 22 >/dev/null && exec node dist/server/entry.mjs'
 Restart=always
 RestartSec=5
 
