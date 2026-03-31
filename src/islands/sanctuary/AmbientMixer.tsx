@@ -8,7 +8,11 @@ import {
 
 type TrackNode = {
   gain: GainNode;
+  play: () => Promise<void>;
+  pause: () => void;
   dispose: () => void;
+  sourceKind: "procedural" | "file";
+  sourceUrl?: string;
 };
 
 type MixerEngine = {
@@ -129,6 +133,9 @@ function createNoiseTrack(
   return {
     gain,
     output: gain,
+    play: async () => {},
+    pause: () => {},
+    sourceKind: "procedural" as const,
     dispose: () => {
       source.stop();
       disposers.forEach((dispose) => dispose());
@@ -141,7 +148,90 @@ function createNoiseTrack(
   };
 }
 
-function createMixerEngine() {
+function createAudioTrack(context: AudioContext, url: string) {
+  const audio = new Audio(url);
+  audio.loop = true;
+  audio.preload = "auto";
+  audio.crossOrigin = "anonymous";
+
+  const source = context.createMediaElementSource(audio);
+  const gain = context.createGain();
+  gain.gain.value = 0;
+  source.connect(gain);
+
+  return {
+    gain,
+    output: gain,
+    play: async () => {
+      try {
+        await audio.play();
+      } catch {
+        // If the file cannot play, the rest of the mixer keeps working.
+      }
+    },
+    pause: () => {
+      audio.pause();
+    },
+    sourceKind: "file" as const,
+    sourceUrl: url,
+    dispose: () => {
+      audio.pause();
+      audio.removeAttribute("src");
+      audio.load();
+      source.disconnect();
+      gain.disconnect();
+    },
+  };
+}
+
+const FILE_TRACK_CANDIDATES: Record<AmbientTrackId, string[]> = {
+  rain: [
+    "/audio/ambient/lluvia.mp3",
+    "/audio/ambient/rain.mp3",
+    "/audio/ambient/lluvia.ogg",
+    "/audio/ambient/rain.ogg",
+  ],
+  fire: [
+    "/audio/ambient/brasas.mp3",
+    "/audio/ambient/fire.mp3",
+    "/audio/ambient/brasas.ogg",
+    "/audio/ambient/fire.ogg",
+  ],
+  library: [
+    "/audio/ambient/sala-biblioteca.mp3",
+    "/audio/ambient/biblioteca.mp3",
+    "/audio/ambient/library.mp3",
+    "/audio/ambient/sala-biblioteca.ogg",
+    "/audio/ambient/biblioteca.ogg",
+    "/audio/ambient/library.ogg",
+  ],
+  wind: [
+    "/audio/ambient/viento.mp3",
+    "/audio/ambient/wind.mp3",
+    "/audio/ambient/viento.ogg",
+    "/audio/ambient/wind.ogg",
+  ],
+};
+
+async function resolveTrackSource(trackId: AmbientTrackId) {
+  for (const candidate of FILE_TRACK_CANDIDATES[trackId]) {
+    try {
+      const response = await fetch(candidate, {
+        method: "HEAD",
+        cache: "no-store",
+      });
+      if (response.ok) {
+        return candidate;
+      }
+    } catch {
+      // Ignore failed checks and continue with the next candidate.
+    }
+  }
+
+  return null;
+}
+
+async function createMixerEngine() {
   const AudioCtor =
     window.AudioContext ||
     (window as typeof window & { webkitAudioContext?: typeof AudioContext })
@@ -156,44 +246,66 @@ function createMixerEngine() {
   master.connect(context.destination);
   const noiseBuffer = createNoiseBuffer(context);
 
-  const rain = createNoiseTrack(context, noiseBuffer, {
-    highpass: 900,
-    lowpass: 7600,
-    movementHz: 0.12,
-  });
+  const trackSources = await Promise.all(
+    (Object.keys(FILE_TRACK_CANDIDATES) as AmbientTrackId[]).map(
+      async (trackId) => [trackId, await resolveTrackSource(trackId)] as const,
+    ),
+  );
+  const trackSourceMap = Object.fromEntries(trackSources) as Record<
+    AmbientTrackId,
+    string | null
+  >;
+
+  const rain =
+    trackSourceMap.rain !== null
+      ? createAudioTrack(context, trackSourceMap.rain)
+      : createNoiseTrack(context, noiseBuffer, {
+          highpass: 900,
+          lowpass: 7600,
+          movementHz: 0.12,
+        });
   rain.output.connect(master);
 
-  const fire = createNoiseTrack(context, noiseBuffer, {
-    highpass: 120,
-    lowpass: 1500,
-    crackle: true,
-  });
+  const fire =
+    trackSourceMap.fire !== null
+      ? createAudioTrack(context, trackSourceMap.fire)
+      : createNoiseTrack(context, noiseBuffer, {
+          highpass: 120,
+          lowpass: 1500,
+          crackle: true,
+        });
   fire.output.connect(master);
 
-  const library = createNoiseTrack(context, noiseBuffer, {
-    highpass: 180,
-    lowpass: 1100,
-    oscillatorFrequencies: [110, 220],
-    movementHz: 0.08,
-  });
+  const library =
+    trackSourceMap.library !== null
+      ? createAudioTrack(context, trackSourceMap.library)
+      : createNoiseTrack(context, noiseBuffer, {
+          highpass: 180,
+          lowpass: 1100,
+          oscillatorFrequencies: [110, 220],
+          movementHz: 0.08,
+        });
   library.output.connect(master);
 
-  const wind = createNoiseTrack(context, noiseBuffer, {
-    highpass: 80,
-    lowpass: 900,
-    bandpass: 320,
-    movementHz: 0.05,
-  });
+  const wind =
+    trackSourceMap.wind !== null
+      ? createAudioTrack(context, trackSourceMap.wind)
+      : createNoiseTrack(context, noiseBuffer, {
+          highpass: 80,
+          lowpass: 900,
+          bandpass: 320,
+          movementHz: 0.05,
+        });
   wind.output.connect(master);
 
   return {
     context,
     master,
     tracks: {
-      rain: { gain: rain.gain, dispose: rain.dispose },
-      fire: { gain: fire.gain, dispose: fire.dispose },
-      library: { gain: library.gain, dispose: library.dispose },
-      wind: { gain: wind.gain, dispose: wind.dispose },
+      rain,
+      fire,
+      library,
+      wind,
     },
     dispose: () => {
       rain.dispose();
@@ -244,6 +356,11 @@ export function AmbientMixer() {
     const apply = async () => {
       if (preset.enabled) {
         await engine.context.resume();
+        await Promise.all(
+          (Object.keys(engine.tracks) as AmbientTrackId[]).map((trackId) =>
+            engine.tracks[trackId].play(),
+          ),
+        );
         rampGain(
           engine.context,
           engine.master,
@@ -253,6 +370,11 @@ export function AmbientMixer() {
       } else {
         rampGain(engine.context, engine.master, 0, 0.35);
         suspendTimerRef.current = window.setTimeout(() => {
+          (Object.keys(engine.tracks) as AmbientTrackId[]).forEach(
+            (trackId) => {
+              engine.tracks[trackId].pause();
+            },
+          );
           void engine.context.suspend();
         }, 420);
       }
@@ -271,7 +393,7 @@ export function AmbientMixer() {
 
   async function ensureEngine() {
     if (!engineRef.current) {
-      engineRef.current = createMixerEngine();
+      engineRef.current = await createMixerEngine();
     }
 
     if (!engineRef.current) {
