@@ -1408,22 +1408,35 @@ export function ScribeGuild() {
                                 <p className="font-headline text-[10px] font-bold uppercase tracking-widest text-on-surface">
                                   {invitation.invitee.displayName}
                                 </p>
-                                <p className="text-[10px] text-outline">
-                                  {invitation.inviteCode}
+                                <p className="text-[10px] text-primary italic">
+                                  Pendiente de aceptar
                                 </p>
                               </div>
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  void handleRevokeInvitation(
-                                    room.code,
-                                    invitation.id,
-                                  )
-                                }
-                                className="flex h-7 items-center justify-center border-2 border-outline-variant/50 bg-surface-container-highest px-2 text-[10px] font-headline font-bold uppercase tracking-widest text-outline hover:text-primary steps-bezel"
-                              >
-                                Revocar
-                              </button>
+                              <div className="flex gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const link = `${window.location.origin}${invitation.inviteLink}`;
+                                    navigator.clipboard.writeText(link);
+                                  }}
+                                  className="flex h-7 items-center justify-center border-2 border-outline-variant/50 bg-surface-container-highest px-2 text-[10px] font-headline font-bold uppercase tracking-widest text-outline hover:text-primary steps-bezel"
+                                  title="Copiar enlace"
+                                >
+                                  Link
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    void handleRevokeInvitation(
+                                      room.code,
+                                      invitation.id,
+                                    )
+                                  }
+                                  className="flex h-7 items-center justify-center border-2 border-outline-variant/50 bg-surface-container-highest px-2 text-[10px] font-headline font-bold uppercase tracking-widest text-outline hover:text-primary steps-bezel"
+                                >
+                                  Revocar
+                                </button>
+                              </div>
                             </div>
                           ))}
                         </div>
