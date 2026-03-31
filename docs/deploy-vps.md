@@ -6,7 +6,7 @@ Lumina now runs as an Astro SSR Node app. `nginx` must proxy to a long-running N
 
 - App checkout in `/var/www/Scholar-s_Sanctuary`
 - Node process running `node dist/server/entry.mjs`
-- `systemd` service named `lumina`
+- `systemd` service named `lumina`, running as the same Unix user that owns `/var/www/Scholar-s_Sanctuary`
 - `nginx` vhost proxying `luminalibrary.duckdns.org` to `127.0.0.1:3000`
 
 ## Files in this repo
@@ -38,6 +38,7 @@ npm run build
 Install `systemd`:
 
 ```bash
+# Edit deploy/lumina.service first and replace User/Group with your deploy user.
 sudo cp deploy/lumina.service /etc/systemd/system/lumina.service
 sudo systemctl daemon-reload
 sudo systemctl enable --now lumina
@@ -87,3 +88,5 @@ npm run build
 sudo systemctl restart lumina
 sudo systemctl status lumina --no-pager
 ```
+
+The workflow also rewrites `/etc/systemd/system/lumina.service` to use the SSH deploy user as `User` and `Group`, then keeps runtime-written files under `/var/www/Scholar-s_Sanctuary/data` and `/var/www/Scholar-s_Sanctuary/data/sessions`. This avoids the common failure mode where the build succeeds as one user but the live service returns `500` because another user cannot write SQLite or Astro session files.

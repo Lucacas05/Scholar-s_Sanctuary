@@ -4,8 +4,9 @@ After=network.target
 
 [Service]
 Type=simple
-User=www-data
-Group=www-data
+# Replace both values with the Unix user that owns /var/www/Scholar-s_Sanctuary.
+User=deploy
+Group=deploy
 WorkingDirectory=/var/www/Scholar-s_Sanctuary
 Environment=NODE_ENV=production
 Environment=HOST=127.0.0.1
