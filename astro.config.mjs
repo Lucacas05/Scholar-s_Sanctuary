@@ -13,5 +13,12 @@ export default defineConfig({
   integrations: [react(), wsDevIntegration()],
   vite: {
     plugins: [tailwindcss()],
+    build: {
+      rollupOptions: {
+        output: {
+          indent: "  ",
+        },
+      },
+    },
   },
 });
