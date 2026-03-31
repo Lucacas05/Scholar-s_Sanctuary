@@ -238,6 +238,9 @@ function handleJoinRoom(userId: string, roomCode: string, ws: WebSocket): void {
   // Verify the user is a member of this room in the database
   const isMember = checkRoomMembership.get(roomCode, userId);
   if (!isMember) {
+    console.debug(
+      `[ws] join-room denied: user ${userId} is not a member of room ${roomCode}`,
+    );
     send(ws, { type: "error", message: "You are not a member of this room." });
     return;
   }
@@ -284,6 +287,9 @@ function handleJoinRoom(userId: string, roomCode: string, ws: WebSocket): void {
     const mp = buildMemberPresence(uid);
     if (mp) members.push(mp);
   }
+  console.debug(
+    `[ws] user ${userId} joined room ${roomCode}, occupants: ${occupants.size}`,
+  );
   send(ws, { type: "room-state", members });
 }
 

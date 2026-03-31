@@ -94,7 +94,8 @@ export function SharedLibraryRoom({
     if (currentRoom?.code === cleanCode) return;
 
     void handleJoinPrivateRoom(urlRoomCode);
-  }, [urlRoomCode, isAnonymous, isBusy, currentRoom?.code]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [urlRoomCode, isAnonymous, currentRoom?.code]);
 
   const handleCreatePrivateRoom = async () => {
     if (isBusy || !roomName.trim()) return;
@@ -114,6 +115,7 @@ export function SharedLibraryRoom({
           data.room.privacy === "public",
         );
         sanctuaryActions.joinPrivateRoom(data.room.code);
+        realtime.joinRoom(data.room.code);
 
         if (inviteIds.length > 0) {
           await Promise.allSettled(
@@ -139,9 +141,12 @@ export function SharedLibraryRoom({
     setIsBusy(true);
     try {
       const cleanCode = codeToJoin.trim().toUpperCase();
+      console.debug("[room-join] Joining room:", cleanCode);
       const res = await fetch(`/api/rooms/${cleanCode}/join`, {
         method: "POST",
       });
+
+      console.debug("[room-join] Join API status:", res.status);
 
       // 200 = joined successfully, 409 = already a member — both are fine
       if (res.ok || res.status === 409) {
@@ -155,10 +160,22 @@ export function SharedLibraryRoom({
             infoData.room.privacy === "public",
           );
           sanctuaryActions.joinPrivateRoom(infoData.room.code);
+          realtime.joinRoom(infoData.room.code);
+          console.debug(
+            "[room-join] Joined room store + realtime:",
+            infoData.room.code,
+          );
+        } else {
+          console.warn(
+            "[room-join] Failed to fetch room info:",
+            infoRes.status,
+          );
         }
+      } else {
+        console.warn("[room-join] Join API rejected:", res.status);
       }
-    } catch {
-      // silent fail
+    } catch (err) {
+      console.warn("[room-join] Join flow error:", err);
     } finally {
       setIsBusy(false);
     }
