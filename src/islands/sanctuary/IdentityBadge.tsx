@@ -330,10 +330,6 @@ export function IdentityBadge({
           (achievement) => achievement.unlockedAt,
         )
       : [];
-  const settingsLink =
-    typeof window !== "undefined"
-      ? `/ajustes?next=${encodeURIComponent(window.location.pathname + window.location.search)}`
-      : "/ajustes";
   const feedbackText =
     authFeedback === "success"
       ? "Sesión iniciada correctamente."
@@ -345,23 +341,15 @@ export function IdentityBadge({
     <div className="flex flex-col items-end gap-2">
       <div className="flex items-center gap-3">
         {sessionUser ? (
-          <div className="flex items-center gap-2">
-            <a
-              href={settingsLink}
-              className="inline-flex items-center justify-center gap-2 border-b-[3px] border-outline-variant bg-surface-container-high px-4 py-2 font-headline text-xs font-bold uppercase tracking-widest text-on-surface"
-            >
-              Ajustes
-            </a>
-            <button
-              type="button"
-              onClick={() => void handleLogout()}
-              disabled={isLoggingOut}
-              className="inline-flex items-center justify-center gap-2 border-b-[3px] border-on-primary-fixed-variant bg-primary px-4 py-2 font-headline text-xs font-bold uppercase tracking-widest text-on-primary disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              <LogOut size={16} />
-              {isLoggingOut ? "Cerrando..." : "Cerrar sesión"}
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => void handleLogout()}
+            disabled={isLoggingOut}
+            className="inline-flex items-center justify-center gap-2 border-b-[3px] border-on-primary-fixed-variant bg-primary px-4 py-2 font-headline text-xs font-bold uppercase tracking-widest text-on-primary disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <LogOut size={16} />
+            {isLoggingOut ? "Cerrando..." : "Cerrar sesión"}
+          </button>
         ) : isOAuthAvailable ? (
           <a
             href="/api/auth/login"
